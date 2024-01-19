@@ -20,7 +20,7 @@ T = struct2table(actMat1stLast);
 
 %%
 
-conditionOI = "16x4";
+conditionOI = "16";
 
 % We filter the data by only taking good place cells in the first AND in
 % the last lap
