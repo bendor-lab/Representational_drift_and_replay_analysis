@@ -23,6 +23,9 @@ for cfile = sessions
     % We load the place fields computed per lap for each animal - lap_place_fields
     load(file + "\extracted_lap_place_fields");
 
+    % Exit parameter if the treatment is impossible (e.g. NEXT mode + 16x1)) 
+    shouldPass = false;
+
     % We iterate through tracks
     for track = 1:4
 
@@ -47,10 +50,15 @@ for cfile = sessions
             load(file + "\extracted_place_fields");
             concurrentPFData = place_fields.track(track + expSession);
         
-        % If mode == "NEXT", we use half laps for all the analysis
+        % If mode == "NEXT", we wont use conditions "16x1" (no next lap in that case)
         elseif mode == "NEXT"
-            currentPFData = lap_place_fields(track).half_Lap;
-            concurrentPFData = lap_place_fields(track).half_Lap;
+            if condition == "16x1"
+                shouldPass = true;
+                continue % Stop the track iteration loop
+            else
+                currentPFData = lap_place_fields(track).Complete_Lap;
+                concurrentPFData = currentPFData;
+            end
         end
 
         % We define a correlation vector accross each lap
@@ -72,9 +80,13 @@ for cfile = sessions
             % And add its mean to the corr_vector
             corr_vector(lap) = mean(pvCorrelationVector); 
         end
+
+        
     end
 
 end
+
+
 
 %% Function to compute the population vector correlation
 
