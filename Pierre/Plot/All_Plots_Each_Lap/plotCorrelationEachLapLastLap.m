@@ -2,7 +2,7 @@
 % lap N of track 1 / 2 (physical) and last lap
 
 PATH.SCRIPT = fileparts(mfilename('fullpath'));
-path_to_data = PATH.SCRIPT + "\..\Data\PC_Decoding_Each_Lap_ALL\";
+path_to_data = PATH.SCRIPT + "\..\..\Data\PC_Decoding_Each_Lap_ALL\";
 listing_files = {dir(path_to_data).name};
 listing_files([1, 2]) = [];
 
