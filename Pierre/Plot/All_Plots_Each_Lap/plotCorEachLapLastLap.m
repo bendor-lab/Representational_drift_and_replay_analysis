@@ -65,7 +65,10 @@ for cfile = sessions
 
             goodCells = concurrentPFData{lap}.good_cells;
 
+            % We get the correlation vector for the current lap
             pvCorrelationVector = getPVCor(goodCells, currentPFCellArray, concurrentCellArray, mode);
+            % And add its mean to the corr_vector
+            corr_vector(lap) = mean(pvCorrelationVector); 
         end
     end
 
