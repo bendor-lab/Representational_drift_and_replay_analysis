@@ -8,6 +8,8 @@ finalData = struct("condition", {}, "session", {}, "lap", {}, "PV_cor", {});
 % "ALL" : all laps re-exposure
 % "NEXT" : next lap
 
+mode = "NEXT";
+
 % We iterate through all the sessions
 
 for cfile = sessions
