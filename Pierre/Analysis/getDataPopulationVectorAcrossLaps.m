@@ -1,3 +1,15 @@
+% This script generates a file containing : 
+% - Animal ID
+% - Condition
+% - Day
+% - Lap
+% - PV correlation with the Final Place Field 
+% - Euclidian distance with the Final Place Field
+% - cosine similarity with the Final Place Field
+
+% This file is only treating Track 1 / 3 data
+% Currently in progress
+
 clear
 
 sessions = data_folders_excl; % Use the function to get all the file paths
