@@ -1,3 +1,5 @@
+clear
+
 sessions = data_folders_excl; % Use the function to get all the file paths
 
 finalData = struct("condition", {}, "session", {}, "lap", {}, "PV_cor", {});
