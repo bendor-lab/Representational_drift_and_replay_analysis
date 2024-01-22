@@ -1,6 +1,7 @@
-% Script to see the difference in firing rate and position between PF in
-% the first and the last lap of the run
-% Currently only for 16 laps
+% Script to see the difference in firing rate / position of PF and
+% other variables lap to lap
+
+% Creates a file extracted_activity_mat_lap.mat
 
 clear
 
