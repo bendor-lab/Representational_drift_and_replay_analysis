@@ -1,4 +1,4 @@
-% Function that gives the participation in nb of spikes of 
+% Function that gives the participation in nb of events of 
 % a vector of cell, given a sleep session, the track decoded during replay, a list of significant RE and
 % decoded RE
 

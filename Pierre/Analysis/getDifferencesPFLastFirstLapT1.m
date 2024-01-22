@@ -11,27 +11,29 @@ cd(PATH.SCRIPT)
 sessions = data_folders_excl; % Use the function to get all the file paths
 
 % Data stored in a table with : 
-% Animal - Condition - Day - Cell - Participation RUN1 Lap 1 -
-% Participation RUN1 Lap End - Participation RUN2 Lap 1 -
-% Participation RUN2 Lap End - 
-% - Participation Replay Events RUN1 - Participation Replay Events RUN2 - 
-% Participation Replay Events POST1 - Participation Replay Events POST2
-% Max Firing Rate PF RUN1 Lap1 - Max Firing Rate PF RUN1 Lap End
-% Max Firing Rate PF RUN2 Lap1 - Max Firing Rate PF RUN2 Lap End
-% Position PF RUN1 Lap1 - Position PF RUN1 Lap End
-% Position PF RUN2 Lap1 - Position PF RUN2 Lap End
+% Animal - Condition - Day - Track - allLaps struct - cellsReplayData
+% struct
+% allLaps struct : lap - cellsData
+% cellsData struct :
+% cell - spike participation of cell during current track
+% - participation to awake replay during current lap
+% - is a good PC when classifing with current lap data
+% - is a good PC when classifing with all the data
+% - relative max firing rate in the smooth PF
+% - position of the PF peak
+% - center of mass of the PF
 
-actMat1stLast = struct("animal", {}, "condition", {}, "day", {}, ...
-                                  "cell", {}, "part_RUN1Lap1", {}, "part_RUN1LapEnd", {}, ... 
-                                  "part_RUN2Lap1", {}, "part_RUN2LapEnd", {}, "part_ReplayRUN1", {}, ...
-                                  "part_ReplayRUN2", {}, "part_ReplayPOST1", {}, "part_ReplayPOST2", {}, ...
-                                  "IsGoodPC_RUN1Lap1", {}, "IsGoodPC_RUN1LapEnd", {}, ...
-                                  "IsGoodPC_RUN2Lap1", {}, "IsGoodPC_RUN2LapEnd", {}, ...
-                                  "IsGoodPC_RUN1ALL", {}, "IsGoodPC_RUN2ALL", {}, ...
-                                  "PF_MaxFRateRUN1Lap1", {}, "PF_MaxFRateRUN1LapEnd", {}, ...
-                                  "PF_MaxFRateRUN2Lap1", {}, "PF_MaxFRateRUN2LapEnd", {}, ...
-                                  "PF_PositionRUN1Lap1", {}, "PF_PositionRUN1LapEnd", {}, ...
-                                  "PF_PositionRUN2Lap1", {}, "PF_PositionRUN2LapEnd", {});
+% cellsReplayData (separated from lap data to avoid redudancy) :
+% cell - participation in PRE - RUN1 - RUN2 - POST1 - POST2
+% - Replay events POST1 over time - Replay events POST2 over time
+
+% Note : here, the replay participation is decoded with the current
+% track
+
+activity_mat_laps = struct("animal", {}, "condition", {}, "day", {}, ...
+                       "track", {}, "allLaps", {}, "cellsReplayData", {});
+                   
+allLaps = struct("lap", {}, "cellsData", {});
 
                               
 % We iterate through files
@@ -43,21 +45,11 @@ for cfile = sessions
     
     % We load the place fields computed per lap for each animal - lap_place_fields
     load(file + "\extracted_lap_place_fields");
+    % And a general PF data to check if good cell on the whole track
+    load(file + "\extracted_place_fields");
     
-    % We're interested in Track 1 / 3 for the moment - only the first and
-    % last lap
-    
-    FirstLapT1 = lap_place_fields(1).Complete_Lap{1};
-    LastLapT1 = lap_place_fields(1).Complete_Lap{end};
-    nbLapsT1 = length(lap_place_fields(1).Complete_Lap);
-    
-    FirstLapT3 = lap_place_fields(3).Complete_Lap{1};
-    LastLapT3 = lap_place_fields(3).Complete_Lap{end};
-    nbLapsT3 = length(lap_place_fields(3).Complete_Lap);
-    
-    % We get the number of pyramidal cells for this session
-    
-    pyramCells = FirstLapT1.pyramidal_cells;
+    % We get the pyramidal cells for this session (same everywhere)
+    pyramCells = lap_place_fields(1).Complete_Lap{1}.pyramidal_cells;
     
     % We load the time / spike data we need for the participation
     % conputation
@@ -69,148 +61,119 @@ for cfile = sessions
     load(file + "\decoded_replay_events"); % Import decoded_replay_events
     load(file + "\significant_replay_events"); % Import significant_replay_events
     load(file + "\extracted_sleep_state"); % Import sleep_state
-   
-    %% We get the participation vector for :
     
-    % RUN1 - Lap 1
-    partVecRUN1Lap1 = getParticipationDuringLap(pyramCells, 1, 1, lap_times, clusters);
-    % RUN1 - Lap End
-    partVecRUN1LapEnd = getParticipationDuringLap(pyramCells, 1, nbLapsT1, lap_times, clusters);
-    % RUN2 - Lap 1
-    partVecRUN2Lap1 = getParticipationDuringLap(pyramCells, 3, 1, lap_times, clusters);
-    % RUN2 - Lap End
-    partVecRUN2LapEnd = getParticipationDuringLap(pyramCells, 3, nbLapsT3, lap_times, clusters);
-    
-    % Awake Replay - RUN1
-    partRepRUN1 = getReplayParticipationDuringTrack(pyramCells, 1, 1, lap_times, ...
-                                                    significant_replay_events, decoded_replay_events);
-    % Awake Replay - RUN2
-    partRepRUN2 = getReplayParticipationDuringTrack(pyramCells, 3, 3, lap_times, ...
-                                                    significant_replay_events, decoded_replay_events);
-    
-    % Sleep Replay - POST1
-    partRepPOST1 = getReplayParticipationDuringSleep(pyramCells, "POST1", 1, sleep_state, ...
-                                                     significant_replay_events, decoded_replay_events);
-    % Sleep Replay - POST2
-    partRepPOST2 = getReplayParticipationDuringSleep(pyramCells, "POST2", 3, sleep_state, ...
-                                                     significant_replay_events, decoded_replay_events);
-                                                 
-    %% We get the place fields properties
-    
-    % RUN1 - Lap 1
-    GoodPCData = lap_place_fields(1).Complete_Lap{1};
-    % Is Good Cell ?
-    IsGoodPC_RUN1Lap1 = repelem(0, length(pyramCells));
-    pyramidalGoodCells = GoodPCData.good_cells(ismember(GoodPCData.good_cells, pyramCells));
-    [~, goodPCPosition] = ismember(pyramidalGoodCells, pyramCells);
-    IsGoodPC_RUN1Lap1(goodPCPosition) = 1; % Mark the cells as good
-    % Max Firing Rate
-    raw_PF = GoodPCData.raw(pyramCells);
-    PF_MaxFRateRUN1Lap1 = cellfun(@max, raw_PF);
-    % Location of the maximum
-    PF_PositionRUN1Lap1 = cellfun(@(x) find(x == max(x), 1), raw_PF, 'UniformOutput', false);
-    
-    % RUN1 - Lap End
-    GoodPCData = lap_place_fields(1).Complete_Lap{end};
-    % Is Good Cell ?
-    IsGoodPC_RUN1LapEnd = repelem(0, length(pyramCells));
-    pyramidalGoodCells = GoodPCData.good_cells(ismember(GoodPCData.good_cells, pyramCells));
-    [~, goodPCPosition] = ismember(pyramidalGoodCells, pyramCells);
-    IsGoodPC_RUN1LapEnd(goodPCPosition) = 1; % Mark the cells as good
-    % Max Firing Rate
-    raw_PF = GoodPCData.raw(pyramCells);
-    PF_MaxFRateRUN1LapEnd = cellfun(@max, raw_PF);
-    % Location of the maximum
-    PF_PositionRUN1LapEnd = cellfun(@(x) find(x == max(x), 1), raw_PF, 'UniformOutput', false);
-    
-    % RUN2 - Lap 1
-    GoodPCData = lap_place_fields(3).Complete_Lap{1};
-    % Is Good Cell ?
-    IsGoodPC_RUN2Lap1 = repelem(0, length(pyramCells));
-    pyramidalGoodCells = GoodPCData.good_cells(ismember(GoodPCData.good_cells, pyramCells));
-    [~, goodPCPosition] = ismember(pyramidalGoodCells, pyramCells);
-    IsGoodPC_RUN2Lap1(goodPCPosition) = 1; % Mark the cells as good
-    % Max Firing Rate
-    raw_PF = GoodPCData.raw(pyramCells);
-    PF_MaxFRateRUN2Lap1 = cellfun(@max, raw_PF);
-    % Location of the maximum
-    PF_PositionRUN2Lap1 = cellfun(@(x) find(x == max(x), 1), raw_PF, 'UniformOutput', false);
-    
-    % RUN2 - Lap End
-    GoodPCData = lap_place_fields(1).Complete_Lap{1};
-    % Is Good Cell ?
-    IsGoodPC_RUN2LapEnd = repelem(0, length(pyramCells));
-    pyramidalGoodCells = GoodPCData.good_cells(ismember(GoodPCData.good_cells, pyramCells));
-    [~, goodPCPosition] = ismember(pyramidalGoodCells, pyramCells);
-    IsGoodPC_RUN2LapEnd(goodPCPosition) = 1; % Mark the cells as good
-    % Max Firing Rate
-    raw_PF = GoodPCData.raw(pyramCells);
-    PF_MaxFRateRUN2LapEnd = cellfun(@max, raw_PF);
-    % Location of the maximum
-    PF_PositionRUN2LapEnd = cellfun(@(x) find(x == max(x), 1), raw_PF, 'UniformOutput', false);
-    
-    % Supplementary data : is it a good cell, regarding all laps
-    
-    load(file + "\extracted_place_fields")
-    
-    % RUN1
-    IsGoodPC_RUN1ALL = repelem(0, length(pyramCells));
-    allGoodCells = place_fields.track(1).good_cells;
-    pyramidalGoodCells = allGoodCells(ismember(allGoodCells, pyramCells));
-    [~, goodPCPosition] = ismember(pyramidalGoodCells, pyramCells);
-    IsGoodPC_RUN1ALL(goodPCPosition) = 1; % Mark the cells as good
-    
-    % RUN2
-    IsGoodPC_RUN2ALL = repelem(0, length(pyramCells));
-    allGoodCells = place_fields.track(3).good_cells;
-    pyramidalGoodCells = allGoodCells(ismember(allGoodCells, pyramCells));
-    [~, goodPCPosition] = ismember(pyramidalGoodCells, pyramCells);
-    IsGoodPC_RUN2ALL(goodPCPosition) = 1; % Mark the cells as good
-    
-    
-                                                
-    %% We populate the table - if it's empty, from index 1, otherwise,
-    % from the length of the array
-    
-    startIndex = ~isempty(actMat1stLast) * length(actMat1stLast);
-    qtyToAdd = length(pyramCells);
-    
-    % We iterate though cells
-    for i = 1:qtyToAdd
+    % We iterate over tracks
+    for track = 1:4
         
-        realIndex = startIndex + i;
+        % We find the number of laps
+        nbLaps = min([lap_times(track).number_completeLaps, length(lap_place_fields(track).Complete_Lap)]);
         
-        % Adding basic information
-        actMat1stLast(realIndex).animal = animalOI;
-        actMat1stLast(realIndex).condition = conditionOI;
-        actMat1stLast(realIndex).day = dayOI;
-        actMat1stLast(realIndex).cell = pyramCells(i);
-        actMat1stLast(realIndex).part_RUN1Lap1 = partVecRUN1Lap1(i);
-        actMat1stLast(realIndex).part_RUN1LapEnd = partVecRUN1LapEnd(i);
-        actMat1stLast(realIndex).part_RUN2Lap1 = partVecRUN2Lap1(i);
-        actMat1stLast(realIndex).part_RUN2LapEnd = partVecRUN2LapEnd(i);
-        actMat1stLast(realIndex).part_ReplayRUN1 = partRepRUN1(i);
-        actMat1stLast(realIndex).part_ReplayRUN2 = partRepRUN2(i);
-        actMat1stLast(realIndex).part_ReplayPOST1 = partRepPOST1(i);
-        actMat1stLast(realIndex).part_ReplayPOST2 = partRepPOST2(i);
-        actMat1stLast(realIndex).IsGoodPC_RUN1Lap1 = IsGoodPC_RUN1Lap1(i);
-        actMat1stLast(realIndex).IsGoodPC_RUN1LapEnd = IsGoodPC_RUN1LapEnd(i);
-        actMat1stLast(realIndex).IsGoodPC_RUN2Lap1 = IsGoodPC_RUN2Lap1(i);
-        actMat1stLast(realIndex).IsGoodPC_RUN2LapEnd = IsGoodPC_RUN2LapEnd(i);
-        actMat1stLast(realIndex).IsGoodPC_RUN1ALL = IsGoodPC_RUN1ALL(i);
-        actMat1stLast(realIndex).IsGoodPC_RUN2ALL = IsGoodPC_RUN2ALL(i);
-        actMat1stLast(realIndex).PF_MaxFRateRUN1Lap1 = PF_MaxFRateRUN1Lap1(i);
-        actMat1stLast(realIndex).PF_MaxFRateRUN1LapEnd = PF_MaxFRateRUN1LapEnd(i);
-        actMat1stLast(realIndex).PF_MaxFRateRUN2Lap1 = PF_MaxFRateRUN2Lap1(i);
-        actMat1stLast(realIndex).PF_MaxFRateRUN2LapEnd = PF_MaxFRateRUN2LapEnd(i);
-        actMat1stLast(realIndex).PF_PositionRUN1Lap1 = PF_PositionRUN1Lap1{i};
-        actMat1stLast(realIndex).PF_PositionRUN1LapEnd = PF_PositionRUN1LapEnd{i};
-        actMat1stLast(realIndex).PF_PositionRUN2Lap1 = PF_PositionRUN2Lap1{i};
-        actMat1stLast(realIndex).PF_PositionRUN2LapEnd = PF_PositionRUN2LapEnd{i};
+        % We create the struct to store the data per lap
         
-    end   
+        allLaps = struct("lap", {}, "cellsData", {});
+                
+        % And the replay data per track
+                
+        cellsReplayData = struct("cell", {}, "partPRE", {}, "partRUN1", {}, "partRUN2", {}, ...
+                          "partPOST1", {}, "partPOST2", {}, "partPREoTime", {}, "partPOST1oTime", {}, "partPOST2oTime", {});
+                
+                
+        % Check if the cell is a good PC on the track
+        % Do this now to avoid repetition
+        GoodPCCurrentTrack = place_fields.track(track).good_cells;
+        isGoodPCCurrentTrack = ismember(pyramCells, GoodPCCurrentTrack);
+        
+        % We iterate through laps
+        for lap = 1:nbLaps
+            
+            % We get the relevant data regarding place fields
+            goodPFData = lap_place_fields(track).Complete_Lap{lap};
+            
+            % We get the participation vector for the current lap runned
+            partRUN = getParticipationDuringLap(pyramCells, track, lap, lap_times, clusters);
+            
+            % Get the participation vector for awake replay events during
+            % the lap
+            
+            partReplayCurrentLap = getParticipationReplayDuringLap(pyramCells, track, lap, lap_times, ...
+                                                                   significant_replay_events, decoded_replay_events);
+            
+            % Check if the cells are good place cells in the current lap
+ 
+            isGoodPCCurrentLap = repelem(0, length(pyramCells));
+            % Find cells that are good place cells AND pyramidal cells
+            pyramidalGoodCells = goodPFData.good_cells(ismember(goodPFData.good_cells, pyramCells));
+            % Find the position of those cells in the bigger vector of
+            % cells
+            [~, goodPCPosition] = ismember(pyramidalGoodCells, pyramCells);
+            isGoodPCCurrentLap(goodPCPosition) = 1; % Mark the cells as good
+            
+            % Get the Max Firing Rate
+            smooth_PF = goodPFData.smooth(pyramCells);
+            pfMaxFRate = cellfun(@max, smooth_PF); % Don't forget to normalise (a - b)/(a + b) when difference
+            % Location of the maximum
+            pfPeakPosition = cellfun(@(x) find(x == max(x), 1), smooth_PF, 'UniformOutput', false);
+            % Center of mass
+            pfCenterMass = goodPFData.centre_of_mass(pyramCells);
+            
+            % We can add those to our struct
+            
+            temp = struct("cell", {pyramCells}, "partRUN", {partRUN}, "partReplayCurrentLap", {partReplayCurrentLap}, ...
+                    "isGoodPCCurrentLap", {isGoodPCCurrentLap}, "isGoodPCCurrentTrack", {isGoodPCCurrentTrack}, "pfMaxFRate", {pfMaxFRate}, ...
+                    "pfPeakPosition", {pfPeakPosition}, "pfCenterMass", {pfCenterMass});
+            
+            allLaps = [allLaps ; struct("lap", {lap}, "cellsData", {temp})];
+            
+        end
+        
+        % Now we can find the involvment of each pyramidal cell in replay
+        % events
+        
+        % Sleep replay participation
+                      
+        partPRE = getReplayParticipationDuringSleep(pyramCells, "PRE", track, sleep_state, ...
+                                            significant_replay_events, decoded_replay_events);
+                                        
+        partPOST1 = getReplayParticipationDuringSleep(pyramCells, "POST1", track, sleep_state, ...
+                                            significant_replay_events, decoded_replay_events);
+                                        
+        partPOST2 = getReplayParticipationDuringSleep(pyramCells, "POST2", track, sleep_state, ...
+                                            significant_replay_events, decoded_replay_events);
+        
+        % Sleep replay participation over time
+        % Will take the form of a list of start / end time_bins
+        % To put in relation with event_times in significant_replay_events
+        
+        partPREoTime = getReplayParticipationOverTimeDuringSleep(pyramCells, "PRE", track, sleep_state, ...
+                                            significant_replay_events, decoded_replay_events);
+        partPOST1oTime = getReplayParticipationOverTimeDuringSleep(pyramCells, "POST1", track, sleep_state, ...
+                                            significant_replay_events, decoded_replay_events);
+        partPOST2oTime = getReplayParticipationOverTimeDuringSleep(pyramCells, "POST2", track, sleep_state, ...
+                                            significant_replay_events, decoded_replay_events);
+        
+        % Awake replay participation during RUN1 / RUN2 OF CURRENT TRACK !
+        
+        % DEFINE RUN1 / RUN2 in function of track
+        trackRUN1 = (~mod(track, 2))*2 + (mod(track, 2));
+        trackRUN2 = trackRUN1 + 2;
+        
+        partRUN1 = getReplayParticipationDuringTrack(pyramCells, trackRUN1, track, lap_times, ...
+            significant_replay_events, decoded_replay_events);
+        
+        partRUN2 = getReplayParticipationDuringTrack(pyramCells, trackRUN2, track, lap_times, ...
+            significant_replay_events, decoded_replay_events);
+        
+        % We save the data in struct
+        
+        cellsReplayData = struct("cell", {pyramCells}, "partPRE", {partPRE}, "partRUN1", {partRUN1}, "partRUN2", {partRUN2}, ...
+            "partPOST1", {partPOST1}, "partPOST2", {partPOST2}, "partPREoTime", {partPREoTime}, "partPOST1oTime", {partPOST1oTime}, "partPOST2oTime", {partPOST2oTime});
+        
+        % now we can save everything in our meta-struct
+    
+        activity_mat_laps = [activity_mat_laps ; struct("animal", {animalOI}, "condition", {conditionOI}, "day", {dayOI}, ...
+                           "track", {track}, "allLaps", {allLaps}, "cellsReplayData", {cellsReplayData})];
+    
+    end
 end
 
-actMat1stLastT1 = actMat1stLast;
-
-save(PATH.SCRIPT + "\..\Data\actMat1stLast_T1.mat", "actMat1stLastT1");
+save(PATH.SCRIPT + "\..\Data\extracted_activity_mat_lap.mat", "activity_mat_laps");
