@@ -1,0 +1,172 @@
+% This script generates a file containing : 
+% - Animal ID
+% - Condition
+% - Day
+% - Lap
+% - PV correlation with the Final Place Field 
+% - Euclidian distance with the Final Place Field
+% - cosine similarity with the Final Place Field
+
+% This file is only treating Track 1 / 3 data
+% Currently in progress
+
+clear
+
+% PATH things
+PATH.SCRIPT = fileparts(mfilename('fullpath'));
+cd(PATH.SCRIPT)
+
+sessions = data_folders_excl; % Use the function to get all the file paths
+
+activity_mat_laps = struct("animal", {}, "condition", {}, "day", {}, ...
+                       "track", {}, "allLaps", {}, "finalPlaceField", {});
+                   
+allLaps = struct("lap", {}, "pvCorrelation", {}, "euclidianDistance", {}, "cosineSim", {});
+                              
+% We iterate through files
+for cfile = sessions
+    disp(cfile);
+    file = cfile{1};
+    
+    [animalOI, conditionOI, dayOI] = parseNameFile(file); % We get the informations about the current data
+
+    %% Variable loading
+    % We load the place fields computed per lap for each animal - lap_place_fields
+    load(file + "\extracted_lap_place_fields");
+    % And a general PF data to check if good cell on the whole track
+    load(file + "\extracted_place_fields");
+    load(file + "\extracted_laps"); % Import table lap_times
+    load(file + "\extracted_clusters"); % Import table clusters
+    load(file + "\extracted_waveforms"); % Import allclusters_waveform
+    load(file + "\extracted_position"); % Import position
+    
+    %% We compute the final place field
+    
+    % Definition : place field of the 16 last lap of RUN2.
+    
+    % We find the common number of laps on T3 - RUN2 between the files
+    totalLapsRUN2 = min(lap_times(3).number_completeLaps, length(lap_place_fields(3).Complete_Lap));
+    
+    % We find the start / end times of the 16 last laps
+    
+    startTime = lap_times(3).completeLaps_start(totalLapsRUN2 - 16);
+    endTime = lap_times(3).completeLaps_stop(totalLapsRUN2);
+    
+    % We then crop the position mat, and compute the place field
+    mutPositions = cropPositionsAtTime(position, 3, startTime, endTime);
+    
+    finalPlaceField = calculate_place_fields_RD(2, mutPositions, clusters, allclusters_waveform);
+    
+    % For population vector analysis, we only use the good place cells of
+    % the FPF - cells that will become good cells
+    
+    goodCells = finalPlaceField.good_place_cells;
+    
+    % We register the number of laps now available for RUN2 decoding
+    
+    remainingLapsRUN2 = totalLapsRUN2 - 16;
+       
+    % We iterate over tracks 1 and 3
+    for track = 1:2:3
+        
+        % We find the number of laps
+        nbLaps = min([lap_times(track).number_completeLaps, length(lap_place_fields(track).Complete_Lap)]);
+        
+        % We create the struct to store the data per lap
+        
+        allLaps = struct("lap", {}, "pvCorrelation", {}, "euclidianDistance", {}, "cosineSim", {});                
+               
+        % We iterate through laps
+        for lap = 1:nbLaps
+            
+            % We get the relevant data regarding place fields
+            goodPFData = lap_place_fields(track).Complete_Lap{lap};
+            
+            currentPFCellArray = goodPFData.raw;
+            concurrentCellArray = finalPlaceField.raw();
+            
+            % We compute the PV correlation
+            pvCorrelation = getPVCor(goodCells, currentPFCellArray, concurrentCellArray, mode);
+            
+            
+            
+            % We can add those to our struct
+            
+            
+            
+        end
+        
+        % Now we can find the involvment of each pyramidal cell in replay
+        % events
+        
+        % Sleep replay participation
+                      
+        partPRE = getReplayParticipationDuringSleep(pyramCells, "PRE", track, sleep_state, ...
+                                            significant_replay_events, decoded_replay_events);
+                                        
+        partPOST1 = getReplayParticipationDuringSleep(pyramCells, "POST1", track, sleep_state, ...
+                                            significant_replay_events, decoded_replay_events);
+                                        
+        partPOST2 = getReplayParticipationDuringSleep(pyramCells, "POST2", track, sleep_state, ...
+                                            significant_replay_events, decoded_replay_events);
+        
+        % Sleep replay participation over time
+        % Will take the form of a list of start / end time_bins
+        % To put in relation with event_times in significant_replay_events
+        
+        partPREoTime = getReplayParticipationOverTimeDuringSleep(pyramCells, "PRE", track, sleep_state, ...
+                                            significant_replay_events, decoded_replay_events);
+        partPOST1oTime = getReplayParticipationOverTimeDuringSleep(pyramCells, "POST1", track, sleep_state, ...
+                                            significant_replay_events, decoded_replay_events);
+        partPOST2oTime = getReplayParticipationOverTimeDuringSleep(pyramCells, "POST2", track, sleep_state, ...
+                                            significant_replay_events, decoded_replay_events);
+        
+        % Awake replay participation during RUN1 / RUN2 OF CURRENT TRACK !
+        
+        % DEFINE RUN1 / RUN2 in function of track
+        trackRUN1 = (~mod(track, 2))*2 + (mod(track, 2));
+        trackRUN2 = trackRUN1 + 2;
+        
+        partRUN1 = getReplayParticipationDuringTrack(pyramCells, trackRUN1, track, lap_times, ...
+            significant_replay_events, decoded_replay_events);
+        
+        partRUN2 = getReplayParticipationDuringTrack(pyramCells, trackRUN2, track, lap_times, ...
+            significant_replay_events, decoded_replay_events);
+        
+        % We save the data in struct
+        
+        cellsReplayData = struct("cell", {pyramCells}, "partPRE", {partPRE}, "partRUN1", {partRUN1}, "partRUN2", {partRUN2}, ...
+            "partPOST1", {partPOST1}, "partPOST2", {partPOST2}, "partPREoTime", {partPREoTime}, "partPOST1oTime", {partPOST1oTime}, "partPOST2oTime", {partPOST2oTime});
+        
+        % now we can save everything in our meta-struct
+    
+        activity_mat_laps = [activity_mat_laps ; struct("animal", {animalOI}, "condition", {conditionOI}, "day", {dayOI}, ...
+                           "track", {track}, "allLaps", {allLaps}, "cellsReplayData", {cellsReplayData})];
+    
+    end
+end
+
+% save(PATH.SCRIPT + "\..\Data\extracted_activity_mat_lap.mat", "activity_mat_laps");
+
+
+
+%% Function to compute the population vector correlation
+
+function [resultVector] = getPVCor(goodCells, currentPFCellArray, concurrentCellArray, mode)
+
+    % Subsample the cell arrays based on the good cells
+    currentPFCellArray = currentPFCellArray(goodCells);
+    concurrentCellArray = concurrentCellArray(goodCells);
+    
+    if mode == "corr"
+        correlationCoefficients = cellfun(@(x, y) corrcoef(x, y), currentPFCellArray, concurrentCellArray, 'UniformOutput', false);
+        % Extract the correlation coefficients and returns it
+        resultVector = mean(cellfun(@(x) x(2), correlationCoefficients);
+    elseif mode == "euclidian"
+        euclidianDistances = cellfun(@(x, y) norm(x - y), currentPFCellArray, concurrentCellArray, 'UniformOutput', false);
+    else
+        
+    end
+
+
+end
