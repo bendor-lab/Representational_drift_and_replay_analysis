@@ -2,7 +2,6 @@
 % - for each session, compute the lap - per - lap max peak remapping for T1
 % - plot all the dynamics of good place cells
 % - for T1 % T3
-% WORK IN PROGRESS
 
 clear
 
@@ -18,16 +17,16 @@ trackOI = 1;
 
 matchingData = activity_mat_laps([activity_mat_laps.track] == trackOI);
 
-for sessionID = 1:1
+for sessionID = 3:3
     
     data = activity_mat_laps(sessionID).allLaps;
     
     for lap = 1:(length(data) - 1)
-        pfPeakPositionN = cell2mat(data(lap).cellsData.pfPeakPosition);
-        pfPeakPositionNP1 = cell2mat(data(lap + 1).cellsData.pfPeakPosition);
+        pfPeakPositionN = data(lap).cellsData.pfPeakPosition;
+        pfPeakPositionNP1 = data(lap + 1).cellsData.pfPeakPosition;
 
         pfMaxFRateN = data(lap).cellsData.pfMaxFRate;
-        pfMaxFRateNP1 = data(lap + 1).cellsData.pfMaxFRate;
+        pfMaxFRateN = data(lap + 1).cellsData.pfMaxFRate;
         
         change = (pfPeakPositionNP1 - pfPeakPositionN);
         % We limit to good place cells on the whole track
@@ -41,7 +40,7 @@ for sessionID = 1:1
     end
 end
 
-for i = 1:4
+for i = 9:9
     subplot(2, 1, 1)
     plot(1:(length(data) - 1), final_data(i, :))
     hold on;
