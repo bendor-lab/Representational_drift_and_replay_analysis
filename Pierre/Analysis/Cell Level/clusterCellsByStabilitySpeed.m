@@ -1,7 +1,5 @@
 % Script that :
-% - for each session, compute the lap - per - lap max peak remapping for T1
-% - plot all the dynamics of good place cells
-% - for T1 % T3
+% - for each session, compute the correlation between PF and PFP.
 % WORK IN PROGRESS
 
 clear

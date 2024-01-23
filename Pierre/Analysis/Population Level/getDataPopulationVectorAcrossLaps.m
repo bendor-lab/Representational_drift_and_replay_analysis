@@ -47,13 +47,40 @@ for cfile = sessions
     % We find the common number of laps on T3 - RUN2 between the files
     totalLapsRUN2 = min(lap_times(3).number_completeLaps, length(lap_place_fields(3).Complete_Lap));
     
-    % We find the start / end times of the 16 last laps
+    % We register the number of laps available for RUN2 decoding after
+    % substraction
     
-    startTime = lap_times(3).completeLaps_start(totalLapsRUN2 - 16);
-    endTime = lap_times(3).completeLaps_stop(totalLapsRUN2);
+    remainingLapsRUN2 = totalLapsRUN2 - 16;
     
-    % We then crop the position mat, and compute the place field
-    mutPositions = cropPositionsAtTime(position, 3, startTime, endTime);
+    % If we have enough laps, we just take the start and the end of those,
+    % otherwise we let the 16th one for the RUN2 decoding ad take the ones
+    % before for FPF
+    
+    if remainingLapsRUN2 >= 16
+        % We find the start / end times of the 16 last laps
+    
+        startTime = lap_times(3).completeLaps_start(totalLapsRUN2 - 16);
+        endTime = lap_times(3).completeLaps_stop(totalLapsRUN2);
+
+        % We then crop the position mat, and compute the place field
+        mutPositions = cropPositionsAtTime(position, 3, startTime, endTime);
+    else
+        % We take one extra
+        startTime = lap_times(3).completeLaps_start(totalLapsRUN2 - 17);
+        endTime = lap_times(3).completeLaps_stop(totalLapsRUN2);
+        % We crop a first mut
+        mutPositions = cropPositionsAtTime(position, 3, startTime, endTime);
+        
+        % We crop position only for lap 16
+        startTime = lap_times(3).completeLaps_start(16);
+        endTime = lap_times(3).completeLaps_stop(16);
+        % We crop the second mut
+        mut2Positions = cropPositionsAtTime(position, 3, startTime, endTime);
+        % We find where mut2 linear is not NaN, and we remove those data
+        % from mut
+        newLinear = mutPositions.linear(3);
+        mutPositions.linear(3).linear(~isnan(mut2Positions.linear(3).linear)) = NaN;
+    end
     
     finalPlaceField = calculate_place_fields_RD(2, mutPositions, clusters, allclusters_waveform);
     finalPlaceField = finalPlaceField.track(3);
@@ -62,23 +89,26 @@ for cfile = sessions
     % the FPF - cells that will become good cells
     
     goodCells = finalPlaceField.good_cells;
-    
-    % We register the number of laps now available for RUN2 decoding
-    
-    remainingLapsRUN2 = totalLapsRUN2 - 16;
        
     % We iterate over tracks 1 and 3
     for track = 1:2:3
         
         % We find the number of laps
         nbLaps = min([lap_times(track).number_completeLaps, length(lap_place_fields(track).Complete_Lap)]);
+        if track ~= 3
+            listLaps = 1:nbLaps;
+        elseif remainingLapsRUN2 >= 16
+            listLaps = [1:remainingLapsRUN2];
+        else
+            listLaps = [1:(remainingLapsRUN2 - 1), 16];
+        end
         
         % We create the struct to store the data per lap
         
-        allLaps = struct("lap", {}, "pvCorrelation", {}, "euclidianDistance", {}, "cosineSim", {});                
-               
+        allLaps = struct("lap", {}, "pvCorrelation", {}, "euclidianDistance", {}, "cosineSim", {});       
+        
         % We iterate through laps
-        for lap = 1:nbLaps
+        for lap = listLaps
             
             % We get the relevant data regarding place fields
             goodPFData = lap_place_fields(track).Complete_Lap{lap};
@@ -112,4 +142,4 @@ for cfile = sessions
     end
 end
 
-% save(PATH.SCRIPT + "\..\Data\extracted_activity_mat_lap.mat", "activity_mat_laps");
+save(PATH.SCRIPT + "\..\..\Data\population_vector_laps.mat", "population_vector_laps");

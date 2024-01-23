@@ -17,7 +17,7 @@ croppedPosition = position; % Copy of position
 % We reduce the positions available for the place field calculation
 allTimesPosition = position.t;
 boolValidTimes = (allTimesPosition > startTime & allTimesPosition < endTime);
-croppedPosition.linear(TrackOI).linear(~boolValidTimes) = false;
+croppedPosition.linear(TrackOI).linear(~boolValidTimes) = NaN;
 
 end
 
