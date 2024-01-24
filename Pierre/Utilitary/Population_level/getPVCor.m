@@ -37,29 +37,29 @@ function [result, resultNorm] = getPVCor(goodCells, currentPFCellArray, concurre
     
     if mode == "pvCorrelation"
         % Classic
-        corVector = cellfun(@(x, y) corrcoef(x, y), currentPFXBins, concurrentPFYBins, 'UniformOutput', false);
+        corVector = cellfun(@(x, y) corrcoef(cell2mat(x), cell2mat(y), 'rows','complete'), currentPFXBins, concurrentPFYBins, 'UniformOutput', false);
         corVector = cellfun(@(x) x(2, 1), corVector);
         result = corVector;
         % Normalised
-        corVectorNorm = cellfun(@(x, y) corrcoef(x, y), currentPFXBinsNorm, concurrentPFYBinsNorm, 'UniformOutput', false);
+        corVectorNorm = cellfun(@(x, y) corrcoef(cell2mat(x), cell2mat(y), 'rows','complete'), currentPFXBinsNorm, concurrentPFYBinsNorm, 'UniformOutput', false);
         corVectorNorm = cellfun(@(x) x(2, 1), corVectorNorm);
         resultNorm = corVectorNorm;
         
         
     elseif mode == "euclidianDistance"
         % Classic
-        result = cellfun(@(x, y) norm(x - y), currentPFXBins, concurrentPFYBins, 'UniformOutput', false);
+        result = cellfun(@(x, y) norm(cell2mat(x) - cell2mat(y)), currentPFXBins, concurrentPFYBins, 'UniformOutput', false);
         result = cell2mat(result);
         % Normalised
-        resultNorm = cellfun(@(x, y) norm(x - y), currentPFXBinsNorm, concurrentPFYBinsNorm, 'UniformOutput', false);
+        resultNorm = cellfun(@(x, y) norm(cell2mat(x) - cell2mat(y)), currentPFXBinsNorm, concurrentPFYBinsNorm, 'UniformOutput', false);
         resultNorm = cell2mat(resultNorm);
     else
         % We compute the cosine similarity
         % Classic
-        cosine_similarity = cellfun(@(x, y) dot(x, y)/(norm(x)*norm(y)), currentPFXBins, concurrentPFYBins, 'UniformOutput', false);
+        cosine_similarity = cellfun(@(x, y) dot(cell2mat(x), cell2mat(y))/(norm(cell2mat(x))*norm(cell2mat(y))), currentPFXBins, concurrentPFYBins, 'UniformOutput', false);
         result = cell2mat(cosine_similarity);
         % Normalised
-        cosine_similarityNorm = cellfun(@(x, y) dot(x, y)/(norm(x)*norm(y)), currentPFXBinsNorm, concurrentPFYBinsNorm, 'UniformOutput', false);
+        cosine_similarityNorm = cellfun(@(x, y) dot(cell2mat(x), cell2mat(y))/(norm(cell2mat(x))*norm(cell2mat(y))), currentPFXBinsNorm, concurrentPFYBinsNorm, 'UniformOutput', false);
         resultNorm = cell2mat(cosine_similarityNorm);
         
     end

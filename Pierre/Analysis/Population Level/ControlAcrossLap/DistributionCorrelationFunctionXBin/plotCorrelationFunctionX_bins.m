@@ -14,7 +14,7 @@ corr = [NaN];
 counter = 0;
 
 % We iterate through files
-for cfile = sessions
+for cfile = sessions(1)
     disp(cfile);
     file = cfile{1};
     

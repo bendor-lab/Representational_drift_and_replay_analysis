@@ -20,11 +20,9 @@ sessions = data_folders_excl; % Use the function to get all the file paths
 
 population_vector_laps = struct("animal", {}, "condition", {}, "day", {}, ...
                        "track", {}, "allLaps", {}, "finalPlaceField", {});
-                   
-allLaps = struct("lap", {}, "pvCorrelation", {}, "pvCorrelationNorm", {}, "euclidianDistance", {}, "euclidianDistanceNorm", {}, "cosineSim", {}, "cosineSimNorm", {});
                               
 % We iterate through files
-for cfile = sessions(1)
+for cfile = sessions
     disp(cfile);
     file = cfile{1};
     
@@ -105,7 +103,9 @@ for cfile = sessions(1)
         
         % We create the struct to store the data per lap
         
-        allLaps = struct("lap", {}, "pvCorrelation", {}, "euclidianDistance", {}, "cosineSim", {});       
+        allLaps = struct("lap", {}, "pvCorrelation", {}, "pvCorrelationNorm", {}, ...
+                 "euclidianDistance", {}, "euclidianDistanceNorm", {}, ...
+                 "cosineSim", {}, "cosineSimNorm", {});       
         
         % We iterate through laps
         for lap = listLaps
@@ -144,4 +144,4 @@ for cfile = sessions(1)
     end
 end
 
-% save(PATH.SCRIPT + "\..\..\Data\population_vector_laps.mat", "population_vector_laps");
+save(PATH.SCRIPT + "\..\..\Data\population_vector_laps.mat", "population_vector_laps");
