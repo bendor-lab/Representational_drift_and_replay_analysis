@@ -35,7 +35,11 @@ function [result, resultNorm] = getPVCor(goodCells, currentPFCellArray, concurre
         concurrentPFYBinsNorm(xbin) = {allConcurrentCellActNorm};
     end
     
-    if mode == "pvCorrelation"
+    if mode == "populationVector" % We just return the population vector
+        result = currentPFXBins;
+        resultNorm = currentPFXBinsNorm;
+        
+    elseif mode == "pvCorrelation"
         % Classic
         corVector = cellfun(@(x, y) corrcoef(cell2mat(x), cell2mat(y), 'rows','complete'), currentPFXBins, concurrentPFYBins, 'UniformOutput', false);
         corVector = cellfun(@(x) x(2, 1), corVector);

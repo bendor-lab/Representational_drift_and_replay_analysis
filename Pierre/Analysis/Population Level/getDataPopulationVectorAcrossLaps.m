@@ -3,9 +3,9 @@
 % - Condition
 % - Day
 % - Lap
-% - PV correlation with the Final Place Field 
-% - Euclidian distance with the Final Place Field
-% - cosine similarity with the Final Place Field
+% - PV correlation with the Final Place Field / normalized & non-normalized
+% - Euclidian distance with the Final Place Field / normalized & non-normalized
+% - cosine similarity with the Final Place Field / normalized & non-normalized
 
 % This file is only treating Track 1 / 3 data
 % Currently in progress
@@ -123,7 +123,7 @@ for cfile = sessions
             
             % We find all the goodCells of the FPF that are in 
             
-            % We compute the PV correlation, ED, Cosine Sim
+            % We compute the PV, PV correlation, ED, Cosine Sim
             [pvCorrelation, pvCorrelationNorm] = getPVCor(goodCells, currentPFCellArray, concurrentCellArray, "pvCorrelation");
             [euclidianDistance, euclidianDistanceNorm] = getPVCor(goodCells, currentPFCellArray, concurrentCellArray, "euclidianDistance");
             [cosineSim, cosineSimNorm] = getPVCor(goodCells, currentPFCellArray, concurrentCellArray, "cosineSim");
