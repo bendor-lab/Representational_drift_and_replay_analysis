@@ -21,10 +21,10 @@ sessions = data_folders_excl; % Use the function to get all the file paths
 population_vector_laps = struct("animal", {}, "condition", {}, "day", {}, ...
                        "track", {}, "allLaps", {}, "finalPlaceField", {});
                    
-allLaps = struct("lap", {}, "pvCorrelation", {}, "euclidianDistance", {}, "cosineSim", {});
+allLaps = struct("lap", {}, "pvCorrelation", {}, "pvCorrelationNorm", {}, "euclidianDistance", {}, "euclidianDistanceNorm", {}, "cosineSim", {}, "cosineSimNorm", {});
                               
 % We iterate through files
-for cfile = sessions
+for cfile = sessions(1)
     disp(cfile);
     file = cfile{1};
     
@@ -123,14 +123,16 @@ for cfile = sessions
             
             % We find all the goodCells of the FPF that are in 
             
-            % We compute the PV correlation
-            pvCorrelation = getPVCor(goodCells, currentPFCellArray, concurrentCellArray, "pvCorrelation");
-            euclidianDistance = getPVCor(goodCells, currentPFCellArray, concurrentCellArray, "euclidianDistance");
-            cosineSim = getPVCor(goodCells, currentPFCellArray, concurrentCellArray, "cosineSim");
+            % We compute the PV correlation, ED, Cosine Sim
+            [pvCorrelation, pvCorrelationNorm] = getPVCor(goodCells, currentPFCellArray, concurrentCellArray, "pvCorrelation");
+            [euclidianDistance, euclidianDistanceNorm] = getPVCor(goodCells, currentPFCellArray, concurrentCellArray, "euclidianDistance");
+            [cosineSim, cosineSimNorm] = getPVCor(goodCells, currentPFCellArray, concurrentCellArray, "cosineSim");
             
             % We can add those to our struct
             
-            allLaps = [allLaps; struct("lap", {lap}, "pvCorrelation", {pvCorrelation}, "euclidianDistance", {euclidianDistance}, "cosineSim", {cosineSim})];
+            allLaps = [allLaps; struct("lap", {lap}, "pvCorrelation", {pvCorrelation}, "pvCorrelationNorm", {pvCorrelationNorm}, ...
+                                       "euclidianDistance", {euclidianDistance}, "euclidianDistanceNorm", {euclidianDistanceNorm}, ...
+                                       "cosineSim", {cosineSim}, "cosineSimNorm", {cosineSimNorm})];
             
         end
         
@@ -142,4 +144,4 @@ for cfile = sessions
     end
 end
 
-save(PATH.SCRIPT + "\..\..\Data\population_vector_laps.mat", "population_vector_laps");
+% save(PATH.SCRIPT + "\..\..\Data\population_vector_laps.mat", "population_vector_laps");
