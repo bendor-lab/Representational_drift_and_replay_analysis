@@ -65,10 +65,10 @@ nbReplayEvents = replayEventsVector';
 
 data = table(animal, condition, day, deltaCorrelation, nbReplayEvents);
 
-save(PATH.SCRIPT + "\..\..\Data\CLEAN_Files_Inferential\correlation_Change_RUN1LAPEnd_RUN2LAP1_FPF_Replay_POST1.mat", data);
+save(PATH.SCRIPT + "\..\..\Data\CLEAN_Files_Inferential\correlation_Change_RUN1LAPEnd_RUN2LAP1_FPF_Replay_POST1.mat", "data");
 
-scatter(data.correlation, data.deltaCorrelation);
-xlabel("PV correlation with FPF difference")
+scatter(data.deltaCorrelation, data.nbReplayEvents);
+xlabel("corr(Lap1RUN2 & FPF) - corr(LapEndRUN1 & FPF)")
 ylabel("Number of POST1 replay events")
 
 lm = fitlm(data,'deltaCorrelation~nbReplayEvents');
