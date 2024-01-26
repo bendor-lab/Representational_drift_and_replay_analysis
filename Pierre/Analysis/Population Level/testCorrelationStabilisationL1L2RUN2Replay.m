@@ -27,9 +27,9 @@ for i = 1:length(sessions)
     
     %% We get the PV for LEndRUN1 and L1RUN2
     
-    PV_RUN1 = extractPopulationVector(animalOI, conditionOI, 1, "last", "norm");
+    PV_RUN2Lap1 = extractPopulationVector(animalOI, conditionOI, 3, 1, "norm");
     
-    PV_RUN2 = extractPopulationVector(animalOI, conditionOI, 3, 1, "norm");
+    PV_RUN2Lap2 = extractPopulationVector(animalOI, conditionOI, 3, 2, "norm");
     
     % We only keep the cells that are good PC on either RUN1 or RUN2
     % We go look for that information
@@ -37,19 +37,15 @@ for i = 1:length(sessions)
     % We load the good place field files
     load(file + "\extracted_place_fields.mat")
     
-    goodCellsRUN1 = place_fields.track(1).good_cells;
-    goodCellsRUN2 = place_fields.track(3).good_cells;
-    
-    % We OR these two lists to have all cells good on one or the other
-    goodCells = unique([goodCellsRUN1 goodCellsRUN2]);
+    goodCells = place_fields.track(3).good_cells;
     
     % Now we can subsample our PVs
     
-    PV_RUN1 = cellfun(@(a) a(goodCells), PV_RUN1, 'UniformOutput', false);
-    PV_RUN2 = cellfun(@(a) a(goodCells), PV_RUN2, 'UniformOutput', false);
+    PV_RUN2Lap1 = cellfun(@(a) a(goodCells), PV_RUN2Lap1, 'UniformOutput', false);
+    PV_RUN2Lap2 = cellfun(@(a) a(goodCells), PV_RUN2Lap2, 'UniformOutput', false);
     
     %% Now we can compute the correlation between the two PVs
-    corrPV = cellfun(@(a,b) corrcoef(cell2mat(a), cell2mat(b)), PV_RUN1, PV_RUN2, 'UniformOutput', false);
+    corrPV = cellfun(@(a,b) corrcoef(cell2mat(a), cell2mat(b)), PV_RUN2Lap1, PV_RUN2Lap2, 'UniformOutput', false);
     corrPV = cellfun(@(a) a(2, 1), corrPV, 'UniformOutput', false);
     
     % We take the median of this vector
@@ -88,7 +84,7 @@ nbReplayEvents = replayEventsVector';
 
 data = table(animal, condition, day, correlation, nbReplayEvents);
 
-save(PATH.SCRIPT + "\..\..\Data\CLEAN_Files_Inferential\correlation_RUN1LAPEnd_RUN2LAP1_Replay_POST1.mat", "data");
+save(PATH.SCRIPT + "\..\..\Data\CLEAN_Files_Inferential\correlation_Lap1Lap2Run2_Replay_POST1.mat", "data");
 
 scatter(data.correlation, data.nbReplayEvents);
 xlabel("PV correlation")
