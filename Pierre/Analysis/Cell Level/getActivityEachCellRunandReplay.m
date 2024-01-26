@@ -90,6 +90,7 @@ for cfile = sessions
             % We get the relevant data regarding place fields
             goodPFData = lap_place_fields(track).Complete_Lap{lap};
             
+            placeField = goodPFData.raw(pyramCells);
             % We get the participation vector for the current lap runned
             partRUN = getParticipationDuringLap(pyramCells, track, lap, lap_times, clusters);
             
@@ -119,7 +120,7 @@ for cfile = sessions
             
             % We can add those to our struct
             
-            temp = struct("cell", {pyramCells}, "partRUN", {partRUN}, "partReplayCurrentLap", {partReplayCurrentLap}, ...
+            temp = struct("cell", {pyramCells}, "placeField", {placeField}, "partRUN", {partRUN}, "partReplayCurrentLap", {partReplayCurrentLap}, ...
                     "isGoodPCCurrentLap", {isGoodPCCurrentLap}, "isGoodPCCurrentTrack", {isGoodPCCurrentTrack}, "pfMaxFRate", {pfMaxFRate}, ...
                     "pfPeakPosition", {pfPeakPosition}, "pfCenterMass", {pfCenterMass});
             
@@ -128,9 +129,9 @@ for cfile = sessions
         end
         
         % Now we can find the involvment of each pyramidal cell in replay
-        % events
+        % events 
         
-        % Sleep replay participation
+        % Sleep replay participation - ONLY IN THE FIRST 30 MINUTES !
                       
         partPRE = getReplayParticipationDuringSleep(pyramCells, "PRE", track, sleep_state, ...
                                             significant_replay_events, decoded_replay_events);
@@ -177,4 +178,4 @@ for cfile = sessions
     end
 end
 
-save(PATH.SCRIPT + "\..\Data\extracted_activity_mat_lap.mat", "activity_mat_laps");
+save(PATH.SCRIPT + "\..\..\Data\extracted_activity_mat_lap.mat", "activity_mat_laps");

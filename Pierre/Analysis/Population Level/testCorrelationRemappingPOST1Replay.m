@@ -11,11 +11,12 @@ allAnimals = unique(string({population_vector_laps.animal}));
 allConditions = unique(string({population_vector_laps.condition}));
 
 sessions = data_folders_excl; % Use the function to get all the file paths
-corrVector = repelem(0, length(sessions));
-replayEventsVector = repelem(0, length(sessions));
-condition = repelem("", length(sessions));
-animal = repelem("", length(sessions));
-day = repelem("", length(sessions));
+corrVector = [];
+replayEventsVector = [];
+condition = [];
+animal = [];
+day = [];
+track = [];
 
 for i = 1:length(sessions)
     
@@ -27,9 +28,11 @@ for i = 1:length(sessions)
     
     %% We get the PV for LEndRUN1 and L1RUN2
     
-    PV_RUN1 = extractPopulationVector(animalOI, conditionOI, 1, "last", "norm");
+    PV_RUN1T1 = extractPopulationVector(animalOI, conditionOI, 1, "last", "norm");
+    PV_RUN2T1 = extractPopulationVector(animalOI, conditionOI, 3, 1, "norm");
     
-    PV_RUN2 = extractPopulationVector(animalOI, conditionOI, 3, 1, "norm");
+    PV_RUN1T2 = extractPopulationVector(animalOI, conditionOI, 2, "last", "norm");
+    PV_RUN2T2 = extractPopulationVector(animalOI, conditionOI, 4, 1, "norm");
     
     % We only keep the cells that are good PC on either RUN1 or RUN2
     % We go look for that information
@@ -37,24 +40,35 @@ for i = 1:length(sessions)
     % We load the good place field files
     load(file + "\extracted_place_fields.mat")
     
-    goodCellsRUN1 = place_fields.track(1).good_cells;
-    goodCellsRUN2 = place_fields.track(3).good_cells;
+    goodCellsRUN1T1 = place_fields.track(1).good_cells;
+    goodCellsRUN2T1 = place_fields.track(3).good_cells;
+    
+    goodCellsRUN1T2 = place_fields.track(2).good_cells;
+    goodCellsRUN2T2 = place_fields.track(4).good_cells;
     
     % We OR these two lists to have all cells good on one or the other
-    goodCells = unique([goodCellsRUN1 goodCellsRUN2]);
+    goodCellsT1 = unique([goodCellsRUN1T1 goodCellsRUN2T1]);
+    goodCellsT2 = unique([goodCellsRUN1T2 goodCellsRUN2T2]);
     
     % Now we can subsample our PVs
     
-    PV_RUN1 = cellfun(@(a) a(goodCells), PV_RUN1, 'UniformOutput', false);
-    PV_RUN2 = cellfun(@(a) a(goodCells), PV_RUN2, 'UniformOutput', false);
+    PV_RUN1T1 = cellfun(@(a) a(goodCellsT1), PV_RUN1T1, 'UniformOutput', false);
+    PV_RUN2T1 = cellfun(@(a) a(goodCellsT1), PV_RUN2T1, 'UniformOutput', false);
+    
+    PV_RUN1T2 = cellfun(@(a) a(goodCellsT2), PV_RUN1T2, 'UniformOutput', false);
+    PV_RUN2T2 = cellfun(@(a) a(goodCellsT2), PV_RUN2T2, 'UniformOutput', false);
     
     %% Now we can compute the correlation between the two PVs
-    corrPV = cellfun(@(a,b) corrcoef(cell2mat(a), cell2mat(b)), PV_RUN1, PV_RUN2, 'UniformOutput', false);
-    corrPV = cellfun(@(a) a(2, 1), corrPV, 'UniformOutput', false);
+    corrPVT1 = cellfun(@(a,b) corrcoef(cell2mat(a), cell2mat(b)), PV_RUN1T1, PV_RUN2T1, 'UniformOutput', false);
+    corrPVT1 = cellfun(@(a) a(2, 1), corrPVT1, 'UniformOutput', false);
+    
+    corrPVT2 = cellfun(@(a,b) corrcoef(cell2mat(a), cell2mat(b)), PV_RUN1T2, PV_RUN2T2, 'UniformOutput', false);
+    corrPVT2 = cellfun(@(a) a(2, 1), corrPVT2, 'UniformOutput', false);
     
     % We take the median of this vector
     
-    corr = median([corrPV{:}], 'omitnan');
+    corrT1 = median([corrPVT1{:}], 'omitnan');
+    corrT2 = median([corrPVT2{:}], 'omitnan');
     
     %% Now we find the number of POST1 replay events
     
@@ -64,18 +78,22 @@ for i = 1:length(sessions)
     SleepStart = sleep_state.state_time.INTER_post_start;
     SleepStop = sleep_state.state_time.INTER_post_end;
     
-    goodSignReplayData = significant_replay_events.track(1);
-    boolMatIsReplayPeriod = goodSignReplayData.event_times <= SleepStop & goodSignReplayData.event_times >= SleepStart;
-    nbReplayEvents = length(goodSignReplayData.index(boolMatIsReplayPeriod));
+    goodSignReplayDataT1 = significant_replay_events.track(1);
+    boolMatIsReplayPeriod = goodSignReplayDataT1.event_times <= SleepStop & goodSignReplayDataT1.event_times >= SleepStart;
+    nbReplayEventsT1 = length(goodSignReplayDataT1.index(boolMatIsReplayPeriod));
+    
+    goodSignReplayDataT2 = significant_replay_events.track(2);
+    boolMatIsReplayPeriod = goodSignReplayDataT2.event_times <= SleepStop & goodSignReplayDataT2.event_times >= SleepStart;
+    nbReplayEventsT2 = length(goodSignReplayDataT2.index(boolMatIsReplayPeriod));
     
     % We append to the vectors
     
-    corrVector(i) = corr;
-    replayEventsVector(i) = nbReplayEvents;
-    condition(i) = conditionOI;
-    animal(i) = animalOI;
-    day(i) = dayOI;
-    
+    corrVector = [corrVector corrT1 corrT2];
+    replayEventsVector = [replayEventsVector nbReplayEventsT1 nbReplayEventsT2];
+    condition = [condition string(conditionOI) string(conditionOI)];
+    animal = [animal string(animalOI) string(animalOI)];
+    day = [day string(dayOI) string(dayOI)];
+    track = [track 1 2];
     
     
 end
@@ -85,12 +103,13 @@ condition = condition';
 day = day';
 correlation = corrVector';
 nbReplayEvents = replayEventsVector';
+track = track';
 
-data = table(animal, condition, day, correlation, nbReplayEvents);
+data = table(animal, condition, day, track, correlation, nbReplayEvents);
 
 save(PATH.SCRIPT + "\..\..\Data\CLEAN_Files_Inferential\correlation_RUN1LAPEnd_RUN2LAP1_Replay_POST1.mat", "data");
 
-scatter(data.correlation, data.nbReplayEvents);
+scatter(data.correlation, data.nbReplayEvents, [], data.track);
 xlabel("PV correlation")
 ylabel("Number of POST1 replay events")
 

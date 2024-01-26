@@ -1,3 +1,4 @@
+
 % Script to plot the clusters of cells, based on their stability at the end
 % of RUN1 and at the beggening of RUN2
 
@@ -53,12 +54,11 @@ for animalOI = unique({matchingData.animal})
         label(wasGoodPCRUN1 & ~wasGoodPCRUN2) = "Disappear";
         label(~wasGoodPCRUN1 & wasGoodPCRUN2) = "Appear";
         label(~wasGoodPCRUN1 & ~wasGoodPCRUN2) = "Unstable";
-
-        label_numeric = zeros(size(label));
-        label_numeric(label == "Stable") = 1;
-        label_numeric(label == "Disappear") = 2;
-        label_numeric(label == "Appear") = 3;
-        label_numeric(label == "Unstable") = 4;
+        
+        % We subset the data with only good cells on RUN1 and / or RUN2
+        
+        stabilityCMRUN1 = stabilityCMRUN1(wasGoodPCRUN1 | wasGoodPCRUN2);
+        stabilityCMRUN1RUN2 = stabilityCMRUN1RUN2(wasGoodPCRUN1 | wasGoodPCRUN2);
         
         % Now we can ad those to our plot
         
@@ -121,6 +121,14 @@ for animalOI = unique({matchingData.animal})
         stabilityCMRUN2 = abs(lineRUN2.allLaps(2).cellsData.pfCenterMass - ...
                                   lineRUN2.allLaps(1).cellsData.pfCenterMass);
         
+        % We get, for each cell, if it was a good PC during RUN1 / RUN2
+        wasGoodPCRUN1 = lineRUN1.allLaps(end).cellsData.isGoodPCCurrentTrack;
+        wasGoodPCRUN2 = lineRUN2.allLaps(end).cellsData.isGoodPCCurrentTrack;
+        
+        % We subset the data with only good cells on RUN1 and / or RUN2
+        
+        stabilityCMRUN1 = stabilityCMRUN1(wasGoodPCRUN1 | wasGoodPCRUN2);
+        stabilityCMRUN2 = stabilityCMRUN2(wasGoodPCRUN1 | wasGoodPCRUN2);
         
         % Now we can ad those to our plot
         
@@ -183,6 +191,14 @@ for animalOI = unique({matchingData.animal})
         stabilityCMRUN2 = abs(lineRUN2.allLaps(3).cellsData.pfCenterMass - ...
                                   lineRUN2.allLaps(2).cellsData.pfCenterMass);
         
+        % We get, for each cell, if it was a good PC during RUN1 / RUN2
+        wasGoodPCRUN1 = lineRUN1.allLaps(end).cellsData.isGoodPCCurrentTrack;
+        wasGoodPCRUN2 = lineRUN2.allLaps(end).cellsData.isGoodPCCurrentTrack;
+        
+        % We subset the data with only good cells on RUN1 and / or RUN2
+        
+        stabilityCMRUN1 = stabilityCMRUN1(wasGoodPCRUN1 | wasGoodPCRUN2);
+        stabilityCMRUN2 = stabilityCMRUN2(wasGoodPCRUN1 | wasGoodPCRUN2);
         
         % Now we can ad those to our plot
         
@@ -251,6 +267,15 @@ for animalOI = unique({matchingData.animal})
         % Compute the difference between 3 RUN2 and 2 RUN2 for each cell
         stabilityCMRUN2 = abs(centerMassL1RUN2 - centerMassEndRUN1);
         
+        % We get, for each cell, if it was a good PC during RUN1 / RUN2
+        wasGoodPCRUN1 = lineRUN1.allLaps(end).cellsData.isGoodPCCurrentTrack;
+        wasGoodPCRUN2 = lineRUN2.allLaps(end).cellsData.isGoodPCCurrentTrack;
+        
+        % We subset the data with only good cells on RUN1 and / or RUN2
+        
+        stabilityCMRUN1 = stabilityCMRUN1(wasGoodPCRUN1 | wasGoodPCRUN2);
+        stabilityCMRUN2 = stabilityCMRUN2(wasGoodPCRUN1 | wasGoodPCRUN2);
+        
         
         % Now we can ad those to our plot
         
@@ -313,6 +338,15 @@ for animalOI = unique({matchingData.animal})
                       
         participationReplayPOST1 = lineRUN1.cellsReplayData.partPOST1;
         
+        % We get, for each cell, if it was a good PC during RUN1 / RUN2
+        wasGoodPCRUN1 = lineRUN1.allLaps(end).cellsData.isGoodPCCurrentTrack;
+        wasGoodPCRUN2 = lineRUN2.allLaps(end).cellsData.isGoodPCCurrentTrack;
+        
+        % We subset the data with only good cells on RUN1 and / or RUN2
+        
+        stabilityCMRUN1 = stabilityCMRUN1(wasGoodPCRUN1 | wasGoodPCRUN2);
+        participationReplayPOST1 = participationReplayPOST1(wasGoodPCRUN1 | wasGoodPCRUN2);
+        
         % Now we can ad those to our plot
         
         if trackOI == 1
@@ -321,7 +355,7 @@ for animalOI = unique({matchingData.animal})
             color = [.8 .5 .5];
         end
         
-        subplot(2, 1, 1)
+        subplot(3, 1, 1)
         s = scatter(participationReplayPOST1, stabilityCMRUN1, 'MarkerEdgeColor',[0 .5 .5],...
                                                                 'MarkerFaceColor',color,...
                                                                 'LineWidth',1.5);
@@ -372,6 +406,14 @@ for animalOI = unique({matchingData.animal})
                       
         participationReplayPOST1 = lineRUN1.cellsReplayData.partPOST1;
         
+        % We get, for each cell, if it was a good PC during RUN2
+        wasGoodPCRUN2 = lineRUN2.allLaps(end).cellsData.isGoodPCCurrentTrack;
+        
+        % We subset the data with only good cells on RUN1 and / or RUN2
+        
+        stabilityCMRUN2 = stabilityCMRUN2(wasGoodPCRUN2);
+        participationReplayPOST1 = participationReplayPOST1(wasGoodPCRUN2);
+        
         % Now we can ad those to our plot
         
         if trackOI == 1
@@ -380,7 +422,7 @@ for animalOI = unique({matchingData.animal})
             color = [.8 .5 .5];
         end
         
-        subplot(2, 1, 2)
+        subplot(3, 1, 2)
         s = scatter(participationReplayPOST1, stabilityCMRUN2, 'MarkerEdgeColor',[0 .5 .5],...
                                                                 'MarkerFaceColor',color,...
                                                                 'LineWidth',1.5);
@@ -388,6 +430,74 @@ for animalOI = unique({matchingData.animal})
         % Add labels for x and y axes
         xlabel('Cell participation in POST1 Replay');
         ylabel('ΔCM between laps 1 & 2 of RUN2');
+        
+        
+        
+        hold on;
+    end
+end
+
+% We add the legend - workaround to keep everything in a loop
+
+h = zeros(2, 1);
+h(1) = scatter(NaN,NaN, 'MarkerEdgeColor',[0 .5 .5],...
+                      'MarkerFaceColor',[0 .7 .7],...
+                      'LineWidth',1.5);
+h(2) = scatter(NaN,NaN, 'MarkerEdgeColor',[0 .5 .5],...
+                      'MarkerFaceColor',[.8 .5 .5],...
+                      'LineWidth',1.5);
+                  
+legend(h, '16 laps', nbLapsT2 + ' laps');
+
+title("Start RUN2 shift (L2 - L1) vs. POST1 replay participation")
+
+hold off;
+
+%% PLOT 6 - Shift RUN1 vs. Participation POST1 Replay
+
+% Now, we iterate through animals
+
+for animalOI = unique({matchingData.animal})
+    
+    % We iterate through tracks
+    for trackOI = 1:2
+        
+        lineRUN1 = matchingData(string({matchingData.animal}) == animalOI & ...
+                                [matchingData.track] == trackOI);
+        lineRUN2 = matchingData(string({matchingData.animal}) == animalOI & ...
+                                [matchingData.track] == trackOI + 2);
+        
+        % Compute the difference between n and n - 1 RUN1 for each cell
+        stabilityCMRUN1RUN2 = abs(lineRUN2.allLaps(1).cellsData.pfCenterMass - ...
+                              lineRUN1.allLaps(end).cellsData.pfCenterMass);
+                      
+        participationReplayPOST1 = lineRUN1.cellsReplayData.partPOST1;
+        
+        % We get, for each cell, if it was a good PC during RUN2
+        wasGoodPCRUN1 = lineRUN1.allLaps(end).cellsData.isGoodPCCurrentTrack;
+        wasGoodPCRUN2 = lineRUN2.allLaps(end).cellsData.isGoodPCCurrentTrack;
+        
+        % We subset the data with only good cells on RUN1 and / or RUN2
+        
+        stabilityCMRUN1RUN2 = stabilityCMRUN1RUN2(wasGoodPCRUN1 & wasGoodPCRUN2);
+        participationReplayPOST1 = participationReplayPOST1(wasGoodPCRUN1 & wasGoodPCRUN2);
+        
+        % Now we can ad those to our plot
+        
+        if trackOI == 1
+            color = [0 .7 .7];
+        else
+            color = [.8 .5 .5];
+        end
+        
+        subplot(3, 1, 3)
+        s = scatter(participationReplayPOST1, stabilityCMRUN1RUN2, 'MarkerEdgeColor',[0 .5 .5],...
+                                                                'MarkerFaceColor',color,...
+                                                                'LineWidth',1.5);
+        
+        % Add labels for x and y axes
+        xlabel('Cell participation in POST1 Replay');
+        ylabel('ΔCM between Lap 1 Run 2 and Lap N Run 1');
         
         
         

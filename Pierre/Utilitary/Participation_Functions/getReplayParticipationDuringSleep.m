@@ -7,13 +7,16 @@ function [activation_vector] = getReplayParticipationDuringSleep(cellVector, sle
 
     if sleepSession == "PRE"
         SleepStart = sleep_state.state_time.PRE_start;
-        SleepStop = sleep_state.state_time.PRE_end;
+        % SleepStop = sleep_state.state_time.PRE_end;
+        SleepStop = SleepStart + 1800; % Only the first 30 minutes
     elseif sleepSession == "POST1"
         SleepStart = sleep_state.state_time.INTER_post_start;
-        SleepStop = sleep_state.state_time.INTER_post_end;
+        % SleepStop = sleep_state.state_time.INTER_post_end;
+        SleepStop = SleepStart + 1800;
     else
         SleepStart = sleep_state.state_time.FINAL_post_start;
-        SleepStop = sleep_state.state_time.FINAL_post_end;
+        % SleepStop = sleep_state.state_time.FINAL_post_end;
+        SleepStop = SleepStart + 1800;
     end
     
     % We get the ID of the significant replay events in this period
