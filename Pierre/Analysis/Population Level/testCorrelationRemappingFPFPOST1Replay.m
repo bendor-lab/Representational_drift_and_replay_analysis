@@ -1,6 +1,8 @@
 
 clear
 
+figure;
+
 % PATH things
 PATH.SCRIPT = fileparts(mfilename('fullpath'));
 cd(PATH.SCRIPT)
@@ -45,7 +47,7 @@ for cFile = sessions
     
     corrLEndRun1T2 = median(mLDR1T2.allLaps(end).pvCorrelationNorm, 'omitnan');
     corrL1Run2T2 = median(mLDR2T2.allLaps(1).pvCorrelationNorm, 'omitnan');
-    deltaT2 = corrLEndRun1T2 - corrL1Run2T2;
+    deltaT2 = corrL1Run2T2 - corrLEndRun1T2;
         
     load(file + "\significant_replay_events.mat");
     load(file + "\extracted_sleep_state.mat");
@@ -79,13 +81,22 @@ track = track';
 
 data = table(animal, condition, day, track, deltaCorrelation, nbReplayEvents);
 
+dataT1 = data(mod(data.track, 2) == 1, :);
+dataT2 = data(mod(data.track, 2) == 0, :);
+
 save(PATH.SCRIPT + "\..\..\Data\CLEAN_Files_Inferential\correlation_Change_RUN1LAPEnd_RUN2LAP1_FPF_Replay_POST1.mat", "data");
 
-splot = scatter(data.deltaCorrelation, data.nbReplayEvents, [], data.track);
+plotT1 = scatter(dataT1.deltaCorrelation, dataT1.nbReplayEvents);
+hold on;
+plotT2 = scatter(dataT2.deltaCorrelation, dataT2.nbReplayEvents);
 
-legend
-xlabel("corr(Lap1RUN2 & FPF) - corr(LapEndRUN1 & FPF)")
+legend('Track 1', 'Track 2');
+
+xlabel("corr(Lap2RUN2 & FPF) - corr(Lap1RUN2 & FPF)")
 ylabel("Number of POST1 replay events")
 
-lm = fitlm(data,'deltaCorrelation~nbReplayEvents');
+lm = fitlm(dataT1,'deltaCorrelation~nbReplayEvents');
+disp(lm);
+
+lm = fitlm(dataT2,'deltaCorrelation~nbReplayEvents');
 disp(lm);

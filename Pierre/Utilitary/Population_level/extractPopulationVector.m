@@ -6,9 +6,13 @@ sessions = data_folders_excl; % Use the function to get all the file paths
 matchingSession = sessions(contains(sessions, animalOI) & contains(sessions, conditionOI));
 load(matchingSession + "\extracted_lap_place_fields.mat")
 
-% If lap = "last", we take the final lap
+% If lap = "last", we take the final lap, if "beforeLast", we take ...
 if isa(lap,'string')
-    goodPFData = lap_place_fields(track).Complete_Lap{end};
+    if lap == "last"
+        goodPFData = lap_place_fields(track).Complete_Lap{end};
+    elseif lap == "beforeLast"
+        goodPFData = lap_place_fields(track).Complete_Lap{end-1};
+    end
 else
     goodPFData = lap_place_fields(track).Complete_Lap{lap};
 end

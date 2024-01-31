@@ -126,6 +126,8 @@ for cfile = sessions
 
                 % rare case : if not the same resolution, for now we ignore
                 if(length(currentPFCellArray{1}) ~= length(concurrentCellArray{1}))
+                    disp(animalOI);
+                    disp(conditionOI);
                     continue;
                 end
 
@@ -154,4 +156,4 @@ for cfile = sessions
     end
 end
 
-save(PATH.SCRIPT + "\..\..\Data\population_vector_laps.mat", "population_vector_laps");
+% save(PATH.SCRIPT + "\..\..\Data\population_vector_laps.mat", "population_vector_laps");

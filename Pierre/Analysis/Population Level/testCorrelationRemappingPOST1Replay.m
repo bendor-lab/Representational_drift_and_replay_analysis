@@ -29,10 +29,10 @@ for i = 1:length(sessions)
     %% We get the PV for LEndRUN1 and L1RUN2
     
     PV_RUN1T1 = extractPopulationVector(animalOI, conditionOI, 1, "last", "norm");
-    PV_RUN2T1 = extractPopulationVector(animalOI, conditionOI, 3, 1, "norm");
+    PV_RUN2T1 = extractPopulationVector(animalOI, conditionOI, 3, 3, "norm");
     
     PV_RUN1T2 = extractPopulationVector(animalOI, conditionOI, 2, "last", "norm");
-    PV_RUN2T2 = extractPopulationVector(animalOI, conditionOI, 4, 1, "norm");
+    PV_RUN2T2 = extractPopulationVector(animalOI, conditionOI, 4, 3, "norm");
     
     % We only keep the cells that are good PC on either RUN1 or RUN2
     % We go look for that information
@@ -97,7 +97,6 @@ for i = 1:length(sessions)
     
     
 end
-
 animal = animal';
 condition = condition';
 day = day';
@@ -109,9 +108,22 @@ data = table(animal, condition, day, track, correlation, nbReplayEvents);
 
 save(PATH.SCRIPT + "\..\..\Data\CLEAN_Files_Inferential\correlation_RUN1LAPEnd_RUN2LAP1_Replay_POST1.mat", "data");
 
-scatter(data.correlation, data.nbReplayEvents, [], data.track);
-xlabel("PV correlation")
+%% PLOT -------------------------------------------------------------------
+load(PATH.SCRIPT + "\..\..\Data\CLEAN_Files_Inferential\correlation_RUN1LAPEnd_RUN2LAP1_Replay_POST1.mat")
+
+dataT1 = data(mod(data.track, 2) == 1, :);
+dataT2 = data(mod(data.track, 2) == 0, :);
+
+plotT1 = scatter(dataT1.correlation, dataT1.nbReplayEvents);
+hold on;
+plotT2 = scatter(dataT2.correlation, dataT2.nbReplayEvents);
+
+legend('Track 1', 'Track 2');
+xlabel("PV correlation between Last Lap RUN1 & 3rd Lap RUN2")
 ylabel("Number of POST1 replay events")
 
-lm = fitlm(data,'correlation~nbReplayEvents');
+lm = fitlm(dataT1,'correlation~nbReplayEvents');
+disp(lm);
+
+lm = fitlm(dataT2,'correlation~nbReplayEvents');
 disp(lm);

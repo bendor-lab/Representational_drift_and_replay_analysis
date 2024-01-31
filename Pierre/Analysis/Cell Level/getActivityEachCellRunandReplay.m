@@ -85,7 +85,7 @@ for cfile = sessions
         isGoodPCCurrentTrack = ismember(pyramCells, GoodPCCurrentTrack);
         
         % We iterate through laps
-        for lap = 1:nbLaps
+        parfor lap = 1:nbLaps
             
             % We get the relevant data regarding place fields
             goodPFData = lap_place_fields(track).Complete_Lap{lap};
@@ -112,9 +112,14 @@ for cfile = sessions
             
             % Get the Max Firing Rate
             smooth_PF = goodPFData.smooth(pyramCells);
-            pfMaxFRate = cellfun(@max, smooth_PF); % Don't forget to normalise (a - b)/(a + b) when difference
+            pfMaxFRate = cellfun(@(x) max(x), smooth_PF); % Don't forget to normalise (a - b)/(a + b) when difference
+            pfMaxFRate(isnan(pfMaxFRate)) = 0;
+            
             % Location of the maximum
-            pfPeakPosition = cellfun(@(x) find(x == max(x), 1), smooth_PF, 'UniformOutput', false);
+            pfPeakPosition = cellfun(@(x, y) find(x == y, 1), smooth_PF, num2cell(pfMaxFRate), 'UniformOutput', false);
+            pfPeakPosition(pfMaxFRate == 0) = {NaN};
+            pfPeakPosition = cell2mat(pfPeakPosition);
+            
             % Center of mass
             pfCenterMass = goodPFData.centre_of_mass(pyramCells);
             
