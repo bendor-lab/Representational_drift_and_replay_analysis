@@ -123,11 +123,12 @@ for cfile = sessions
 
                 currentPFCellArray = goodPFData.raw;
                 concurrentCellArray = finalPlaceField.raw;
-
+                
+                shouldNotSave = false;
+                
                 % rare case : if not the same resolution, for now we ignore
                 if(length(currentPFCellArray{1}) ~= length(concurrentCellArray{1}))
-                    disp(animalOI);
-                    disp(conditionOI);
+                    shouldNotSave = true;
                     continue;
                 end
 
@@ -147,6 +148,10 @@ for cfile = sessions
             end
 
             % Now we can save everything in our meta-struct
+            % If should not save, we pass
+            if shouldNotSave
+                continue;
+            end
 
             population_vector_laps = [population_vector_laps ; struct("animal", {animalOI}, "condition", {conditionOI}, "day", {dayOI}, ...
                            "track", {theoTrack}, "allLaps", {allLaps}, "finalPlaceField", {finalPlaceField})];

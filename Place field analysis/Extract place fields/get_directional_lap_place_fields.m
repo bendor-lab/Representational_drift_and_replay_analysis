@@ -90,6 +90,13 @@ function lap_directional_place_fields = get_directional_lap_place_fields(track_i
         non_visited_bins = find(x_hist==0);
         if sum(place_fields.spike_hist{j}(non_visited_bins))>0
             disp('ERROR: x_hist is zero, but spike histogram is not');
+
+            for nbin = non_visited_bins
+                place_fields.spike_hist{j}(nbin) = 0;
+            end
+            
+            place_fields.raw{j}(non_visited_bins)= 0;
+            
         else
             place_fields.raw{j}(non_visited_bins)= 0;
         end

@@ -1,12 +1,14 @@
 function extract_place_field_lap(bayesian_option)
-% Extract place fields for each complete lap and each half lap. 
-% MH_ 2020
+% Extract place fields for each complete lap and each half lap.
+% Needs to be called in the folder of the relevant session
+
+% MH_ 2020 Pierre Varichon 2024
 
 load('extracted_laps.mat')
 
-for track = 1 : length(lap_times)
+for track = 1 : length(lap_times) % Iterate through tracks
     
-    for i = 1 : length(lap_times(track).completeLaps_start)
+    for i = 1 : length(lap_times(track).completeLaps_start) % Iterate through laps
        
         disp([num2str(i) ' out of ' num2str(length(lap_times(track).completeLaps_start))])
 
@@ -27,6 +29,7 @@ for track = 1 : length(lap_times)
     
     for i = 1 : length(lap_times(track).halfLaps_start)
         disp([num2str(i) ' out of ' num2str(length(lap_times(track).halfLaps_start))])
+        
          % Extract place field of each half lap
         lap_start_time = lap_times(track).halfLap_id(i);
         lap_end_time = lap_times(track).halfLap_id(i);

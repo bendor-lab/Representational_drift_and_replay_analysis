@@ -87,15 +87,22 @@ function place_fields = get_lap_place_fields(track_id,lap_start,lap_end,bayesian
             speed_during_spike<parameters.speed_threshold_max)),x_bin_edges);
         
         place_fields.raw{j} = place_fields.spike_hist{j}./x_hist; % place field calculation
-        place_fields.raw{j}(find(isnan(place_fields.raw{j})==1)) = 0; %replace NaNs for zeros
+        place_fields.raw{j}(find(isnan(place_fields.raw{j}))) = 0; %replace NaNs for zeros
         
         % zero bins with 0 dwell time, but make sure no spikes occurred
-        non_visited_bins = find(x_hist==0);
+        non_visited_bins = find(x_hist == 0);
         if sum(place_fields.spike_hist{j}(non_visited_bins))>0
             disp('ERROR: x_hist is zero, but spike histogram is not');
+            
+            for nbin = non_visited_bins
+                place_fields.spike_hist{j}(nbin) = 0;
+            end
+            
+            place_fields.raw{j}(non_visited_bins)= 0;
         else
             place_fields.raw{j}(non_visited_bins)= 0;
         end
+        
         place_fields.non_visited_bins = non_visited_bins; %NaNs that have been replaced by O
         
         
