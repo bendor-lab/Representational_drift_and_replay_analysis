@@ -1,7 +1,6 @@
 % This script generates a file containing : 
 % - Animal ID
 % - Condition
-% - Day
 % - Lap
 % - PV correlation with the Final Place Field / normalized & non-normalized
 % - Euclidian distance with the Final Place Field / normalized & non-normalized
@@ -15,7 +14,7 @@ cd(PATH.SCRIPT)
 
 sessions = data_folders_excl; % Use the function to get all the file paths
 
-population_vector_laps = struct("animal", {}, "condition", {}, "day", {}, ...
+population_vector_laps = struct("animal", {}, "condition", {}, ...
                        "track", {}, "allLaps", {}, "finalPlaceField", {});
                               
 % We iterate through files
@@ -23,7 +22,7 @@ for cfile = sessions
     disp(cfile);
     file = cfile{1};
     
-    [animalOI, conditionOI, dayOI] = parseNameFile(file); % We get the informations about the current data
+    [animalOI, conditionOI] = parseNameFile(file); % We get the informations about the current data
 
     %% Variable loading
     % We load the place fields computed per lap for each animal - lap_place_fields
@@ -153,7 +152,7 @@ for cfile = sessions
                 continue;
             end
 
-            population_vector_laps = [population_vector_laps ; struct("animal", {animalOI}, "condition", {conditionOI}, "day", {dayOI}, ...
+            population_vector_laps = [population_vector_laps ; struct("animal", {animalOI}, "condition", {conditionOI}, ...
                            "track", {theoTrack}, "allLaps", {allLaps}, "finalPlaceField", {finalPlaceField})];
 
         end
@@ -161,4 +160,4 @@ for cfile = sessions
     end
 end
 
-% save(PATH.SCRIPT + "\..\..\Data\population_vector_laps.mat", "population_vector_laps");
+save(PATH.SCRIPT + "\..\..\Data\population_vector_laps.mat", "population_vector_laps");

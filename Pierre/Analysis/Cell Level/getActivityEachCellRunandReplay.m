@@ -12,7 +12,7 @@ cd(PATH.SCRIPT)
 sessions = data_folders_excl; % Use the function to get all the file paths
 
 % Data stored in a table with : 
-% Animal - Condition - Day - Track - allLaps struct - cellsReplayData
+% Animal - Condition - Track - allLaps struct - cellsReplayData
 % struct
 % allLaps struct : lap - cellsData
 % cellsData struct :
@@ -31,7 +31,7 @@ sessions = data_folders_excl; % Use the function to get all the file paths
 % Note : here, the replay participation is decoded with the current
 % track
 
-activity_mat_laps = struct("animal", {}, "condition", {}, "day", {}, ...
+activity_mat_laps = struct("animal", {}, "condition", {}, ...
                        "track", {}, "allLaps", {}, "cellsReplayData", {});
                    
 allLaps = struct("lap", {}, "cellsData", {});
@@ -42,7 +42,7 @@ for cfile = sessions
     disp(cfile);
     file = cfile{1};
     
-    [animalOI, conditionOI, dayOI] = parseNameFile(file); % We get the informations about the current data
+    [animalOI, conditionOI] = parseNameFile(file); % We get the informations about the current data
     
     % We load the place fields computed per lap for each animal - lap_place_fields
     load(file + "\extracted_lap_place_fields");
@@ -72,13 +72,7 @@ for cfile = sessions
         % We create the struct to store the data per lap
         
         allLaps = struct("lap", {}, "cellsData", {});
-                
-        % And the replay data per track
-                
-        cellsReplayData = struct("cell", {}, "partPRE", {}, "partRUN1", {}, "partRUN2", {}, ...
-                          "partPOST1", {}, "partPOST2", {}, "partPREoTime", {}, "partPOST1oTime", {}, "partPOST2oTime", {});
-                
-                
+                                
         % Check if the cell is a good PC on the track
         % Do this now to avoid repetition
         GoodPCCurrentTrack = place_fields.track(track).good_cells;
@@ -177,7 +171,7 @@ for cfile = sessions
         
         % now we can save everything in our meta-struct
     
-        activity_mat_laps = [activity_mat_laps ; struct("animal", {animalOI}, "condition", {conditionOI}, "day", {dayOI}, ...
+        activity_mat_laps = [activity_mat_laps ; struct("animal", {animalOI}, "condition", {conditionOI}, ...
                            "track", {track}, "allLaps", {allLaps}, "cellsReplayData", {cellsReplayData})];
     
     end
