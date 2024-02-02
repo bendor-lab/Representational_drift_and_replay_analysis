@@ -10,8 +10,15 @@ function [result, resultNorm] = getPVCor(goodCells, currentPFCellArray, concurre
     % We normalise the place field of each cell, to return our metric
     % normalised
     
-    currentPFCellArrayNorm = cellfun(@(x) rescale(x), currentPFCellArray, 'UniformOutput', false);
-    concurrentPFCellArrayNorm = cellfun(@(x) rescale(x), concurrentCellArray, 'UniformOutput', false);
+    % We normalise across the current PF and the FPF
+    % We concat both
+
+    pfConcat = cellfun(@(x, y) rescale([x y]), currentPFCellArray, concurrentCellArray, 'UniformOutput', false);
+    currentPFCellArrayNorm = cellfun(@(x) x(1:100), pfConcat, 'UniformOutput', false);
+    concurrentPFCellArrayNorm = cellfun(@(x) x(101:200), pfConcat, 'UniformOutput', false);
+    
+%     currentPFCellArrayNorm = cellfun(@(x) rescale(x), currentPFCellArray, 'UniformOutput', false);
+%     concurrentPFCellArrayNorm = cellfun(@(x) rescale(x), concurrentCellArray, 'UniformOutput', false);
     
     % We reverse the data XBIN -> cells for population vector
     % Classic

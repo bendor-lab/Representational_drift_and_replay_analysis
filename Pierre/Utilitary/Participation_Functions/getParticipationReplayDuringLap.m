@@ -10,9 +10,13 @@ function [activation_vector] = getParticipationReplayDuringLap(cellVector, runni
     LapStarts = lap_times(runningTrack).completeLaps_start(lap); % Beginning of the first lap
     LapStop = lap_times(runningTrack).completeLaps_stop(lap); % End of the last lap
     
+    % We get if the animal is in track 1 or track 2 
+    
+    trackRealNumber = mod(runningTrack, 2) + (mod(runningTrack, 2) == 0)*2;
+    
     % We get the ID of the significant replay events in this period
     
-    goodSignReplayData = significantRE.track(runningTrack);
+    goodSignReplayData = significantRE.track(trackRealNumber);
     
     boolMatIsReplayPeriod = goodSignReplayData.event_times <= LapStop & goodSignReplayData.event_times >= LapStarts;
     
@@ -21,7 +25,7 @@ function [activation_vector] = getParticipationReplayDuringLap(cellVector, runni
     % We find the corresponding cell data in decoded (more info than
     % significant file)
     
-    allSpikesCells = {decodedRE(runningTrack).replay_events(relevantReplayID).spikes};
+    allSpikesCells = {decodedRE(trackRealNumber).replay_events(relevantReplayID).spikes};
     
     concatAllCellsInv = []; % We initiate the table with an impossible cell ID, will disappear
     

@@ -16,15 +16,19 @@ function [timestampsAll] = getReplayParticipationOverTimeDuringSleep(cellVector,
         SleepStop = sleep_state.state_time.FINAL_post_end;
     end
     
+    % We get the current track run by the animal between 1 and 2
+    
+    trackRealNumber = (mod(replayedTrack, 2) + (mod(replayedTrack, 2) == 0)*2);
+    
     % We get the ID of the significant replay events in this period
     
-    goodSignReplayData = significantRE.track(replayedTrack);
+    goodSignReplayData = significantRE.track(trackRealNumber);
     
     boolMatIsReplayPeriod = goodSignReplayData.event_times <= SleepStop & goodSignReplayData.event_times >= SleepStart;
     
     relevantReplayID = goodSignReplayData.index(boolMatIsReplayPeriod);
     
-    goodDataDecode = decodedRE(replayedTrack).replay_events;
+    goodDataDecode = decodedRE(trackRealNumber).replay_events;
     
     goodDataDecode = goodDataDecode(ismember([goodDataDecode.replay_id], [relevantReplayID]));
     

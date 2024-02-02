@@ -80,7 +80,7 @@ for cfile = sessions
             mutPositions.linear(trackOI + 2).linear(~isnan(mut2Positions.linear(trackOI + 2).linear)) = NaN;
         end
 
-        finalPlaceField = calculate_place_fields_RD(2, mutPositions, clusters, allclusters_waveform);
+        finalPlaceField = calculate_place_fields_LBL(2, mutPositions, clusters, allclusters_waveform);
         finalPlaceField = finalPlaceField.track(trackOI + 2);
 
         % For population vector analysis, we only use the good place cells of
@@ -158,6 +158,9 @@ for cfile = sessions
         end
         toc
     end
+    
+    clear lap_place_fields place_fields lap_times clusters allclusters_waveform position
+    
 end
 
 save(PATH.SCRIPT + "\..\..\Data\population_vector_laps.mat", "population_vector_laps");

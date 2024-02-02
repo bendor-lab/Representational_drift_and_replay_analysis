@@ -1,6 +1,7 @@
 % DATA FOLDERS FOR ANALYSE ORGANIZED BY SESSIONS
 % M-BLU_Day2_16x4 session excluded
 % Re-written by Pierre Varichon 2024 to link with the new data structure
+% Old register can be found in "data_folders_excl_legacy"
 
 function sessions = data_folders_excl
 

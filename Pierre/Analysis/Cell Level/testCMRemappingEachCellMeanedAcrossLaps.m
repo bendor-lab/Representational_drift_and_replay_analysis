@@ -30,15 +30,10 @@ deltaPeakLocationV = [];
 for cFile = sessions
     disp(cFile);
     file = cFile{1}; % We get the current session
-    [animalOI, conditionOI, ~] = parseNameFile(file); % We get the informations about the current data
+    [animalOI, conditionOI] = parseNameFile(file); % We get the informations about the current data
     
     animalOI = string(animalOI);
     conditionOI = string(conditionOI); % We convert everything to string
-    
-    % Don't use N-BLU 16x4 -> bad calculation, needs to redo it
-    if animalOI == "N-BLU" && conditionOI == "16x4"
-        continue;
-    end
     
     for track = 1:2
         
@@ -66,11 +61,7 @@ for cFile = sessions
                                          [activity_mat_laps.track] == vTrack);
             lapData = lapData.allLaps;
             nbLaps = length(lapData);       
-            
-            % Define vectors to store our deltas
-            allMeanDeltaCM = repelem(0, nbLaps);
-            allMeanDeltaMaxFR= repelem(0, nbLaps);
-            allMeanDeltaPeakLoc = repelem(0, nbLaps);
+
             
             for lap = 1:nbLaps
                 currentData = lapData(lap).cellsData;
@@ -84,7 +75,20 @@ for cFile = sessions
                 % place cells on the track
                 
                 deltaCM = abs(currentData.pfCenterMass - fpfCM(currentData.cell));
-                deltaMaxFR = abs(currentData.pfMaxFRate - fpfMaxFR(currentData.cell));
+                
+                % We normalise across the current PF and the FPF
+                % We concat both
+                
+                pfConcat = cellfun(@(x, y) rescale([x y]), currentData.placeField, FPF.raw(currentData.cell), 'UniformOutput', false);
+                currentPFNorm = cellfun(@(x) x(1:100), pfConcat, 'UniformOutput', false);
+                fpfNorm = cellfun(@(x) x(101:200), pfConcat, 'UniformOutput', false);
+                
+                currentNormMax = cellfun(@(x) max(x), currentPFNorm);
+                fpfNormMax = cellfun(@(x) max(x), fpfNorm);
+                
+                % This is normalised as a percentage
+                deltaMaxFR = abs(currentNormMax - fpfNormMax);
+                
                 deltaPeakLoc = abs(currentData.pfPeakPosition - fpfPeakLoc(currentData.cell));
                 
                 deltaCM = deltaCM(currentData.isGoodPCCurrentTrack);
@@ -216,17 +220,17 @@ end
 
 % Set the legend for each subplot
 subplot(1, 2, 1);
-ylim([2, 6])
+ylim([0.5, 0.8])
 legend({'1 lap', '2 laps', '3 laps', '4 laps', '8 laps', '16 laps'});
 legend('show');
 xlabel("Lap")
-ylabel("Max Firing Rate difference with the FPF")
+ylabel("Max Firing Rate difference with the FPF (minmax normalised across current PF & FPF)")
 title("First exposure")
 
 subplot(1, 2, 2);
-ylim([2, 6])
+ylim([0.5, 0.8])
 xlabel("Lap")
-ylabel("Max Firing Rate difference with the FPF")
+ylabel("Max Firing Rate difference with the FPF (minmax normalised across current PF & FPF)")
 title("Re-exposure")
 
 hold off;
@@ -302,12 +306,13 @@ for i = 1:length(allConditions) % We iterate through conditions
     dataByLapExp1 = dataByLapExp1(dataByLapExp1.lapV <= str2double(condition), :);
     
     % We plot
-    subplot(1, 2, plotPosition)
-    
-    scatter(dataByLapExp1.lapV, dataByLapExp1.mean_deltaCMV, color, 'filled');
+    subplot(6, 2, plotPosition)
+    a = cellstr(string(1:max(dataByLapExp1.lapV)));
+    violinplot(dataByLapExp1.deltaCMV, cellstr(int2str(dataByLapExp1.lapV)), 'GroupOrder', a, 'QuartileStyle','boxplot', 'HalfViolin','right',...
+    'DataStyle', 'histogram');
     
     % Set the legend for each subplot
-    ylim([0, 100])
+    ylim([0, 40])
     xlabel("Lap")
     ylabel("PF Peak Location difference with the FPF")
     title("First exposure")
@@ -318,12 +323,14 @@ for i = 1:length(allConditions) % We iterate through conditions
     dataByLapExp2 = dataByLapExp2(dataByLapExp2.lapV <= 16, :);
     
     % We plot
-    subplot(1, 2, plotPosition + 1)
-    scatter(dataByLapExp2.lapV, dataByLapExp2.mean_deltaCMV, color, 'filled');
+    subplot(6, 2, plotPosition + 1)
+    a = cellstr(string(1:max(dataByLapExp2.lapV)));
+    violinplot(dataByLapExp2.deltaCMV, cellstr(int2str(dataByLapExp2.lapV)), 'GroupOrder', a, 'QuartileStyle','boxplot', 'HalfViolin','right',...
+    'DataStyle', 'histogram');
 
     % Set the legend for each subplot
 
-    ylim([0, 100])
+    ylim([0, 40])
     xlabel("Lap")
     ylabel("PF Peak Location difference with the FPF")
     title("Re-exposure")
@@ -344,12 +351,12 @@ for i = 1:length(allConditions) % We iterate through conditions
     dataByLapExp1 = dataByLapExp1(dataByLapExp1.lapV <= str2double(condition), :);
     
     % We plot
-    subplot(1, 2, plotPosition)
-    
-    scatter(dataByLapExp1.lapV, dataByLapExp1.mean_deltaMaxFRV, color, 'filled');
+    subplot(6, 2, plotPosition)
+    a = cellstr(string(1:max(dataByLapExp1.lapV)));
+    violinplot(dataByLapExp1.deltaMaxFRV, cellstr(int2str(dataByLapExp1.lapV)), 'GroupOrder', a);
     
     % Set the legend for each subplot
-    ylim([0, 100])
+    ylim([0, 50])
     xlabel("Lap")
     ylabel("PF Peak Location difference with the FPF")
     title("First exposure")
@@ -360,12 +367,14 @@ for i = 1:length(allConditions) % We iterate through conditions
     dataByLapExp2 = dataByLapExp2(dataByLapExp2.lapV <= 16, :);
     
     % We plot
-    subplot(1, 2, plotPosition + 1)
-    scatter(dataByLapExp2.lapV, dataByLapExp2.mean_deltaMaxFRV, color, 'filled');
+    subplot(6, 2, plotPosition + 1)
+    a = cellstr(string(1:max(dataByLapExp2.lapV)));
+    violinplot(dataByLapExp2.deltaMaxFRV, cellstr(int2str(dataByLapExp2.lapV)), 'GroupOrder', a);
+
 
     % Set the legend for each subplot
 
-    ylim([0, 100])
+    ylim([0, 50])
     xlabel("Lap")
     ylabel("PF Peak Location difference with the FPF")
     title("Re-exposure")
@@ -386,9 +395,9 @@ for i = 1:length(allConditions) % We iterate through conditions
     dataByLapExp1 = dataByLapExp1(dataByLapExp1.lapV <= str2double(condition), :);
     
     % We plot
-    subplot(1, 2, plotPosition)
+    subplot(6, 2, plotPosition)
     
-    scatter(dataByLapExp1.lapV, dataByLapExp1.mean_deltaPeakLocationV, color, 'filled');
+    scatter(dataByLapExp1.lapV, dataByLapExp1.deltaPeakLocationV, [], color);
     
     % Set the legend for each subplot
     ylim([0, 100])
@@ -402,10 +411,10 @@ for i = 1:length(allConditions) % We iterate through conditions
     dataByLapExp2 = dataByLapExp2(dataByLapExp2.lapV <= 16, :);
     
     % We plot
-    subplot(1, 2, plotPosition + 1)
-    scatter(dataByLapExp2.lapV, dataByLapExp2.mean_deltaPeakLocationV, color, 'filled');
+    subplot(6, 2, plotPosition + 1)
+    scatter(dataByLapExp2.lapV, dataByLapExp2.deltaPeakLocationV, [], color);
 
-    % Set the legend for each subplot
+    % Set the legend for each subplot 
 
     ylim([0, 100])
     xlabel("Lap")

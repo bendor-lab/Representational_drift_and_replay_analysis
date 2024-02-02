@@ -23,7 +23,7 @@ POST1ReplayPartT2V = [];
 
 for cFile = sessions
     file = cFile{1};
-    [animalOI, conditionOI, dayOI] = parseNameFile(file); % We get the informations about the current data
+    [animalOI, conditionOI] = parseNameFile(file); % We get the informations about the current data
     
     currentLines = activity_mat_laps(string({activity_mat_laps.animal}) == animalOI & ...
                                     string({activity_mat_laps.condition}) == conditionOI);

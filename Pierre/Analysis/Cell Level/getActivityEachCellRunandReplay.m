@@ -58,13 +58,28 @@ for cfile = sessions
     % For online participation
     load(file + "\extracted_laps"); % Import table lap_times
     load(file + "\extracted_clusters"); % Import table clusters
+
     % For replay
-    load(file + "\decoded_replay_events"); % Import decoded_replay_events
-    load(file + "\significant_replay_events"); % Import significant_replay_events
+    % We switch the files we use depending on the track, so we store everything in a struct
+
+    dreRUN1 = load(file + "\Replay\RUN1_Decoding\decoded_replay_events"); % Import decoded_replay_events
+    dreRUN1 = dreRUN1.decoded_replay_events;
+    dreRUN2 = load(file + "\Replay\RUN2_Decoding\decoded_replay_events"); % Import decoded_replay_events
+    dreRUN2 = dreRUN2.decoded_replay_events;
+    
+    dreStruct = struct("data", {dreRUN1, dreRUN2});
+
+    sreRUN1 = load(file + "\Replay\RUN1_Decoding\significant_replay_events_wcorr"); % Import significant_replay_events
+    sreRUN1 = sreRUN1.significant_replay_events;
+    sreRUN2 = load(file + "\Replay\RUN2_Decoding\significant_replay_events_wcorr"); % Import significant_replay_events
+    sreRUN2 = sreRUN2.significant_replay_events;
+
+    sreStruct = struct("data", {sreRUN1, sreRUN2});
+
     load(file + "\extracted_sleep_state"); % Import sleep_state
     
     % We iterate over tracks
-    for track = 1:4
+    parfor track = 1:4
         
         % We find the number of laps
         nbLaps = min([lap_times(track).number_completeLaps, length(lap_place_fields(track).Complete_Lap)]);
@@ -78,8 +93,15 @@ for cfile = sessions
         GoodPCCurrentTrack = place_fields.track(track).good_cells;
         isGoodPCCurrentTrack = ismember(pyramCells, GoodPCCurrentTrack);
         
+        % We determine the good replay data based on track
+
+        runNumber = ((track <= 2) + (track > 2)*2);
+
+        significant_replay_events = sreStruct(runNumber).data;
+        decoded_replay_events = dreStruct(runNumber).data;
+        
         % We iterate through laps
-        parfor lap = 1:nbLaps
+        for lap = 1:nbLaps
             
             % We get the relevant data regarding place fields
             goodPFData = lap_place_fields(track).Complete_Lap{lap};

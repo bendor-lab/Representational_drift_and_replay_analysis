@@ -8,6 +8,8 @@ load('extracted_laps.mat')
 
 for track = 1 : length(lap_times) % Iterate through tracks
     
+    disp(["Track " + num2str(track)]);
+    
     for i = 1 : length(lap_times(track).completeLaps_start) % Iterate through laps
        
         disp([num2str(i) ' out of ' num2str(length(lap_times(track).completeLaps_start))])
@@ -17,11 +19,11 @@ for track = 1 : length(lap_times) % Iterate through tracks
         lap_end_time = lap_times(track).completeLap_id(i);
         
         place_fields = get_lap_place_fields(track,lap_start_time,lap_end_time,bayesian_option,'complete');
-        directional_place_fields = get_directional_lap_place_fields(track,lap_start_time,lap_end_time,bayesian_option,'complete');
+        % directional_place_fields = get_directional_lap_place_fields(track,lap_start_time,lap_end_time,bayesian_option,'complete');
 
         lap_place_fields(track).Complete_Lap{i} = place_fields;
-        lap_directional_place_fields(track).dir1.Complete_Lap{i} =  directional_place_fields(1).place_fields;
-        lap_directional_place_fields(track).dir2.Complete_Lap{i} =  directional_place_fields(2).place_fields;
+        % lap_directional_place_fields(track).dir1.Complete_Lap{i} =  directional_place_fields(1).place_fields;
+        % lap_directional_place_fields(track).dir2.Complete_Lap{i} =  directional_place_fields(2).place_fields;
 
         clear place_fields directional_place_fields
 
@@ -35,11 +37,11 @@ for track = 1 : length(lap_times) % Iterate through tracks
         lap_end_time = lap_times(track).halfLap_id(i);
         
         place_fields = get_lap_place_fields(track,lap_start_time,lap_end_time,bayesian_option,'half');
-        directional_place_fields = get_directional_lap_place_fields(track,lap_start_time,lap_end_time,bayesian_option,'half');
+        % directional_place_fields = get_directional_lap_place_fields(track,lap_start_time,lap_end_time,bayesian_option,'half');
 
         lap_place_fields(track).half_Lap{i} = place_fields;
-        lap_directional_place_fields(track).dir1.half_Lap{i} =  directional_place_fields(1).place_fields;
-        lap_directional_place_fields(track).dir2.half_Lap{i} =  directional_place_fields(2).place_fields;
+        % lap_directional_place_fields(track).dir1.half_Lap{i} =  directional_place_fields(1).place_fields;
+        % lap_directional_place_fields(track).dir2.half_Lap{i} =  directional_place_fields(2).place_fields;
 
         clear place_fields directional_place_fields
     end
@@ -53,8 +55,8 @@ end
         save('extracted_lap_place_fields_BAYESIAN','lap_place_fields_BAYESIAN','-v7.3')
         save('extracted_directional_lap_place_fields_BAYESIAN.mat','lap_directional_place_fields_BAYESIAN','-v7.3')
     else
-        save('extracted_lap_place_fields.mat','lap_directional_place_fields','-v7.3')
-        save('extracted_directional_lap_place_fields.mat','lap_directional_place_fields','-v7.3')
+        save('extracted_lap_place_fields.mat','lap_place_fields','-v7.3')
+        % save('extracted_directional_lap_place_fields.mat','lap_directional_place_fields','-v7.3')
     end
 
 

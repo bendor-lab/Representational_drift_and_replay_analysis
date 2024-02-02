@@ -19,9 +19,13 @@ function [activation_vector] = getReplayParticipationDuringSleep(cellVector, sle
         SleepStop = SleepStart + 1800;
     end
     
+    % We get the current track run by the animal between 1 and 2
+    
+    trackRealNumber = (mod(replayedTrack, 2) + (mod(replayedTrack, 2) == 0)*2);
+    
     % We get the ID of the significant replay events in this period
     
-    goodSignReplayData = significantRE.track(replayedTrack);
+    goodSignReplayData = significantRE.track(trackRealNumber);
     
     boolMatIsReplayPeriod = goodSignReplayData.event_times <= SleepStop & goodSignReplayData.event_times >= SleepStart;
     
@@ -30,7 +34,7 @@ function [activation_vector] = getReplayParticipationDuringSleep(cellVector, sle
     % We find the corresponding cell data in decoded (more info than
     % significant file)
     
-    allSpikesCells = {decodedRE(replayedTrack).replay_events(relevantReplayID).spikes};
+    allSpikesCells = {decodedRE(trackRealNumber).replay_events(relevantReplayID).spikes};
     
     concatAllCellsInv = []; % We initiate the table with an impossible cell ID, will disappear
     
