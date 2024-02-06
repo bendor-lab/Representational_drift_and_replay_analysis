@@ -87,7 +87,7 @@ for cFile = sessions
                 fpfNormMax = cellfun(@(x) max(x), fpfNorm);
                 
                 % This is normalised as a percentage
-                deltaMaxFR = abs(currentNormMax - fpfNormMax);
+                deltaMaxFR = abs(fpfNormMax - currentNormMax);
                 
                 deltaPeakLoc = abs(currentData.pfPeakPosition - fpfPeakLoc(currentData.cell));
                 
@@ -220,7 +220,7 @@ end
 
 % Set the legend for each subplot
 subplot(1, 2, 1);
-ylim([0.5, 0.8])
+ylim([0.4, 0.65])
 legend({'1 lap', '2 laps', '3 laps', '4 laps', '8 laps', '16 laps'});
 legend('show');
 xlabel("Lap")
@@ -228,7 +228,7 @@ ylabel("Max Firing Rate difference with the FPF (minmax normalised across curren
 title("First exposure")
 
 subplot(1, 2, 2);
-ylim([0.5, 0.8])
+ylim([0.4, 0.65])
 xlabel("Lap")
 ylabel("Max Firing Rate difference with the FPF (minmax normalised across current PF & FPF)")
 title("Re-exposure")
@@ -353,10 +353,11 @@ for i = 1:length(allConditions) % We iterate through conditions
     % We plot
     subplot(6, 2, plotPosition)
     a = cellstr(string(1:max(dataByLapExp1.lapV)));
-    violinplot(dataByLapExp1.deltaMaxFRV, cellstr(int2str(dataByLapExp1.lapV)), 'GroupOrder', a);
+    violinplot(dataByLapExp1.deltaMaxFRV, cellstr(int2str(dataByLapExp1.lapV)), 'GroupOrder', a, 'QuartileStyle','boxplot', 'HalfViolin','right',...
+    'DataStyle', 'histogram');
     
     % Set the legend for each subplot
-    ylim([0, 50])
+    ylim([-1.5, 1.5])
     xlabel("Lap")
     ylabel("PF Peak Location difference with the FPF")
     title("First exposure")
@@ -369,12 +370,13 @@ for i = 1:length(allConditions) % We iterate through conditions
     % We plot
     subplot(6, 2, plotPosition + 1)
     a = cellstr(string(1:max(dataByLapExp2.lapV)));
-    violinplot(dataByLapExp2.deltaMaxFRV, cellstr(int2str(dataByLapExp2.lapV)), 'GroupOrder', a);
+    violinplot(dataByLapExp2.deltaMaxFRV, cellstr(int2str(dataByLapExp2.lapV)), 'GroupOrder', a, 'QuartileStyle','boxplot', 'HalfViolin','right',...
+    'DataStyle', 'histogram');
 
 
     % Set the legend for each subplot
 
-    ylim([0, 50])
+    ylim([-1.5, 1.5])
     xlabel("Lap")
     ylabel("PF Peak Location difference with the FPF")
     title("Re-exposure")

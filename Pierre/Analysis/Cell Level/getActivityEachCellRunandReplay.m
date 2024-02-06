@@ -106,7 +106,7 @@ for cfile = sessions
             % We get the relevant data regarding place fields
             goodPFData = lap_place_fields(track).Complete_Lap{lap};
             
-            placeField = goodPFData.raw(pyramCells);
+            placeField = goodPFData.smooth(pyramCells);
             % We get the participation vector for the current lap runned
             partRUN = getParticipationDuringLap(pyramCells, track, lap, lap_times, clusters);
             
@@ -136,7 +136,7 @@ for cfile = sessions
             pfPeakPosition(pfMaxFRate == 0) = {NaN};
             pfPeakPosition = cell2mat(pfPeakPosition);
             
-            % Center of mass
+            % Center of mass - smoothed
             pfCenterMass = goodPFData.centre_of_mass(pyramCells);
             
             % We can add those to our struct

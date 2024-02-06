@@ -58,17 +58,20 @@ for cFile = sessions
                 % Skewness of all the good place cells on the track
                 
                 goodPlaceFields = currentData.placeField(goodCellsBoolMat);
-                goodPeaks = currentData.pfPeakPosition(goodCellsBoolMat);
+%                 goodPeaks = currentData.pfPeakPosition(goodCellsBoolMat);
+%                 
+%                 maxPFRadius = 20;
+%                 
+%                 supIndex = arrayfun(@(x) min([x+maxPFRadius, 100]), goodPeaks);
+%                 infIndex = arrayfun(@(x) max([x-maxPFRadius, 1]), goodPeaks);
+%                 
+%                 cellArray = arrayfun(@(x, y) [x, y], infIndex, supIndex, 'UniformOutput', false);
+%                 
+%                 skewnessValues = cellfun(@(x, y) skewness(x(y(1):y(2)), 0), goodPlaceFields, cellArray); % Returns a value per cell
                 
-                maxPFRadius = 20;
-                
-                supIndex = arrayfun(@(x) min([x+maxPFRadius, 100]), goodPeaks);
-                infIndex = arrayfun(@(x) max([x-maxPFRadius, 1]), goodPeaks);
-                
-                cellArray = arrayfun(@(x, y) [x, y], infIndex, supIndex, 'UniformOutput', false);
-                
-                skewnessValues = cellfun(@(x, y) skewness(x(y(1):y(2)), 0), goodPlaceFields, cellArray); % Returns a value per cell
-                                
+                skewnessValues = cellfun(@(x) skewness(x, 0), goodPlaceFields); % Returns a value per cell
+
+
                 % We add the data
             
                 animalV = [animalV; repelem(animalOI, nbGoodCells)'];
