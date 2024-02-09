@@ -12,6 +12,8 @@ function shuffled_track = run_shuffles(shuffle_choice,analysis_type, num_shuffle
 %
 % num_shuffles= number of shuffles
 
+% Evrything stored in the struct shuffled_track
+
 analysis_type(4) = 0;  % don't do shuffles on spearman correlation
 
 % If spike circular shift (usually first shuffle), we extract the relevant
@@ -248,7 +250,7 @@ for s = 1:num_shuffles
     end
     
     %% Score replay for decoded events with shuffled place fields
-    shuffle_output = replay_scoring(shuffled_struct, place_fields_BAYESIAN, analysis_type);  %don't do shuffle for spearman
+    shuffle_output = replay_scoring(shuffled_struct, place_fields_BAYESIAN, analysis_type);  % don't do shuffle for spearman
     for track = 1 : num_tracks
         for event = 1: num_replay_events
             shuffled_track(track).replay_events(event).linear_score(s) = shuffle_output(track).replay_events(event).linear_score;

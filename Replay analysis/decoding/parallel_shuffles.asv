@@ -36,14 +36,14 @@ new_num_shuffles = ceil(num_shuffles/number_of_loops);
 
 % ADD PARFOR !!
 parfor i=1:number_of_loops
-    out{i}.shuffled_track = run_shuffles(shuffle_choice,analysis_type,new_num_shuffles,decoded_replay_events, ...
+    out{i} = run_shuffles(shuffle_choice,analysis_type,new_num_shuffles,decoded_replay_events, ...
                                          place_fields_BAYESIAN, replayEvents_bayesian_spike_count, tracks_compared);
 end
 
-% Get the current numbr of tracks
-num_tracks = length(out{1}.shuffled_track);
+% Get the current number of tracks
+num_tracks = size(out{1}, 2);
 % Get the current number of replay events
-num_replay_events = length(out{1}.shuffled_track(1).replay_events);
+num_replay_events = length(out{1}..replay_events);
 
 % Pre-allocating
 
@@ -68,7 +68,6 @@ end
 %copy exact number of shuffles needed (more shuffles will be performed if
 %total number is not equall divisible by the number of cores used for
 %parallel processing
-
 for track = 1 : num_tracks
     for event = 1: num_replay_events
         shuffled_track(track).replay_events(event).linear_score = shuffled_track(track).replay_events(event).linear_score(1:num_shuffles);
