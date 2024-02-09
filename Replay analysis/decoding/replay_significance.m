@@ -8,6 +8,7 @@ function scored_replay = replay_significance(scored_replay, shuffle_type)  %defa
 
 num_shuffle_types = length(shuffle_type);
 num_tracks = length(scored_replay);
+
 %num_replay_events = length(scored_replay(1).replay_events);
 
 %extract replay scores for each replay event, across all tracks, across all methods

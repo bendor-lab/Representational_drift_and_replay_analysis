@@ -34,7 +34,6 @@ new_num_shuffles = ceil(num_shuffles/number_of_loops);
 % One cell per shuffle, and 2 tracks per cells
 % Could remove intermediate variable shuffled_track
 
-% ADD PARFOR !!
 parfor i=1:number_of_loops
     out{i}.shuffled_track = run_shuffles(shuffle_choice,analysis_type,new_num_shuffles,decoded_replay_events, ...
                                          place_fields_BAYESIAN, replayEvents_bayesian_spike_count, tracks_compared);

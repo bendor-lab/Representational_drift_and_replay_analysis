@@ -45,7 +45,6 @@ for folderID = 1:length(folders)
     %% Score the replay events
     disp('Scoring replay events')
     scored_replay = replay_scoring(decoded_replay_events, place_fields_BAYESIAN, [0 1 0 0]);
-    save(globalPath + "scored_replay", "scored_replay")
     
     %% Shuffles
     
@@ -60,10 +59,10 @@ for folderID = 1:length(folders)
     
     p = gcp; % Starting new parallel pool
     
+    shuffle_type = [];
+    
     % Choosing the type of shuffle we want to execute num_shuffles times
-    % shuffle_choice = {'PRE spike_train_circular_shift','PRE place_field_circular_shift', 'POST place bin circular shift'};
-    shuffle_choice = {'POST time bin circular shift', 'POST time bin permutation', 'PRE spike_train_circular_shift', ...
-                      'PRE place_field_circular_shift', 'POST place bin circular shift'};
+    shuffle_choice = {'PRE spike_train_circular_shift','PRE place_field_circular_shift', 'POST place bin circular shift'};
     
     % Trying to start a parallel pool, otherwise classical computation
     % Add the num_shuffles shuffled scores to the shuffle_type object
@@ -83,6 +82,16 @@ for folderID = 1:length(folders)
         end
 
     end
+    
+    save(globalPath + "shuffled_tracks.mat", "shuffle_type");
+    
+    % Evaluate significance
+    scored_replay = replay_significance(scored_replay, shuffle_type);
+    save(globalPath + "scored_replay", "scored_replay")
+    
+    %% Now we can analyse segments
+    
+    replay_decoding_split_events;
     
     
 end
