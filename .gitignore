@@ -1,2 +1,3 @@
 # Ignore all folders and files in the ExpData folder
 ExpData/*
+Dimension Reduction/NeuralTraj/*
