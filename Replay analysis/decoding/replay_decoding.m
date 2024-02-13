@@ -31,8 +31,8 @@ replay_events = struct('replay_id',{},...%the id of the candidate replay events 
 %% TAKE SPIKES FROM ONLY good place fields (on at least one track of interest)
 
 sorted_spikes = zeros(size(clusters.spike_id));
-sorted_spikes(:,1) = clusters.spike_id; % Get the spike ID
-sorted_spikes(:,2) = clusters.spike_times; % Get the spike time
+sorted_spikes(:, 1) = clusters.spike_id; % Get the spike ID
+sorted_spikes(:, 2) = clusters.spike_times; % Get the spike time
 
 all_units = unique(clusters.spike_id);
 allGoodPCTracks = unique([place_fields_BAYESIAN.track(tracks_compared).good_cells]);

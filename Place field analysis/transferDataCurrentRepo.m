@@ -15,8 +15,9 @@ goodPathsServer = data_folders_excl; % Path for the new server location
 %                   "extracted_directional_place_fields.mat"];
 % filesToExtract = ["replayEvents_bayesian_spike_count.mat"];
 % filesToExtract = ["extracted_sleep_state.mat"];
+% filesToExtract = ["extracted_replay_events.mat"];
 
-filesToExtract = ["extracted_replay_events.mat"];
+filesToExtract = ["extracted_directional_lap_place_fields.mat"];
 
 % For each good session
 for i = 1:length(sessions)

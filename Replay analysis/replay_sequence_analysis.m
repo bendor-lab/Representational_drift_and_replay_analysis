@@ -51,7 +51,7 @@ for folderID = 1:length(folders)
     disp("Starting shuffles")
     
     % Number of shuffles to do for each method
-    num_shuffles = 4;
+    num_shuffles = 1000;
     
     % Types of shuffle we want to run
     % [linear wcorr path spearman]
@@ -91,7 +91,7 @@ for folderID = 1:length(folders)
     
     %% Now we can analyse segments
     
-    replay_decoding_split_events;
+    % replay_decoding_split_events;
     
     
 end
