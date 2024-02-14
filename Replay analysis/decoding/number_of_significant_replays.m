@@ -32,6 +32,7 @@ significant_replay_events.bin_size_BIG = 61;
 if isempty(ripple_zscore_threshold)
     ripple_zscore_threshold = 3; % 3 SD
 end
+
 if isempty(p_value_threshold)
     p_value_threshold = 0.05;
 end
@@ -390,7 +391,7 @@ elseif strcmp(method,'spearman') %spearman correlation coefficient
         end
     end
     
-else disp('ERROR: scoring method not recognized')
+else disp('ERROR: scoring method not recognized');
     
 end
 

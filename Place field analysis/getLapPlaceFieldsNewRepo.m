@@ -20,7 +20,7 @@ allFolders = string(ls(path2Data + "*_*")); % We look for all the directoris wit
 
 % We iterate through folders
 
-parfor direcInd = 11:19
+parfor direcInd = 1:19
     direc = allFolders(direcInd);
     disp(direc);
     

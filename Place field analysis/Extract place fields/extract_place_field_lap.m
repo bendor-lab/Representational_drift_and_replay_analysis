@@ -8,7 +8,7 @@ load('extracted_laps.mat')
 
 for track = 1 : length(lap_times) % Iterate through tracks
     
-    disp(["Track " + num2str(track)]);
+    disp("Track " + num2str(track));
     
     for i = 1 : length(lap_times(track).completeLaps_start) % Iterate through laps
        
