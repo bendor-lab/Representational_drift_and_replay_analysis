@@ -9,14 +9,12 @@ function [] = replay_sequence_analysis(folders, tracks_compared)
 
 % Global analysis variables --
 
-clear
-
 % Types of scoring we want to run
 % [linear wcorr path spearman]
 scoringType = [0 1 0 0];
 
 % Number of shuffles to do for each method
-num_shuffles = 4;
+num_shuffles = 1000;
 
 % Choosing the type of shuffle we want to execute num_shuffles times
 shuffle_choice = {'PRE spike_train_circular_shift','PRE place_field_circular_shift', 'POST place bin circular shift'};
@@ -25,10 +23,7 @@ for folderID = 1:length(folders)
     
     folder = folders{folderID};
     
-    % For tests
-    folder = data_folders_excl;
-    folder = folder{1};
-    tracks_compared = [1, 3];
+    disp(folder);
     
     cd(folder);
     
@@ -153,6 +148,8 @@ for folderID = 1:length(folders)
     
     significant_replay_events = number_of_significant_replays_new(0.05, 3, "wcorr", tracks_compared, globalPath);
     
+    % We clear to let more memory
+    clearvars -except scoringType num_shuffles shuffle_choice folders folderID tracks_compared
 end
 
 end

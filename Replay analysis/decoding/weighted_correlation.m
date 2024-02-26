@@ -2,7 +2,12 @@
 % Linear correlation between time and position weighted by the associated posterior probability
 % INPUTS: decoded_position (e.g. decoded replay event); T as vector of time bins; P as vector of position bins
 
-function weighted_corr = weighted_correlation(decoded_event)
+function weighted_corr = weighted_correlation(decoded_event, absolute)
+
+     if ~exist('absolute','var')
+         % third parameter does not exist, so default it to something
+          absolute = true;
+     end
 
     pixel_size = size(decoded_event);
     P = 1:pixel_size(1); % position bins
@@ -49,8 +54,12 @@ function weighted_corr = weighted_correlation(decoded_event)
     end
     cov_TT = sum(sum(probTT))./decoded_event_sum;
 
-    % weighted correlation between time and decoded position
-    weighted_corr = abs(cov_TP / sqrt(cov_TT*cov_PP));
+    if absolute
+        % weighted correlation between time and decoded position
+        weighted_corr = abs(cov_TP / sqrt(cov_TT*cov_PP));
+    else
+        weighted_corr = cov_TP / sqrt(cov_TT*cov_PP);
+    end
 
 end
 
