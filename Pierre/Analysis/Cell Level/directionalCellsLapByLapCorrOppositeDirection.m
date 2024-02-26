@@ -162,7 +162,7 @@ colors = lines(length(allConditions));
 figure; 
 
 maxX = [];
-set_ylim = [0, 1];
+set_ylim = [0, 3000];
 
 for i = 1:length(allConditions) % We iterate through conditions
     current_condition = allConditions(i);
@@ -304,7 +304,7 @@ xlabel("Lap")
 figure; 
 
 maxX = [];
-set_ylim = [0, 1];
+set_ylim = [0, 50];
 
 for i = 1:length(allConditions) % We iterate through conditions
     current_condition = allConditions(i);
