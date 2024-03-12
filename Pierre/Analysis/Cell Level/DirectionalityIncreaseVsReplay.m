@@ -13,29 +13,37 @@ animalV = [];
 conditionV = [];
 trackV = [];
 cellV = [];
+isDirectionnalV = [];
 directionV = [];
 
 savingsPOST1V = []; % Metric diff between last lap RUN1 and first lap RUN2
 dirChangeRUN1V = []; % Metric diff between last and first lap RUN1
 dirChangeRUN2V = []; % Same for RUN2
+dirChangeRUN1RUN2V = [];
 
 partP1RepV = [];
 replayDirBiasV = []; % Bias in the replay detection, mean of all the directions
+
+isPCBothTracksV = [];
 
 % Define the metric we want to use
 
 % Diffsum
 diffsum = @(pf1, pf2) abs(max(pf1) - max(pf2)) / (max(pf1) + max(pf2));
 
+% Diffsum integral PF
+diffsumInt = @(pf1, pf2) abs(sum(pf1) - sum(pf2)) / (sum(pf1) + sum(pf2));
+
+
 % Earth Moving Distance
 earthMoversDistance = @(p1, p2) sum(abs(cumsum(p1) - cumsum(p2)));
 
 % Assign the function
-metric = diffsum;
+metric = diffsumInt;
 
 % Choose if you include only directional cells (1), all cells (0), no directional cells
 % (-1)
-inclusionMode = 1;
+inclusionMode = 0;
 
 
 %% Extraction & computation
@@ -74,10 +82,18 @@ parfor fileID = 1:length(sessions)
         [directionalCellsRUN2, dirOPRUN2] = getDirectionalCells(directional_place_fields(1).place_fields.track(track + 2).smooth, ...
             directional_place_fields(2).place_fields.track(track + 2).smooth);
 
-        directionalCells = union(directionalCellsRUN1, directionalCellsRUN2);
+        % directionalCells = union(directionalCellsRUN1, directionalCellsRUN2);
+        directionalCells = directionalCellsRUN2;
 
-        goodCells = union(directional_place_fields(1).place_fields.good_place_cells, ...
-            directional_place_fields(2).place_fields.good_place_cells);
+        
+        % Good Cells are good place cells on RUN1 OR RUN2
+        goodCellsRUN1 = union(directional_place_fields(1).place_fields.track(track).good_cells, ...
+                          directional_place_fields(2).place_fields.track(track).good_cells);
+
+        goodCellsRUN2 = union(directional_place_fields(1).place_fields.track(track + 2).good_cells, ...
+                          directional_place_fields(2).place_fields.track(track + 2).good_cells);
+
+        goodCells = union(goodCellsRUN1, goodCellsRUN2);
 
         if inclusionMode == 1
             goodDirCells = intersect(goodCells, directionalCells);
@@ -170,18 +186,38 @@ parfor fileID = 1:length(sessions)
                            metric(dataDir1RUN1{end - 1}.smooth{cell}, dataDir2RUN1{end}.smooth{cell});
 
             dirChangeRUN1 = metric(dataDir1RUN1{end - 1}.smooth{cell}, dataDir2RUN1{end}.smooth{cell}) - ...
-                            metric(dataDir1RUN1{1}.smooth{cell}, dataDir2RUN1{2}.smooth{cell});
+                             metric(dataDir1RUN1{1}.smooth{cell}, dataDir2RUN1{2}.smooth{cell});
 
             dirChangeRUN2 = metric(dataDir1RUN2{end - 1}.smooth{cell}, dataDir2RUN2{end}.smooth{cell}) - ...
                             metric(dataDir1RUN2{1}.smooth{cell}, dataDir2RUN2{2}.smooth{cell});
+
+            dirChangeRUN1RUN2 = metric(dataDir1RUN2{end - 1}.smooth{cell}, dataDir2RUN2{end}.smooth{cell}) - ...
+                                metric(dataDir1RUN1{end - 1}.smooth{cell}, dataDir2RUN1{end}.smooth{cell});
+
+            if conditionOI == "1"
+                dirChangeRUN1 = NaN;
+            end
 
             
             % We get the replay participation of the cell
             replayInvolved = cellfun(@(ev) any(ev(:, 1) == cell), filteredReplayEventsSpikes);
 
             partP1Rep = sum(replayInvolved);
-            replayDirBias = mean(replayDirectionArray(replayInvolved), 'omitnan');
+            replayDirBias = abs(mean(replayDirectionArray(replayInvolved), 'omitnan'));
+            
+            % We get if it's a good place cell on both tracks - T1 or T3
+            % and T2 or T4
+            % (by definition, it's a good PC on the current track)
 
+            adverseTrack = mod(track + 1, 2) + mod(track, 2)*2; % Get the other track ID
+
+            goodCellsTAd = union(directional_place_fields(1).place_fields.track(adverseTrack).good_cells, ...
+                           directional_place_fields(2).place_fields.track(adverseTrack).good_cells);
+
+            goodCellsTAd2 = union(directional_place_fields(1).place_fields.track(adverseTrack + 2).good_cells, ...
+                           directional_place_fields(2).place_fields.track(adverseTrack + 2).good_cells);
+
+            isPCBothTracks = ismember(cell, union(goodCellsTAd, goodCellsTAd2));
 
             % Save the data
 
@@ -189,12 +225,16 @@ parfor fileID = 1:length(sessions)
             conditionV = [conditionV; conditionOI];
             trackV = [trackV; track];
             cellV = [cellV; cell];
+            isDirectionnalV = [isDirectionnalV; ismember(cell, directionalCells)];
             directionV = [directionV; dirVector(cellID)];
             savingsPOST1V = [savingsPOST1V; savingsPOST1];
             dirChangeRUN1V = [dirChangeRUN1V; dirChangeRUN1];
             dirChangeRUN2V = [dirChangeRUN2V; dirChangeRUN2];
+            dirChangeRUN1RUN2V = [dirChangeRUN1RUN2V; dirChangeRUN1RUN2];
             partP1RepV = [partP1RepV; partP1Rep];
             replayDirBiasV = [replayDirBiasV; replayDirBias];
+            isPCBothTracksV = [isPCBothTracksV; isPCBothTracks];
+
         end
     end
 end
@@ -207,25 +247,85 @@ newConditions = split(conditionV(trackV ~= 1), 'x');
 conditionV(trackV ~= 1) = newConditions(:, 2);
 
 
-data = table(animalV, conditionV, trackV, cellV, directionV, savingsPOST1V, dirChangeRUN1V, dirChangeRUN2V, partP1RepV, replayDirBiasV);
+data = table(animalV, conditionV, trackV, cellV, isDirectionnalV, directionV, savingsPOST1V, ...
+             dirChangeRUN1V, dirChangeRUN2V, dirChangeRUN1RUN2V, partP1RepV, replayDirBiasV, isPCBothTracksV);
 
-%% From there we can test our hypothesis
+%% From there we can test
 
-% 1. There is a link between the quantity of directionnality remapping and 
-allDirections = unique(directionV);
+%% Group by directionality and commonality
+
+G = groupsummary(data, ["isDirectionnalV", "isPCBothTracksV", "trackV"], ...
+                        ["median", "std"], ["partP1RepV", "savingsPOST1V", "dirChangeRUN1V", "dirChangeRUN2V"]);
+
+name = ["NoDir-NoBoth", "NoDir-Both", "Dir-NoBoth", "Dir-Both"];
+
+count = reshape(G.GroupCount, [2, 4]);
+replayPart = reshape(G.median_savingsPOST1V, [2, 4]);
+
+tiledlayout(1, 2);
+nexttile;
+bar([1, 2, 3, 4], count);
+nexttile;
+bar([1, 2, 3, 4], replayPart);
 
 
-f1 = figure;
-scatter(directionV, partP1RepDir1V)
+
+%% Look at the distribution of directionality variation depending on the
+% directionality of the cell at different times
+
+t = tiledlayout(3, 2);
+
+
+ax2 = nexttile;
+
+histogram(dirChangeRUN1V(logical(isDirectionnalV) & trackV == 1), 20, 'Normalization','probability');
 hold on;
-scatter(directionV, partP1RepDir2V)
+histogram(dirChangeRUN1V(logical(isDirectionnalV) & trackV == 2), 20, 'Normalization','probability');
+hold off;
 
-errorbar(allDirections, [mean(partP1RepDir1V(allDirections(1))), mean(partP1RepDir1V(allDirections(2)))], ...
-    [std(partP1RepDir1V(allDirections(1))) std(partP1RepDir1V(allDirections(2)))]);
+title("Directional cells, change over RUN1");
+ax3 = nexttile;
 
-xlim([0.5, 2.5]);
-legend({'Replay direction A', 'Replay direction B'});
-title("POST1 replay direction depending on neuron direction")
+histogram(dirChangeRUN1V(~logical(isDirectionnalV) & trackV == 1), 20, 'Normalization','probability');
+hold on;
+histogram(dirChangeRUN1V(~logical(isDirectionnalV) & trackV == 2), 20, 'Normalization','probability');
+hold off;
+
+title("Non-directional cells, change over RUN1");
+
+ax0 = nexttile;
+
+histogram(savingsPOST1V(logical(isDirectionnalV) & trackV == 1), 20, 'Normalization','probability');
+hold on;
+histogram(savingsPOST1V(logical(isDirectionnalV) & trackV == 2), 20, 'Normalization','probability');
+hold off;
+
+title("Directional cells, change over POST1 sleep");
+ax1 = nexttile;
+
+histogram(savingsPOST1V(~logical(isDirectionnalV) & trackV == 1), 20, 'Normalization','probability');
+hold on;
+histogram(savingsPOST1V(~logical(isDirectionnalV) & trackV == 2), 20, 'Normalization','probability');hold off;
+
+title("Non-directional cells, change over POST1 sleep");
+ax4 = nexttile;
+
+histogram(dirChangeRUN2V(logical(isDirectionnalV) & trackV == 1), 20, 'Normalization','probability');
+hold on;
+histogram(dirChangeRUN2V(logical(isDirectionnalV) & trackV == 2), 20, 'Normalization','probability');
+hold off;
+
+title("Directional cells, change over RUN2");
+ax5 = nexttile;
+
+histogram(dirChangeRUN2V(~logical(isDirectionnalV) & trackV == 1), 20, 'Normalization','probability');
+hold on;
+histogram(dirChangeRUN2V(~logical(isDirectionnalV) & trackV == 2), 20, 'Normalization','probability');
+hold off;
+
+title("Non-directional cells, change over RUN2");
+
+linkaxes([ax0, ax1, ax2, ax3, ax4, ax5], 'xy');
 
 
 %% Functions

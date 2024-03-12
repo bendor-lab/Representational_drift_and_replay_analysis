@@ -36,7 +36,7 @@ function [activation_vector] = getReplayParticipationDuringSleep(cellVector, sle
     
     allSpikesCells = {decodedRE(trackRealNumber).replay_events(relevantReplayID).spikes};
     
-    concatAllCellsInv = []; % We initiate the table with an impossible cell ID, will disappear
+    concatAllCellsInv = []; 
     
     for RE = allSpikesCells
         temp = RE{1};

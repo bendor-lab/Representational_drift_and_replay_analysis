@@ -7,7 +7,7 @@ clear
 PATH.SCRIPT = fileparts(mfilename('fullpath'));
 cd(PATH.SCRIPT)
 
-listFilesToTest = ["\..\..\Data\population_vector_laps.mat", "\..\..\Data\population_vector_lapsLap16RUN1.mat", ...
+listFilesToTest = ["\..\..\Data\population_vector_laps_6_next_laps.mat", "\..\..\Data\population_vector_lapsLap16RUN1.mat", ...
     "\..\..\Data\population_vector_lapsLap16RUN2.mat"];
 
 for path = listFilesToTest(1)
@@ -38,7 +38,7 @@ for path = listFilesToTest(1)
             matchingData2 = matchingData([matchingData.track] == trackOI);
             
             for sessionID = 1:length(matchingData2)
-                currentCorrelationVector = {matchingData2(sessionID).allLaps.pvCorrelationNorm};
+                currentCorrelationVector = {matchingData2(sessionID).allLaps.pvCorrelation};
                 currentCorrelationVector = cellfun(@(x) median(x, 'omitnan'), currentCorrelationVector);
                 lenVec = length(currentCorrelationVector);
                 if trackOI == 1
@@ -72,10 +72,10 @@ end
 
 %% Now we can mean the data and plot
 
-% Mean
+% Median
 
 for lineNb = 1:length(finalData)
-    finalData(lineNb).mat = mean(finalData(lineNb).mat, 'omitnan');
+    finalData(lineNb).mat = median(finalData(lineNb).mat, 'omitnan');
     if finalData(lineNb).exposure == 1
         finalData(lineNb).mat = finalData(lineNb).mat(1:finalData(lineNb).condition);
     else
@@ -111,7 +111,7 @@ end
 
 % Set the legend for each subplot
 subplot(1, 2, 1);
-ylim([0, 0.5])
+ylim([0, 1])
 legend({'1 lap', '2 laps', '3 laps', '4 laps', '8 laps', '16 laps'});
 legend('show');
 xlabel("Lap")
@@ -119,7 +119,7 @@ ylabel("Correlation with the FPF")
 title("First exposure")
 
 subplot(1, 2, 2);
-ylim([0, 0.5])
+ylim([0, 1])
 xlabel("Lap")
 ylabel("Correlation with the FPF")
 title("Re-exposure")
