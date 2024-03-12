@@ -38,16 +38,19 @@ allLaps = struct("lap", {}, "cellsData", {});
 
                               
 % We iterate through files
-for cfile = sessions
-    disp(cfile);
-    file = cfile{1};
+parfor cID = 1:numel(sessions)
+    disp(cID);
+    file = sessions{cID};
     
     [animalOI, conditionOI] = parseNameFile(file); % We get the informations about the current data
     
     % We load the place fields computed per lap for each animal - lap_place_fields
-    load(file + "\extracted_lap_place_fields");
+    lap_place_fields = load(file + "\extracted_lap_place_fields");
+    lap_place_fields = lap_place_fields.lap_place_fields;
+
     % And a general PF data to check if good cell on the whole track
-    load(file + "\extracted_place_fields");
+    place_fields = load(file + "\extracted_place_fields");
+    place_fields = place_fields.place_fields;
     
     % We get the pyramidal cells for this session (same everywhere)
     pyramCells = lap_place_fields(1).Complete_Lap{1}.pyramidal_cells;
@@ -56,8 +59,11 @@ for cfile = sessions
     % conputation
     
     % For online participation
-    load(file + "\extracted_laps"); % Import table lap_times
-    load(file + "\extracted_clusters"); % Import table clusters
+    lap_times = load(file + "\extracted_laps"); % Import table lap_times
+    lap_times = lap_times.lap_times;
+
+    clusters = load(file + "\extracted_clusters"); % Import table clusters
+    clusters = clusters.clusters;
 
     % For replay
     % We switch the files we use depending on the track, so we store everything in a struct
@@ -76,10 +82,11 @@ for cfile = sessions
 
     sreStruct = struct("data", {sreRUN1, sreRUN2});
 
-    load(file + "\extracted_sleep_state"); % Import sleep_state
+    sleep_state = load(file + "\extracted_sleep_state"); % Import sleep_state
+    sleep_state = sleep_state.sleep_state;
     
     % We iterate over tracks
-    parfor track = 1:4
+    for track = 1:4
         
         % We find the number of laps
         nbLaps = min([lap_times(track).number_completeLaps, length(lap_place_fields(track).Complete_Lap)]);
@@ -138,12 +145,15 @@ for cfile = sessions
             
             % Center of mass - smoothed
             pfCenterMass = goodPFData.centre_of_mass(pyramCells);
+
+            % Information per spike 
+            infoPerSpike = goodPFData.skaggs_info(pyramCells) ./ goodPFData.mean_rate(pyramCells);
             
             % We can add those to our struct
             
             temp = struct("cell", {pyramCells}, "placeField", {placeField}, "partRUN", {partRUN}, "partReplayCurrentLap", {partReplayCurrentLap}, ...
                     "isGoodPCCurrentLap", {isGoodPCCurrentLap}, "isGoodPCCurrentTrack", {isGoodPCCurrentTrack}, "pfMaxFRate", {pfMaxFRate}, ...
-                    "pfPeakPosition", {pfPeakPosition}, "pfCenterMass", {pfCenterMass});
+                    "pfPeakPosition", {pfPeakPosition}, "pfCenterMass", {pfCenterMass}, "infoPerSpike", {infoPerSpike});
             
             allLaps = [allLaps ; struct("lap", {lap}, "cellsData", {temp})];
             

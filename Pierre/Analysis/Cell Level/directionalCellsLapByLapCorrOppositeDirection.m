@@ -19,6 +19,7 @@ expositionV = [];
 emdV = [];
 diffSumV = [];
 peakLocChangeV = [];
+cmChangeV = [];
 
 %% Extraction & computation
 
@@ -57,17 +58,19 @@ parfor fileID = 1:length(sessions)
             directionalCells = union(directionalCellsRUN1, directionalCellsRUN2);
 
             
-            goodCells = union(directional_place_fields(1).place_fields.good_place_cells, ...
-            directional_place_fields(2).place_fields.good_place_cells);
-            
+            % Good Cells are good place cells on RUN2
+            goodCells = union(directional_place_fields(1).place_fields.track(track + 2).good_cells, ...
+                              directional_place_fields(2).place_fields.track(track + 2).good_cells);
+    
+                
             goodDirCells = intersect(goodCells, directionalCells); % To test with directional cells
 
-            goodDirCells = goodCells; % Test with all cells, not just directional
+            % goodDirCells = goodCells; % Test with all cells, not just directional
 
             % removeIdx = ismember(goodCells, directionalCells);
             % goodCellsWttDir = goodCells;
             % goodCellsWttDir(removeIdx) = [];
-            % goodDirCells = goodCellsWttDir(); % To test only non-directional cells
+            % goodDirCells = goodCellsWttDir; % To test only non-directional cells
 
             % Get the directional lap data
 
@@ -104,8 +107,8 @@ parfor fileID = 1:length(sessions)
                     if (max(pfDir1{cell}) + max(pfDir2{cell})) == 0
                         current_diffSum = NaN;
                     else
-                        current_diffSum = (max(pfDir1{cell}) - max(pfDir2{cell})) / ...
-                                      (max(pfDir1{cell}) + max(pfDir2{cell}));
+                        current_diffSum = (sum(pfDir1{cell}) - sum(pfDir2{cell})) / ...
+                                      (sum(pfDir1{cell}) + sum(pfDir2{cell}));
 
                         current_diffSum = abs(current_diffSum);
                     end
@@ -116,6 +119,15 @@ parfor fileID = 1:length(sessions)
                     [~, peakLocDir2] = max(pfDir2{cell});
 
                     peakLocChange = abs(peakLocDir1 - peakLocDir2);
+
+                    % Get the center of mass 
+
+                    x_bin_centres = 1:2:200;
+
+                    cmDir1 = sum(pfDir1{cell}.*x_bin_centres/sum(pfDir1{cell}));
+                    cmDir2 = sum(pfDir2{cell}.*x_bin_centres/sum(pfDir2{cell}));
+
+                    cmChange = abs(cmDir1 - cmDir2);
 
 
                     % Save the data
@@ -129,6 +141,7 @@ parfor fileID = 1:length(sessions)
                     emdV = [emdV; current_emd];
                     diffSumV = [diffSumV; current_diffSum];
                     peakLocChangeV = [peakLocChangeV; peakLocChange];
+                    cmChangeV = [cmChangeV; cmChange];
 
                 end
             end
@@ -142,16 +155,12 @@ conditionV(trackV == 1) = 16;
 newConditions = split(conditionV(trackV ~= 1), 'x');
 conditionV(trackV ~= 1) = newConditions(:, 2);
 
-data = table(animalV, conditionV, trackV, lapV, expositionV, cellV, emdV, diffSumV, peakLocChangeV);
-
-% We remove every row with corrV == NaN
-
-data(isnan(diffSumV), :) = [];
+data = table(animalV, conditionV, trackV, lapV, expositionV, cellV, emdV, cmChangeV, diffSumV, peakLocChangeV);
 
 
 % We mean by condition, exopsition and lap
 G = groupsummary(data, ["conditionV", "expositionV", "lapV"], ...
-                        "median", ["diffSumV", "emdV", "peakLocChangeV"]);
+                        "median", ["diffSumV", "emdV", "cmChangeV", "peakLocChangeV"]);
 
 allConditions = unique(conditionV);
 allConditions = allConditions([1, 3, 4, 5, 6, 2]); % Re-order the condition
@@ -369,6 +378,161 @@ xlabel("Lap")
 
 subplot(length(allConditions), 2, length(allConditions)*2);
 xlabel("Lap")
+
+%% Plotting loop - Peak location change (spatial metric)
+
+figure; 
+
+maxX = [];
+set_ylim = [0, 50];
+
+for i = 1:length(allConditions) % We iterate through conditions
+    current_condition = allConditions(i);
+    color = colors(allConditions == current_condition, :);
+    
+    % We get the lap data of the exposure
+    dataByLapExp1 = G(G.conditionV == current_condition & G.expositionV == 1, :);
+
+    % We crop the data depending on the condition number
+    dataByLapExp1 = dataByLapExp1(1:str2double(current_condition), :);
+
+    allLaps = dataByLapExp1.lapV;
+    allMean = dataByLapExp1.median_cmChangeV;
+    allStd = dataByLapExp1.median_cmChangeV;
+    allSE = allStd./sqrt(dataByLapExp1.GroupCount);
+
+    % We plot
+    subplot(length(allConditions), 2, 2*(i - 1) + 1)
+    
+    % If we're in condition 1 lap 1st exposure, we can't plot so we scatter
+    if str2double(current_condition) == 1
+        errorbar(allLaps, allMean, allSE, "o", "MarkerSize", 5, "MarkerFaceColor", color);
+    else
+        errorbar(allLaps, allMean, allSE, 'Color', color, 'LineWidth', 2);
+    end
+
+    xlim([1, 16]);
+    ylim(set_ylim);
+    title("Condition : " + current_condition + " laps - First exposure")
+
+    maxX(end + 1) = max(dataByLapExp1.median_cmChangeV);
+    
+    % We get the lap data of the reexposure
+    dataByLapExp2 = G(G.conditionV == current_condition & G.expositionV == 2, :);
+    % We crop the data at lap 16
+    dataByLapExp2 = dataByLapExp2(1:16, :);
+
+    allLaps = dataByLapExp2.lapV;
+    allMean = dataByLapExp2.median_cmChangeV;
+    allStd = dataByLapExp2.median_cmChangeV;
+    allSE = allStd./sqrt(dataByLapExp2.GroupCount);
+    
+    % We plot
+    subplot(length(allConditions), 2, 2*(i - 1) + 2)
+    errorbar(allLaps, allMean, allSE, 'Color', color, 'LineWidth', 2);
+
+    xlim([1, 16]);
+    ylim(set_ylim);
+    title("Condition : " + current_condition + " laps - Re-exposure")
+    
+    maxX(end + 1) = max(dataByLapExp2.median_cmChangeV);    
+end
+
+subplot(length(allConditions), 2, 5);
+ylabel("Median CM change between place field in opposite directions")
+
+subplot(length(allConditions), 2, 6);
+ylabel("Median CM change between place field in opposite directions")
+
+subplot(length(allConditions), 2, length(allConditions)*2 - 1);
+xlabel("Lap")
+
+subplot(length(allConditions), 2, length(allConditions)*2);
+xlabel("Lap")
+
+%% Sorted cell plot for directionality
+
+colorFunc = @(x) 1-x;
+
+
+for c = 1:length(allConditions(1:end - 1))
+    condition = allConditions(c);
+
+    figure;
+
+    uniqueAnimals = unique(data.animalV);
+
+    % one subplot per animal
+    t = tiledlayout(length(uniqueAnimals), 1);
+    
+    for a = 1:length(uniqueAnimals)
+
+        nexttile;
+
+        animal = uniqueAnimals(a);
+        currentData = data(data.conditionV == condition & data.animalV == animal, :);
+
+        % We crop based on the condition
+        intCond = str2double(condition);
+
+        toDelete = (currentData.expositionV == 1 & currentData.lapV > intCond) | ...
+            (currentData.expositionV == 2 & currentData.lapV > 16);
+
+        currentData(toDelete, :) = [];
+
+        if isempty(currentData)
+            continue; % If no data for that session, pass
+        end
+
+        % We get the number of lap during RUN1 (not always equal to condition)
+        numerLapRanRUN1 = max([currentData.lapV([currentData.expositionV] == 1)]);
+
+        % For re-exposure, we add numberLapRUN1 to get a continuous
+        % variable (laps are from 1 o x).
+
+        currentData.lapV(currentData.expositionV == 2) = currentData.lapV(currentData.expositionV == 2) + numerLapRanRUN1;
+
+        increment = 0;
+
+         % We add a line at sleep
+         xline(numerLapRanRUN1 + 0.5, ['k--'], 'LineWidth', 2);
+         
+         % We get all the cells during the last lap
+         allCells = currentData.cellV(currentData.lapV == max(currentData.lapV));
+
+         % We sort the cells based on our metric
+         allDirec16Laps = currentData.diffSumV(currentData.lapV == max(currentData.lapV));
+         [~, sortIdx] = sort(allDirec16Laps, 'descend');
+         sortedCells = allCells(sortIdx);
+
+         % We create the viz matrix
+         dataMat = zeros(length(sortedCells), max([currentData.lapV]));
+
+        for cID = 1:length(sortedCells)
+            
+            cell = sortedCells(cID);
+
+            % We get the data we need for the plot
+            cellData = currentData(currentData.cellV == cell, :);
+
+            % Create the plot
+            hold on;
+            for i = 1:length(cellData.lapV)
+                % Now we find the color from blue to red depending on the diffSumV
+                colr = colorFunc(cellData.diffSumV(i));
+                dataMat(cID, i) = colr;
+            end
+        end
+
+        imagesc(dataMat);
+        colorbar
+
+        hold off;
+
+        title(condition + " - " + animal);
+
+    end
+end
 
 %% Functions
 

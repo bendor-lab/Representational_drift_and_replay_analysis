@@ -18,7 +18,6 @@ deltaVector = [];
 replayEventsVector = [];
 condition = [];
 animal = [];
-day = [];
 track = [];
 
 for cFile = sessions
@@ -27,12 +26,8 @@ for cFile = sessions
     
     file = cFile{1};
     
-    [animalOI, conditionOI, dayOI] = parseNameFile(file); % We get the informations about the current data
-    
-    if animalOI == "N-BLU" && conditionOI == "16x4" % For now, we need to exclude N-BLU, 16x4 because no data
-        continue;
-    end
-    
+    [animalOI, conditionOI] = parseNameFile(file); % We get the informations about the current data
+
     matchingLineDataBool = string({population_vector_laps.animal}) == animalOI & string({population_vector_laps.condition}) == conditionOI;
     
     matchingLinesData = population_vector_laps(matchingLineDataBool);
@@ -48,8 +43,8 @@ for cFile = sessions
     corrLEndRun1T2 = median(mLDR1T2.allLaps(end).pvCorrelationNorm, 'omitnan');
     corrL1Run2T2 = median(mLDR2T2.allLaps(1).pvCorrelationNorm, 'omitnan');
     deltaT2 = corrL1Run2T2 - corrLEndRun1T2;
-        
-    load(file + "\significant_replay_events.mat");
+
+    load(file + "\Replay\RUN1_Decoding\significant_replay_events_wcorr.mat");
     load(file + "\extracted_sleep_state.mat");
     
     SleepStart = sleep_state.state_time.INTER_post_start;
@@ -67,19 +62,17 @@ for cFile = sessions
     deltaVector = [deltaVector deltaT1 deltaT2];
     condition = [condition string(conditionOI) string(conditionOI)];
     animal = [animal string(animalOI) string(animalOI)];
-    day = [day string(dayOI) string(dayOI)];
     track = [track 1 2];
     
 end
 
 animal = animal';
 condition = condition';
-day = day';
 deltaCorrelation = deltaVector';
 nbReplayEvents = replayEventsVector';
 track = track';
 
-data = table(animal, condition, day, track, deltaCorrelation, nbReplayEvents);
+data = table(animal, condition, track, deltaCorrelation, nbReplayEvents);
 
 dataT1 = data(mod(data.track, 2) == 1, :);
 dataT2 = data(mod(data.track, 2) == 0, :);
