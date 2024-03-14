@@ -1,3 +1,5 @@
+% generate a file with neural traj per lap
+
 clear
 
 currentPath = data_folders_excl_legacy;
@@ -111,5 +113,5 @@ end
 
 t = rmmissing(t);
 
-writetable(t, "neuralData_MBLU-8.csv")
+writetable(t, "neuralData_cross_validation.csv")
 
