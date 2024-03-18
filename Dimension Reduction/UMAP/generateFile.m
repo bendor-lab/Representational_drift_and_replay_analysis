@@ -1,16 +1,23 @@
 clear
 
 currentPath = data_folders_excl_legacy;
-currentPath = currentPath{4};
+currentPath = currentPath{3};
+
+direction = 1;
+unilateral = 2; % 2 for unilateral, 1 for bi
+groupBy = 1;
+
 
 % Load the data
 
 load(currentPath + "/extracted_laps");
 load(currentPath + "/extracted_clusters");
-load(currentPath + "/extracted_place_fields_BAYESIAN");
+load(currentPath + "/extracted_place_fields");
+load(currentPath + "/extracted_directional_place_fields");
+
 load(currentPath + "/extracted_position");
 
-trackOI = 1;
+trackOI = 3;
 
 positionArray = position.linear(trackOI).linear;
 
@@ -42,9 +49,6 @@ for cID = 1:length(allCells)
     histBinned(cID, :) = spikeCounts;
 end
 
-% We filter the hist with only good place cells
-% histBinned = histBinned(place_fields_BAYESIAN.good_place_cells, :);
-
 % We smooth using a 500 ms gaussian kernel
 histBinned = smoothdata(histBinned, 2, "gaussian", 5);
 
@@ -65,12 +69,10 @@ histBinned(:, interp_speed < 5) = NaN;
 runningTimes = zeros(1, length(binEdges) - 1);
 lapVector = zeros(1, length(binEdges) - 1);
 
-direction = 1;
-halfLaps = direction:2:length(lap_times(trackOI).halfLaps_start);
+halfLaps = direction:unilateral:length(lap_times(trackOI).halfLaps_start);
 nbLaps = numel(halfLaps);
 
-nb_clusters = nbLaps;
-labels = floor(halfLaps * (nb_clusters/2) / nbLaps) + 1;
+labels = floor(halfLaps * (floor(nbLaps/groupBy)/2) / nbLaps);
 
 for lid = 1:nbLaps
 
@@ -90,16 +92,29 @@ idleTimes = not(runningTimes);
 %  We NaN those times in the hist
 histBinned(:, idleTimes) = NaN;
 lap = lapVector';
+speed = interp_speed(1:end-1)';
 
 x = x';
 
 % Now we can pivot the hist, add info and export to csv
 
 histBinned = histBinned';
-% cellLabel = place_fields_BAYESIAN.good_place_cells;
-cellLabel = allCells;
 
-t = table(x, lap);
+% cellLabel = place_fields_BAYESIAN.other_cells;
+% cellLabel = allCells(~ismember(allCells, place_fields.track(trackOI).good_cells));
+% cellLabel = place_fields.track(trackOI).good_cells;
+cellLabel = allCells;
+% 
+% pfDir1 = directional_place_fields(1).place_fields.track(trackOI).smooth;
+% pfDir2 = directional_place_fields(2).place_fields.track(trackOI).smooth;
+% [directionalCells, ~] = getDirectionalCells(pfDir1, pfDir2);
+% % cellLabel = directionalCells;
+% cellLabel = allCells(~ismember(allCells, directionalCells));
+
+% We filter if needed
+histBinned = histBinned(:, cellLabel);
+
+t = table(x, lap, speed);
 
 for c = 1:numel(cellLabel)
     cell = cellLabel(c);
@@ -112,4 +127,16 @@ end
 t = rmmissing(t);
 
 writetable(t, "neuralData_MBLU-8.csv")
+
+% Function to get directional place cells based on Foster 2008 criteria
+% Note : does not filters out bad place cells / non-pyramidal pc
+
+function [directionalCells, dirOP] = getDirectionalCells(pfDir1, pfDir2)
+peakDir1 = cellfun(@(x) max(x), pfDir1);
+peakDir2 = cellfun(@(x) max(x), pfDir2);
+
+directionalCells = find(peakDir1./peakDir2 >= 2 | peakDir1./peakDir2 <= 0.5);
+dirOP = (peakDir1./peakDir2 >= 2)*1 + (peakDir1./peakDir2 <= 0.5)*2;
+dirOP = dirOP(directionalCells);
+end
 

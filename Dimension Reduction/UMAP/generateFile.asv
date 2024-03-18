@@ -1,7 +1,7 @@
 clear
 
 currentPath = data_folders_excl_legacy;
-currentPath = currentPath{2};
+currentPath = currentPath{4};
 
 % Load the data
 
@@ -10,7 +10,7 @@ load(currentPath + "/extracted_clusters");
 load(currentPath + "/extracted_place_fields_BAYESIAN");
 load(currentPath + "/extracted_position");
 
-trackOI = 3;
+trackOI = 1;
 
 positionArray = position.linear(trackOI).linear;
 
@@ -69,15 +69,19 @@ direction = 1;
 halfLaps = direction:2:length(lap_times(trackOI).halfLaps_start);
 nbLaps = numel(halfLaps);
 
-for half_lap = 1:2:length(lap_times(trackOI).halfLaps_start)
+groupBy = 2;
+labels = floor(halfLaps * (floor(nbLaps/groupBy)/2) / nbLaps);
+
+for lid = 1:nbLaps
+
+    half_lap = halfLaps(lid);
+    label = labels(lid);
 
     runningTimes(binEdges <= lap_times(trackOI).halfLaps_stop(half_lap) & ...
         binEdges >= lap_times(trackOI).halfLaps_start(half_lap)) = 1;
 
-    label_lap = floor(half_lap / (length(lap_time) )
-
     lapVector(binEdges <= lap_times(trackOI).halfLaps_stop(half_lap) & ...
-        binEdges >= lap_times(trackOI).halfLaps_start(half_lap)) = (half_lap-1)/2;
+        binEdges >= lap_times(trackOI).halfLaps_start(half_lap)) = label;
 
 end
 
@@ -92,8 +96,11 @@ x = x';
 % Now we can pivot the hist, add info and export to csv
 
 histBinned = histBinned';
-% cellLabel = place_fields_BAYESIAN.good_place_cells;
-cellLabel = allCells;
+cellLabel = place_fields_BAYESIAN.track()good_place_cells;
+% cellLabel = allCells;
+
+% We filter if needed
+histBinned = histBinned(cellLabel, :);
 
 t = table(x, lap);
 

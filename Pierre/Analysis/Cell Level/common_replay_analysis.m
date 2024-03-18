@@ -227,44 +227,44 @@ title(t, "Number of disapearing cells that co-replayed");
 
 %% We then create the weight matrix between each cell
 
-% weightMat = zeros(numel(cell), numel(cell));
-%
-% for c1 = 1:numel(cell)
-%     for c2 = 1:numel(cell)
-%
-%         % We get the ID of the replay events, and the number of common RE
-%
-%         nbCommonReplay = sum(ismember(replayIndices{c1}, replayIndices{c2}));
-%         totalNbReplay = sum(length(replayIndices{c1}) + length(replayIndices{c2}));
-%
-%         if c1 == c2
-%             weightMat(c1, c2) = 0;
-%             continue;
-%         end
-%
-%         if totalNbReplay == 0
-%             totalNbReplay = 1;
-%         end
-%
-%         weightMat(c1, c2) = nbCommonReplay/totalNbReplay;
-%     end
-% end
-%
-% nameNodes = string(cell);
-%
-% % Create the graph
-% G = graph(weightMat, nameNodes);
-% h = plot(G, 'Layout','force');
-%
-% numlinks = degree(G) + 1;
-% h.MarkerSize = numlinks/4;
-%
-% highlight(h, nameNodes(label == "Appear"),'NodeColor','g')
-% highlight(h, nameNodes(label == "Disapear"),'NodeColor','r')
-% highlight(h, nameNodes(label == "Unstable"),'NodeColor','k')
-% highlight(h, nameNodes(label == "Stable"),'NodeColor','m')
-%
-%
+weightMat = zeros(numel(cell), numel(cell));
+
+for c1 = 1:numel(cell)
+    for c2 = 1:numel(cell)
+
+        % We get the ID of the replay events, and the number of common RE
+
+        nbCommonReplay = sum(ismember(replayIndices{c1}, replayIndices{c2}));
+        totalNbReplay = sum(length(replayIndices{c1}) + length(replayIndices{c2}));
+
+        if c1 == c2
+            weightMat(c1, c2) = 0;
+            continue;
+        end
+
+        if totalNbReplay == 0
+            totalNbReplay = 1;
+        end
+
+        weightMat(c1, c2) = nbCommonReplay/totalNbReplay;
+    end
+end
+
+nameNodes = string(cell);
+
+% Create the graph
+G = graph(weightMat, nameNodes);
+h = plot(G, 'Layout','force');
+
+numlinks = degree(G) + 1;
+h.MarkerSize = numlinks/4;
+
+highlight(h, nameNodes(label == "Appear"),'NodeColor','g')
+highlight(h, nameNodes(label == "Disapear"),'NodeColor','r')
+highlight(h, nameNodes(label == "Unstable"),'NodeColor','k')
+highlight(h, nameNodes(label == "Stable"),'NodeColor','m')
+
+
 
 function [] = boxplotMetric(data, metric, title)
 
