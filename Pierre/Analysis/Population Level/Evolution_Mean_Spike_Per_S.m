@@ -9,7 +9,7 @@ exposition = [];
 lap = [];
 spikePerS = [];
 
-parfor i = 1:numel(allPaths)
+for i = 1:numel(allPaths)
     currentPath = allPaths{i};
     disp(i);
 
@@ -37,7 +37,7 @@ parfor i = 1:numel(allPaths)
 
             trackOI = cTrack + (cExposition == 2)*2;
 
-            opposite_track = mod(cTrack, 2)*2 + mod(cTrack + 1, 2)
+            opposite_track = mod(cTrack, 2)*2 + mod(cTrack + 1, 2);
 
             positionArray = position.linear(trackOI).linear;
 
@@ -70,8 +70,14 @@ parfor i = 1:numel(allPaths)
             end
 
             % We filter the hist with only good place cells
-            histBinned = histBinned(union(place_fields_BAYESIAN.track(cTrack + 2).good_cells, ...
-                                    place_fields_BAYESIAN.track(opposite_track + 2).good_cells), :);
+
+            % goodCells = union(place_fields_BAYESIAN.track(cTrack + 2).good_cells, ...
+            %                 place_fields_BAYESIAN.track(opposite_track + 2).good_cells);
+
+            goodCells = xor(ismember(allCells, place_fields_BAYESIAN.track(cTrack + 2).good_cells), ...
+                            ismember(allCells, place_fields_BAYESIAN.track(opposite_track + 2).good_cells));
+
+            histBinned = histBinned(goodCells, :);
 
             % We smooth using a 500 ms gaussian kernel
             % histBinned = smoothdata(histBinned, 2, "gaussian", 5);

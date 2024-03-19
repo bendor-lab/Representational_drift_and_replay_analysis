@@ -26,7 +26,7 @@ diffsumInt = @(pf1, pf2) abs(sum(pf1) - sum(pf2)) / (sum(pf1) + sum(pf2));
 
 %% Extraction & computation
 
-parfor fileID = 1:length(sessions)
+for fileID = 1:length(sessions)
     disp(fileID);
     file = sessions{fileID}; % We get the current session
     [animalOI, conditionOI] = parseNameFile(file); % We get the informations about the current data
@@ -91,8 +91,8 @@ parfor fileID = 1:length(sessions)
         % For each cell, we create the final place field
         for cellID = 1:length(place_fields.track(track + 2).smooth)
             temp = [];
-            for lap = 0:15
-                temp = [temp; RUN2LapPFData{numberLapsRUN2 - lap}.smooth{cellID}];
+            for lap = 1:5
+                temp = [temp; RUN2LapPFData{16 + lap}.smooth{cellID}];
             end
             finalPlaceField(end + 1) = {mean(temp, 'omitnan')};
         end
@@ -173,7 +173,7 @@ conditionV(trackV ~= 1) = newConditions(:, 2);
 conditionV = str2double(conditionV);
 
 
-data = table(animalV, conditionV, trackV, cellV, refinCMV, refinFRV, refinPeakV, partP1RepV, partP1RepOtherV);
+data2 = table(animalV, conditionV, trackV, cellV, refinCMV, refinFRV, refinPeakV, partP1RepV, partP1RepOtherV);
 
 %% Inferential stats : more refinement when less laps ?
 
@@ -210,3 +210,8 @@ disp(lm);
 
 figure;
 plot(lm)
+
+%% Mixed model with all the data
+
+lme = fitlme(data, "refinPeakV ~ conditionV + partP1RepV + (1|animalV)");
+disp(lme)

@@ -1,5 +1,5 @@
 % Function to get the sleep replay between certain timestamps
-% Only consider sleeping times !
+% Only consider the cumulative first 30 minutes of sleeping times !
 
 function [allMatchingReplay] = getAllSleepReplay(track, startTime,stopTime, significant_replay_events, sleep_state)
 
@@ -13,6 +13,13 @@ stateVec(stateVec == -1) = 0; % We convert to a logical
 stateVec = logical(stateVec);
 timeVec = timeVec(timeVec <= stopTime & timeVec >= startTime);
 
+% We find when the cumulative duration of sleep is bigger than 30 minutes, 
+% and we switch everything after to 0 (awake)
+
+cumsumSleep = cumsum(stateVec);
+id30Minutes = find(cumsumSleep >= 1800/freq, 1);
+stateVec(id30Minutes:end) = 0;
+
 % Now we return all the replay events in that range
 
 allTimesReplay = significant_replay_events.track(track).event_times;
@@ -20,14 +27,14 @@ allTimesReplay = significant_replay_events.track(track).event_times;
 allMatchingReplay = [];
 
 for re = 1:numel(allTimesReplay)
-    % Find the minute where the replay happend
-    findMinute = histcounts(allTimesReplay(re), [timeVec timeVec(end) + freq]);
+    % Find the timebin where the replay happend
+    findTB = histcounts(allTimesReplay(re), [timeVec timeVec(end) + freq]);
 
-    % remove all the minutes when the animal was awake
-    findMinute(~stateVec) = 0;
+    % remove all the timebin when the animal was awake
+    findTB(~stateVec) = 0;
 
     % Now, if the replay event is still here, it's saved
-    if sum(findMinute) ~= 0
+    if sum(findTB) ~= 0
         allMatchingReplay = [allMatchingReplay; re];
     end
 end

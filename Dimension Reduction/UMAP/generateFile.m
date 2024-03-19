@@ -1,12 +1,18 @@
 clear
 
 currentPath = data_folders_excl_legacy;
-currentPath = currentPath{3};
+currentPath = currentPath{2};
 
 direction = 1;
 unilateral = 2; % 2 for unilateral, 1 for bi
 groupBy = 1;
+speed_th = 5;
 
+trackOI = 3;
+
+% Parameters for the speed filter
+
+trigger_position = 15; % 15 cm before the end / after the start
 
 % Load the data
 
@@ -14,27 +20,29 @@ load(currentPath + "/extracted_laps");
 load(currentPath + "/extracted_clusters");
 load(currentPath + "/extracted_place_fields");
 load(currentPath + "/extracted_directional_place_fields");
-
 load(currentPath + "/extracted_position");
 
-trackOI = 3;
-
-positionArray = position.linear(trackOI).linear;
 
 % Start and end times of the whole session
-
 startTime = lap_times(trackOI).completeLaps_start(1);
 endTime = lap_times(trackOI).completeLaps_stop(end);
 
+% Get the position of the animal across time
+positionArray = position.linear(trackOI).linear;
 timePositionBool = position.t <= endTime & position.t >= startTime;
 positionArray = positionArray(timePositionBool);
+% Get the speed of the animal at each time
+position_speed = abs(position.v_cm);
 
+% Create the new time vector - .100 s
 binEdges = startTime:0.100:endTime + 0.100;  % Create bins of timeBin intervals
 
+% Interpolate the position and the speed at each one of these times
 x = interp1(position.t(timePositionBool), positionArray, binEdges(1:end-1), 'nearest');
+interp_speed = interp1(position.t(timePositionBool), position_speed(timePositionBool), ...
+    binEdges, 'nearest');
 
 % We create a big histogram of each spike of each cell
-
 allCells = unique(clusters.spike_id);
 histBinned = zeros(length(allCells), length(binEdges) - 1);
 
@@ -52,19 +60,47 @@ end
 % We smooth using a 500 ms gaussian kernel
 histBinned = smoothdata(histBinned, 2, "gaussian", 5);
 
-% We speed filter
+% Direction filtering
 
-% Get the speed of the animal at each time
-position_speed = abs(position.v_cm);
-% Get the speed of the animal at every timebin
-interp_speed = interp1(position.t(timePositionBool), position_speed(timePositionBool), ...
-                       binEdges, 'nearest');
+% if unilateral ~= 1
+%
+%     % We filter to get only data from when the animal is headed towards ONE direction
+%     % In lap_times, direction 1 is 200 -> 0 and -1 is reversed
+%
+%     headedDir = sign(diff(x));
+%     if direction == 1
+%         % We take the direction of the first lap
+%         dirWanted = lap_times(trackOI).initial_dir;
+%     else
+%         % We take the opposite direction
+%         dirWanted = (-1)*lap_times(trackOI).initial_dir;
+%     end
+%
+%     % Now we NaN every position that's when the animal is headed in the
+%     % wrong direction
+%     headedDir = [0 headedDir]; % Add an element to the front cause one less
+%     headedDir(headedDir == 0) = dirWanted;
+%     x(headedDir ~= dirWanted) = NaN;
+% end
+
+% Speed filtering
 % NaN the rows of the hist where the speed is less than 5 cm / s
-histBinned(:, interp_speed < 5) = NaN;
+histBinned(:, interp_speed < speed_th) = NaN;
 
-% We remove all the times in the hist that are not running
-% RunningTimes contains only time values inside laps
-% Note : Speed Filter does the job usually
+% Position filtering
+
+% We find all the moments where the position was less / more than our
+% threshold
+
+xLessTh = x < trigger_position;
+xSupTh = x > 200 - trigger_position;
+
+% We NaN all the values not in our threshold
+x(xLessTh | xSupTh) = NaN;
+
+
+% We extract all the half laps we're interested in with the bool
+% runningTimes
 
 runningTimes = zeros(1, length(binEdges) - 1);
 lapVector = zeros(1, length(binEdges) - 1);
@@ -72,7 +108,16 @@ lapVector = zeros(1, length(binEdges) - 1);
 halfLaps = direction:unilateral:length(lap_times(trackOI).halfLaps_start);
 nbLaps = numel(halfLaps);
 
-labels = floor(halfLaps * (floor(nbLaps/groupBy)/2) / nbLaps);
+if unilateral == 2
+    numberWholeGroups = floor(nbLaps/groupBy);
+    numberMod = mod(nbLaps, groupBy);
+    labels = repelem(1:numberWholeGroups, groupBy);
+    if numberMod ~= 0
+        labels(end+1:end+numberMod) = repelem(numberWholeGroups + 1, numberMod);
+    end
+else
+    labels = 1:nbLaps;
+end
 
 for lid = 1:nbLaps
 
@@ -87,32 +132,33 @@ for lid = 1:nbLaps
 
 end
 
-idleTimes = not(runningTimes);
+% We NaN if not running
+histBinned(:, ~logical(runningTimes)) = NaN;
 
-%  We NaN those times in the hist
-histBinned(:, idleTimes) = NaN;
+% We flip the data vectors to create a table
 lap = lapVector';
 speed = interp_speed(1:end-1)';
-
 x = x';
 
-% Now we can pivot the hist, add info and export to csv
-
+% Now we can pivot the hist
 histBinned = histBinned';
 
+% We filter the cells we want to study
+
 % cellLabel = place_fields_BAYESIAN.other_cells;
-% cellLabel = allCells(~ismember(allCells, place_fields.track(trackOI).good_cells));
-% cellLabel = place_fields.track(trackOI).good_cells;
+% cellLabel = allCells(~ismember(allCells, union(place_fields.track(track).good_cells, place_fields.track(track + 2).good_cells)));
+% cellLabel = union(place_fields.track(track).good_cells, place_fields.track(track + 2).good_cells);
 cellLabel = allCells;
-% 
+
 % pfDir1 = directional_place_fields(1).place_fields.track(trackOI).smooth;
 % pfDir2 = directional_place_fields(2).place_fields.track(trackOI).smooth;
 % [directionalCells, ~] = getDirectionalCells(pfDir1, pfDir2);
 % % cellLabel = directionalCells;
 % cellLabel = allCells(~ismember(allCells, directionalCells));
 
-% We filter if needed
 histBinned = histBinned(:, cellLabel);
+
+% We save the data
 
 t = table(x, lap, speed);
 
@@ -128,6 +174,9 @@ t = rmmissing(t);
 
 writetable(t, "neuralData_MBLU-8.csv")
 
+%%
+
+
 % Function to get directional place cells based on Foster 2008 criteria
 % Note : does not filters out bad place cells / non-pyramidal pc
 
@@ -139,4 +188,6 @@ directionalCells = find(peakDir1./peakDir2 >= 2 | peakDir1./peakDir2 <= 0.5);
 dirOP = (peakDir1./peakDir2 >= 2)*1 + (peakDir1./peakDir2 <= 0.5)*2;
 dirOP = dirOP(directionalCells);
 end
+
+
 
