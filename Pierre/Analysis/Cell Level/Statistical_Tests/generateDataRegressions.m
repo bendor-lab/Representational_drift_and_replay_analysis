@@ -4,7 +4,12 @@ clear
 PATH.SCRIPT = fileparts(mfilename('fullpath'));
 cd(PATH.SCRIPT)
 
-sessions = data_folders_excl_legacy; % We fetch all the sessions folders paths
+sessions = data_folders_excl; % We fetch all the sessions folders paths
+
+% We create identifiers for cells from each session. 
+% Format is : IDENT-00-XXX
+identifiers = 1:numel(sessions); 
+identifiers = identifiers* 1000;
 
 % Arrays to hold all the data
 
@@ -18,6 +23,7 @@ refinFR = [];
 refinPeak = [];
 
 partP1Rep = [];
+propPartRep = []; % % of replay participated in 
 
 % We take the absolute value of the difference over sum to get the relative
 % distance with the FPF, independently of the direction
@@ -25,7 +31,7 @@ diffSum = @(x1, x2) abs(x1 - x2)/(x1 + x2);
 
 %% Extraction & computation
 
-for fileID = 1:length(sessions)
+parfor fileID = 1:length(sessions)
 
     disp(fileID);
     file = sessions{fileID}; % We get the current session
@@ -33,11 +39,7 @@ for fileID = 1:length(sessions)
 
     animalOI = string(animalOI);
     conditionOI = string(conditionOI); % We convert everything to string
-
-    if fileID == 5
-        continue;
-    end
-
+    ident = identifiers(fileID); % We get the identifier for the session
 
     % Load the variables
 
@@ -51,15 +53,14 @@ for fileID = 1:length(sessions)
 
     for trackOI = 1:2
 
-        % Good cells : cells that become good place cells on RUN2
+        % Good cells : Cells that where good place cells during RUN1 / RUN2
 
-        goodCells = place_fields.track(trackOI + 2).good_cells;
+        goodCells = union(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
 
         % We get the replay participation
 
         % Fetch the significant replay events
-        % temp = load(file + "\Replay\RUN1_Decoding\significant_replay_events_wcorr");
-        temp = load(file + "\Bayesian controls\Only first exposure\significant_replay_events_wcorr");
+        temp = load(file + "\Replay\RUN1_Decoding\significant_replay_events_wcorr");
         significant_replay_events = temp.significant_replay_events;
 
         RE_current_track = significant_replay_events.track(trackOI);
@@ -72,6 +73,8 @@ for fileID = 1:length(sessions)
 
         % We get the IDs of all the sleep replay events
         goodIDCurrent = getAllSleepReplay(trackOI, startTime, endTime, significant_replay_events, sleep_state);
+
+        nbReplay = numel(goodIDCurrent);
 
         filteredReplayEventsSpikesCurrent = RE_current_track.spikes(goodIDCurrent);
 
@@ -89,7 +92,7 @@ for fileID = 1:length(sessions)
         for cellID = 1:length(place_fields.track(trackOI + 2).smooth)
             temp = [];
 
-            for lap = 1:5
+            for lap = 1:6
                 temp = [temp; RUN2LapPFData{16 + lap}.smooth{cellID}];
             end
 
@@ -138,29 +141,32 @@ for fileID = 1:length(sessions)
 
             % We compute the metrics we're interested in
 
-            current_refinCM = abs(cmFPF(cellOI) - startRUN2CM) - abs(cmFPF(cellOI) - endRUN1CM);
+            current_refinCM = abs(cmFPF(cellOI) - endRUN1CM) - abs(cmFPF(cellOI) - startRUN2CM);
 
-            current_refinFR = diffSum(frFPF(cellOI), startRUN2MaxFR) ...
-                            - diffSum(frFPF(cellOI), endRUN1MaxFR);
+            current_refinFR = diffSum(frFPF(cellOI), endRUN1MaxFR) ...
+                            - diffSum(frFPF(cellOI), startRUN2MaxFR);
             
-            current_refinPeak = abs(peakFPF(cellOI) - startRUN2PeakLoc) - ...
-                                abs(peakFPF(cellOI) - endRUN1PeakLoc);
+            current_refinPeak = abs(peakFPF(cellOI) - endRUN1PeakLoc) - ...
+                                abs(peakFPF(cellOI) - startRUN2PeakLoc);
             
 
             % We get the replay participation of the cell - in nb of events
             replayInvolvedCurrent = cellfun(@(ev) any(ev(:, 1) == cellOI), filteredReplayEventsSpikesCurrent);
             current_partP1Rep = sum(replayInvolvedCurrent);
 
+            current_propPart = current_partP1Rep/nbReplay;
+
             % Save the data
 
             animal = [animal; animalOI];
             condition = [condition; conditionOI];
             track = [track; trackOI];
-            cell = [cell; cellOI];
+            cell = [cell; ident + cellOI];
             refinCM = [refinCM; current_refinCM];
             refinFR = [refinFR; current_refinFR];
             refinPeak = [refinPeak; current_refinPeak];
             partP1Rep = [partP1Rep; current_partP1Rep];
+            propPartRep = [propPartRep; current_propPart];
 
         end
     end
@@ -178,6 +184,6 @@ condition(track ~= 1) = newConditions(:, 2);
 condition = str2double(condition);
 
 
-data = table(animal, condition, cell, refinCM, refinFR, refinPeak, partP1Rep);
+data = table(animal, condition, cell, refinCM, refinFR, refinPeak, partP1Rep, propPartRep);
 
 save("dataRegression.mat", "data")

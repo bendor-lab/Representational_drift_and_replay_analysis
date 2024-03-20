@@ -1,4 +1,5 @@
-% Script to generate the data used for the statistical tests.
+% Generate the data for regressions
+% Related to the directionality of the cell
 
 clear
 PATH.SCRIPT = fileparts(mfilename('fullpath'));
@@ -18,20 +19,15 @@ condition = [];
 track = [];
 cell = [];
 
-refinCM = [];
-refinFR = [];
-refinPeak = [];
+refinDir = [];
 
 partP1Rep = [];
 propPartRep = []; % % of replay participated in 
 
-% We take the absolute value of the difference over sum to get the relative
-% distance with the FPF, independently of the direction
-diffSum = @(x1, x2) abs(x1 - x2)/(x1 + x2);
 
 %% Extraction & computation
 
-parfor fileID = 1:length(sessions)
+for fileID = 1:1 %length(sessions)
 
     disp(fileID);
     file = sessions{fileID}; % We get the current session
@@ -46,16 +42,21 @@ parfor fileID = 1:length(sessions)
     temp = load(file + "\extracted_place_fields.mat");
     place_fields = temp.place_fields;
 
-    temp = load(file + "\extracted_lap_place_fields.mat");
-    lap_place_fields = temp.lap_place_fields;
+    temp = load(file + "\extracted_directional_lap_place_fields.mat");
+    lap_directional_place_fields = temp.lap_directional_place_fields;
+
+    temp = load(file + "\extracted_directional_place_fields.mat");
+    directional_place_fields = temp.directional_place_fields;
+
+    temp = load(file + "\extracted_laps.mat");
+    lap_times = temp.lap_times;
 
     % Track loop
 
     for trackOI = 1:2
 
-        % Good cells : cells that become good place cells on RUN2
-
-        goodCells = place_fields.track(trackOI + 2).good_cells;
+        % Good cells : Cells that where good place cells during RUN1 / RUN2
+        goodCells = union(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
 
         % We get the replay participation
 
@@ -78,38 +79,68 @@ parfor fileID = 1:length(sessions)
 
         filteredReplayEventsSpikesCurrent = RE_current_track.spikes(goodIDCurrent);
 
+        % We get the place fields in each direction at each lap
+        RUN1LapDataDir1 = lap_directional_place_fields(trackOI).dir1.Complete_Lap;
+        RUN1LapDataDir2 = lap_directional_place_fields(trackOI).dir2.Complete_Lap;
+        RUN2LapDataDir1 = lap_directional_place_fields(trackOI + 2).dir1.Complete_Lap;
+        RUN2LapDataDir2 = lap_directional_place_fields(trackOI + 2).dir2.Complete_Lap;
+
+        % VERIFICATIONS : 
+        % 1. If the starting direction is different at the begginning of
+        % RUN1 and RUN2, we will take the opposite of the RUN2
+        % directionnality (to restore inbound / outbound order)
+
+        startDirRUN1 = lap_times(trackOI).initial_dir;
+        startDirRUN2 = lap_times(trackOI + 2).initial_dir;
+
+        if startDirRUN1 ~= startDirRUN2
+            correctionDir = -1;
+        else
+            correctionDir = 1;
+        end
+        
+        % 2. If number of half lap is odd, we remove one and we
+        % cut the data we just registered
+
+        nbHalfLapsRUN1 = numel(lap_times(trackOI).halfLaps_start);
+        nbHalfLapsRUN2 = numel(lap_times(trackOI + 2).halfLaps_start);
+
+        nbHalfLapsRUN1 = nbHalfLapsRUN1 - mod(nbHalfLapsRUN1, 2);
+        nbHalfLapsRUN2 = nbHalfLapsRUN2 - mod(nbHalfLapsRUN2, 2);
+
+        RUN1LapDataDir1 = RUN1LapDataDir1(1:nbHalfLapsRUN1/2);
+        RUN1LapDataDir2 = RUN1LapDataDir2(1:nbHalfLapsRUN1/2);
+        RUN2LapDataDir1 = RUN2LapDataDir1(1:nbHalfLapsRUN2/2);
+        RUN2LapDataDir2 = RUN2LapDataDir2(1:nbHalfLapsRUN2/2);
+
+        numberLapsRUN2 = length(nbHalfLapsRUN2/2);
+
         % We get the final place field : mean of the 6 laps following the
         % 16th lap of RUN2
-        
-        RUN1LapPFData = lap_place_fields(trackOI).Complete_Lap;
-        RUN2LapPFData = lap_place_fields(trackOI + 2).Complete_Lap;
+        % Here, we compute the FPF for each direction
 
-        numberLapsRUN2 = length(RUN2LapPFData);
-
-        finalPlaceField = {};
+        finalPlaceFieldDir1 = {};
+        finalPlaceFieldDir2 = {};
         
         % For each cell, we create the final place field
         for cellID = 1:length(place_fields.track(trackOI + 2).smooth)
             temp = [];
+            temp2 = [];
 
             for lap = 1:6
-                temp = [temp; RUN2LapPFData{16 + lap}.smooth{cellID}];
+                temp = [temp; RUN2LapDataDir1{16 + lap}.smooth{cellID}];
+                temp2 = [temp2; RUN2LapDataDir2{16 + lap}.smooth{cellID}];
             end
 
-            finalPlaceField(end + 1) = {mean(temp, 'omitnan')};
+            finalPlaceFieldDir1(end + 1) = {mean(temp, 'omitnan')};
+            finalPlaceFieldDir2(end + 1) = {mean(temp2, 'omitnan')};
         end
 
-        cmFPF = cellfun(@(x) sum(x.*(1:2:200)/sum(x)), finalPlaceField);
-        frFPF = cellfun(@max, finalPlaceField);
-        peakFPF = cellfun(@(x) find(x == max(x), 1), finalPlaceField);
+        % Here, we compute the directionnality of each cell as being the
+        % difference over sum of the max of the place field in direction
+        % 1 vs. 2. 1 is totally directional in dir 1, -1 is reverse.
 
-        % If the firing rate is 0 on the whole track, the CM calculation
-        % will return NaN. In that case, max firing rate and peak don't
-        % have sense, we can NaN  everything.
-
-        frFPF(isnan(cmFPF)) = NaN;
-        peakFPF(isnan(cmFPF)) = NaN;
-
+        dirFPF = cellfun(@(x, y) max(x) - max(), finalPlaceFieldDir1, finalPlaceFieldDir2);
 
         % Cell loop
         for cellID = 1:length(goodCells)
@@ -154,7 +185,7 @@ parfor fileID = 1:length(sessions)
             replayInvolvedCurrent = cellfun(@(ev) any(ev(:, 1) == cellOI), filteredReplayEventsSpikesCurrent);
             current_partP1Rep = sum(replayInvolvedCurrent);
 
-            
+            current_propPart = current_partP1Rep/nbReplay;
 
             % Save the data
 
@@ -166,6 +197,7 @@ parfor fileID = 1:length(sessions)
             refinFR = [refinFR; current_refinFR];
             refinPeak = [refinPeak; current_refinPeak];
             partP1Rep = [partP1Rep; current_partP1Rep];
+            propPartRep = [propPartRep; current_propPart];
 
         end
     end
@@ -183,6 +215,6 @@ condition(track ~= 1) = newConditions(:, 2);
 condition = str2double(condition);
 
 
-data = table(animal, condition, cell, refinCM, refinFR, refinPeak, partP1Rep);
+data = table(animal, condition, cell, refinCM, refinFR, refinPeak, partP1Rep, propPartRep);
 
 save("dataRegression.mat", "data")

@@ -29,5 +29,5 @@ parfor direcInd = 1:19
     
     % We can run the function
     extract_place_field_lap(0); % We set the bayesian option to 0, to have 2 cm bins
-    
+
 end

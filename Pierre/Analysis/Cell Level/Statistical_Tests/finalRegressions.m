@@ -1,5 +1,5 @@
 % Final regressions performed on the cell-level metrics :
-% Over sleep CM stabilisation (difference between 1st lap of RUN2 and 1st lap of RUN1 
+% Over sleep CM stabilisation (difference between 1st lap of RUN1 and 1st lap of RUN2
 % in CM with the Final Place Field)
 % Over sleep Peak Firing Rate stabilisation (normalised as the difference / sum)
 % Over sleep Peak Location stabilisation
@@ -21,7 +21,8 @@
 % doesn't change radically the results.
 
 % The models used will be mixed-models, with a random intercept for the
-% factor "animal". Each model will first be tested with an interaction. If
+% factor "animal".
+% Each model will first be tested with an interaction. If
 % N.S, the interaction will be removed.
 
 clear 
@@ -32,6 +33,9 @@ data = data.data;
 data.logConditionC = log(data.condition) - mean(log(data.condition));
 data.conditionC = data.condition - mean(data.condition);
 data.replayPartC = data.partP1Rep - mean(data.partP1Rep, "omitnan");
+data.propPartRepC = data.propPartRep - mean(data.propPartRep);
+
+%% Effect of condition and the ABSOLUTE quantity of replay
 
 %% Regressions - Interactions & log condition
 
@@ -39,8 +43,7 @@ data.replayPartC = data.partP1Rep - mean(data.partP1Rep, "omitnan");
 lme = fitlme(data, "refinCM ~ logConditionC * replayPartC + (1|animal)");
 disp(lme)
 
-% RESULTS : Significant interaction at .03. Effects of condition and
-% replay.
+% RESULTS : No significant interaction.
 
 % Max firing rate refinement
 lme = fitlme(data, "refinFR ~ logConditionC * replayPartC + (1|animal)");
@@ -56,47 +59,51 @@ disp(lme)
 
 %% Regressions - Log condition
 
+% Center of mass refinement
+lme = fitlme(data, "refinCM ~ logConditionC + replayPartC + (1|animal)");
+disp(lme)
+
+% RESULTS : Significant effect of condition, no effect of replay.
+
 % Max firing rate refinement
 lme = fitlme(data, "refinFR ~ logConditionC + replayPartC + (1|animal)");
 disp(lme)
 
-% RESULTS : Marginal effect of condition (.03), no effect of replay.
+% RESULTS : Significant effect of condition (.03), no effect of replay.
 
 % Peak firing rate 
 lme = fitlme(data, "refinPeak ~ logConditionC + replayPartC + (1|animal)");
 disp(lme)
 
-% RESULTS : Effect of condition. Tendential effect of replay (.07)
-
+% RESULTS : Effect of condition. No effect of replay.
 %% Regressions - Non logged condition
 
 % Center of mass refinement
 lme = fitlme(data, "refinCM ~ conditionC + replayPartC + (1|animal)");
 disp(lme)
 
-% RESULTS : Condition is still significant, replay is tendencial (.06)
+% RESULTS : Condition is still significant, no effect of replay
 
 % Max firing rate refinement
 lme = fitlme(data, "refinFR ~ conditionC + replayPartC + (1|animal)");
 disp(lme)
 
-% RESULTS : No change.
-
-% The results are not significant anymore.
+% RESULTS : Condition is not significant anymore. Tendencial
 
 % Peak firing rate 
 lme = fitlme(data, "refinPeak ~ conditionC + replayPartC + (1|animal)");
 disp(lme)
 
-% RESULTS : Condition is still significant, replay becomes marg.
-% significant (.04)
+% RESULTS : Condition is still significant, replay NS.
 
 %% Regressions - Interaction, Log Condition & animal-wise
 % Here, we take the mean of our metrics for each animal and condition
-summaryData = groupsummary(data, ["animal", "condition"], "median", ["partP1Rep", "refinCM", "refinFR", "refinPeak"]);
+summaryData = groupsummary(data, ["animal", "condition"], "median", ["partP1Rep", "refinCM", "refinFR", "refinPeak", "propPartRep"]);
 summaryData.logConditionC = log(summaryData.condition) - mean(log(summaryData.condition));
 summaryData.conditionC = summaryData.condition - mean(summaryData.condition);
 summaryData.replayPartC = summaryData.median_partP1Rep - mean(summaryData.median_partP1Rep, "omitnan");
+summaryData.propPartRepC = summaryData.median_propPartRep - mean(summaryData.median_propPartRep, "omitnan");
+
 
 % Center of mass refinement
 lme = fitlme(summaryData, "median_refinCM ~ logConditionC * replayPartC + (1|animal)");
@@ -128,13 +135,13 @@ disp(lme)
 lme = fitlme(summaryData, "median_refinFR ~ logConditionC + replayPartC + (1|animal)");
 disp(lme)
 
-% RESULTS : Except intercept, nothing significant
+% RESULTS : Nothing is significant
 
 % Peak firing rate 
 lme = fitlme(summaryData, "median_refinPeak ~ logConditionC + replayPartC + (1|animal)");
 disp(lme)
 
-% RESULTS : Condition is tendencial (.06), replay N.S
+% RESULTS : Condition is not significant anymore, replay N.S
 
 %% Regressions - Condition non logged & animal-wise
 
@@ -142,7 +149,7 @@ disp(lme)
 lme = fitlme(summaryData, "median_refinCM ~ conditionC + replayPartC + (1|animal)");
 disp(lme)
 
-% RESULTS : Condition becomes tendencial (.06)
+% RESULTS : Condition not significant
 
 % Max firing rate refinement
 lme = fitlme(summaryData, "median_refinFR ~ conditionC + replayPartC + (1|animal)");
@@ -154,4 +161,49 @@ disp(lme)
 lme = fitlme(summaryData, "median_refinPeak ~ conditionC + replayPartC + (1|animal)");
 disp(lme)
 
-% Replay become significant (.03), condition is still non-significant.
+% Replay NS, condition is still non-significant.
+
+
+%% Effect of condition and the RELATIVE quantity of replay
+% (replay participation / total number of replay)
+
+%% Regressions - Interactions & log condition
+
+% Center of mass refinement
+lme = fitlme(data, "refinCM ~ logConditionC * propPartRepC + (1|animal)");
+disp(lme)
+
+% RESULTS : No sig interaction, effect of condition.
+
+% Max firing rate refinement
+lme = fitlme(data, "refinFR ~ logConditionC * propPartRepC + (1|animal)");
+disp(lme)
+
+% RESULTS : No significant interaction.
+
+% Peak firing rate 
+lme = fitlme(data, "refinPeak ~ logConditionC * propPartRepC + (1|animal)");
+disp(lme)
+
+% RESULTS : No significant interaction.
+
+%% Regressions - Log condition
+
+% Center of mass refinement
+lme = fitlme(data, "refinCM ~ logConditionC + propPartRepC + (1|animal)");
+disp(lme)
+
+% Max firing rate refinement
+lme = fitlme(data, "refinFR ~ logConditionC + propPartRepC + (1|animal)");
+disp(lme)
+
+% RESULTS : Significant effect of condition, no effect of replay.
+
+% Peak firing rate 
+lme = fitlme(data, "refinPeak ~ logConditionC + propPartRepC + (1|animal)");
+disp(lme)
+
+% RESULTS : Effect of condition. No effect of replay.
+
+
+
