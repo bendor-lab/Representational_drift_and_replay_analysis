@@ -27,7 +27,7 @@
 
 clear 
 
-data = load("dataRegression.mat");
+data = load("dataRegressionXor.mat");
 data = data.data;
 
 data.logConditionC = log2(data.condition) - mean(log2(data.condition));
