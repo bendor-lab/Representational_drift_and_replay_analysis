@@ -1,9 +1,7 @@
 clear
 
 currentPath = data_folders_excl_legacy;
-currentPath = currentPath{6};
-
-track = 2;
+currentPath = currentPath{2};
 
 load(currentPath + "\replayEvents_bayesian_spike_count")
 load(currentPath + "\Bayesian controls\Only first exposure\significant_replay_events_wcorr")
@@ -15,78 +13,76 @@ load(currentPath + "/extracted_clusters");
 timePOST1Start = sleep_state.state_time.INTER_post_start;
 timePOST1Stop = sleep_state.state_time.INTER_post_end;
 
-binEdges = timePOST1Start:0.020:timePOST1Stop;  % Create bins of timeBin intervals
+histBinnedV = [];
+binEdgesV = [];
+idV = [];
+track = [];
 
-% We get all the sleep replay during POST1
-goodIndex = getAllSleepReplay(track, timePOST1Start, timePOST1Stop, significant_replay_events, sleep_state);
+for trackOI = 1:2
 
-allSpikesConcat = cell2mat(cellfun(@(x) x(:, 1)', ...
-    significant_replay_events.track(track).spikes(goodIndex), ...
-    'UniformOutput', false));
+    binEdges = timePOST1Start:0.020:timePOST1Stop;  % Create bins of timeBin intervals
 
-allTimesConcat = cell2mat(cellfun(@(x) x(:, 2)', ...
-    significant_replay_events.track(track).spikes(goodIndex), ...
-    'UniformOutput', false));
+    % We get all the sleep replay during POST1
+    goodIndex = getAllSleepReplay(trackOI, timePOST1Start, timePOST1Stop, significant_replay_events, sleep_state);
 
+    allSpikesConcat = cell2mat(cellfun(@(x) x(:, 1)', ...
+        significant_replay_events.track(trackOI).spikes(goodIndex), ...
+        'UniformOutput', false));
 
-idReplayVector = cellfun(@(x, y) (binEdges' >= x(1, 2) & binEdges' <= x(end, 2))*y, ...
-    significant_replay_events.track(track).spikes(goodIndex), ...
-    num2cell(goodIndex'), 'UniformOutput', false);
+    allTimesConcat = cell2mat(cellfun(@(x) x(:, 2)', ...
+        significant_replay_events.track(trackOI).spikes(goodIndex), ...
+        'UniformOutput', false));
 
-idReplayVector = cell2mat(idReplayVector);
+    idReplayVector = cellfun(@(x, y) (binEdges' >= x(1, 2) & binEdges' <= x(end, 2))*y, ...
+        significant_replay_events.track(trackOI).spikes(goodIndex), ...
+        num2cell(goodIndex'), 'UniformOutput', false);
 
-id = sum(idReplayVector, 2);
+    idReplayVector = cell2mat(idReplayVector);
 
-% We determine which cells to include
+    id = sum(idReplayVector, 2);
 
-% allCells = unique(clusters.spike_id);
-% allCells = union(place_fields.track(track).good_cells, place_fields.track(track + 2).good_cells);
-allCells = place_fields.pyramidal_cells;
+    % We determine which cells to include
 
-% We create a big histogram of each spike of each cell
-histBinned = zeros(length(allCells), length(binEdges) - 1);
+    % allCells = unique(clusters.spike_id);
+    allCells = place_fields.pyramidal_cells;
 
-for i = 1:length(allCells)
-    cell = allCells(i);
+    % allCells = union(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
 
-    % We get the histcount for that cell, and happend to the big hist
-    currentHist = histcounts(allTimesConcat(allSpikesConcat == cell), binEdges);
+    % We create a big histogram of each spike of each cell
+    histBinned = zeros(length(allCells), length(binEdges) - 1);
 
-    histBinned(i, :) = currentHist;
+    for i = 1:length(allCells)
+        cell = allCells(i);
+
+        % We get the histcount for that cell, and happend to the big hist
+        currentHist = histcounts(allTimesConcat(allSpikesConcat == cell), binEdges);
+
+        histBinned(i, :) = currentHist;
+    end
+
+    % We NaN every time that's not a replay time
+
+    id = id(1:end-1);
+    binEdges = binEdges(1:end-1)';
+
+    isReplayTime = logical(id);
+    histBinned(:, ~isReplayTime) = NaN;
+    histBinned = histBinned';
+
+    histBinnedV = [histBinnedV; histBinned];
+    binEdgesV = [binEdgesV; binEdges];
+    idV = [idV; id];
+    track = [track; repelem(trackOI, numel(id))'];
+
 end
 
-% We smooth using a 40  ms gaussian kernel
-histBinned = smoothdata(histBinned, 2, "gaussian", 2);
-
-
-% We NaN every time that's not a replay time
-
-id = id(1:end-1);
-binEdges = binEdges(1:end-1)';
-
-isReplayTime = logical(id);
-histBinned(:, ~isReplayTime) = NaN;
-histBinned = histBinned';
+histBinned = histBinnedV;
+binEdges = binEdgesV;
+id = idV;
 
 % We create a table with our variables, and we remove the NaN rows
 
-t = table(binEdges, id);
-
-order = zeros(length(t.id), 1);
-
-for i = 1:numel(goodIndex)
-    currentID = goodIndex(i);
-
-    if ~any(t.id == currentID)
-        continue;
-    end
-
-    toAdd = cumsum(t.id == currentID) .* ((t.id == currentID));
-    toAdd = toAdd / sum(t.id == currentID);
-    order = order + toAdd;
-end
-
-t.order = order;
+t = table(binEdges, track, id);
 
 for c = 1:numel(allCells)
     cell = allCells(c);
@@ -98,5 +94,9 @@ end
 
 t = rmmissing(t);
 
+% We can shuffle the hist
+% for col = 1:numel(allCells)
+%     t(:, 3 + col) = circshift(t(:, 3 + col), randi([0 numel(t(:, 3 + col))]));
+% end
 
 writetable(t, "replayData.csv")

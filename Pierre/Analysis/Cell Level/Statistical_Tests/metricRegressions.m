@@ -30,7 +30,7 @@ clear
 data = load("dataRegression.mat");
 data = data.data;
 
-data.logConditionC = log(data.condition) - mean(log(data.condition));
+data.logConditionC = log2(data.condition) - mean(log2(data.condition));
 data.conditionC = data.condition - mean(data.condition);
 data.replayPartC = data.partP1Rep - mean(data.partP1Rep, "omitnan");
 data.propPartRepC = data.propPartRep - mean(data.propPartRep);
@@ -88,7 +88,7 @@ disp(lme)
 lme = fitlme(data, "refinFR ~ conditionC + replayPartC + (1|animal)");
 disp(lme)
 
-% RESULTS : Condition is not significant anymore. Tendencial
+% RESULTS : NS
 
 % Peak firing rate 
 lme = fitlme(data, "refinPeak ~ conditionC + replayPartC + (1|animal)");
@@ -99,7 +99,7 @@ disp(lme)
 %% Regressions - Interaction, Log Condition & animal-wise
 % Here, we take the mean of our metrics for each animal and condition
 summaryData = groupsummary(data, ["animal", "condition"], "median", ["partP1Rep", "refinCM", "refinFR", "refinPeak", "propPartRep"]);
-summaryData.logConditionC = log(summaryData.condition) - mean(log(summaryData.condition));
+summaryData.logConditionC = log2(summaryData.condition) - mean(log2(summaryData.condition));
 summaryData.conditionC = summaryData.condition - mean(summaryData.condition);
 summaryData.replayPartC = summaryData.median_partP1Rep - mean(summaryData.median_partP1Rep, "omitnan");
 summaryData.propPartRepC = summaryData.median_propPartRep - mean(summaryData.median_propPartRep, "omitnan");

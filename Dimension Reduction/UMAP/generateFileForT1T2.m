@@ -177,8 +177,8 @@ for track = 1:2
 
         % cellLabel = place_fields_BAYESIAN.other_cells;
         % cellLabel = allCells(~ismember(allCells, union(place_fields.track(track).good_cells, place_fields.track(track + 2).good_cells)));
-        cellLabel = union(place_fields.track(track).good_cells, place_fields.track(track + 2).good_cells);
-        % cellLabel = place_fields.pyramidal_cells;
+        % cellLabel = union(place_fields.track(track).good_cells, place_fields.track(track + 2).good_cells);
+        cellLabel = place_fields.pyramidal_cells;
         % cellLabel = allCells;
 
         % pfDir1 = directional_place_fields(1).place_fields.track(trackOI).smooth;

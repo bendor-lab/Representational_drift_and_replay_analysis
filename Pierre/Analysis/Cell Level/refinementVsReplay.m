@@ -26,7 +26,7 @@ diffsumInt = @(pf1, pf2) abs(sum(pf1) - sum(pf2)) / (sum(pf1) + sum(pf2));
 
 %% Extraction & computation
 
-for fileID = 1:length(sessions)
+parfor fileID = 1:length(sessions)
     disp(fileID);
     file = sessions{fileID}; % We get the current session
     [animalOI, conditionOI] = parseNameFile(file); % We get the informations about the current data
@@ -173,7 +173,7 @@ conditionV(trackV ~= 1) = newConditions(:, 2);
 conditionV = str2double(conditionV);
 
 
-data2 = table(animalV, conditionV, trackV, cellV, refinCMV, refinFRV, refinPeakV, partP1RepV, partP1RepOtherV);
+data = table(animalV, conditionV, trackV, cellV, refinCMV, refinFRV, refinPeakV, partP1RepV, partP1RepOtherV);
 
 %% Inferential stats : more refinement when less laps ?
 

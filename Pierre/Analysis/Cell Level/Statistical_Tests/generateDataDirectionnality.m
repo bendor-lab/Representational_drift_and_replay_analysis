@@ -127,7 +127,7 @@ for fileID = 1:length(sessions)
             temp = [];
             temp2 = [];
 
-            for lap = 1:6
+            for lap = 1:5
                 temp = [temp; RUN2LapDataDir1{16 + lap}.smooth{cellID}];
                 temp2 = [temp2; RUN2LapDataDir2{16 + lap}.smooth{cellID}];
             end
@@ -194,4 +194,4 @@ condition = str2double(condition);
 
 data = table(animal, condition, cell, refinDir, partP1Rep, propPartRep);
 
-save("dataRegression.mat", "data")
+save("dataRegressionDirectionality.mat", "data")
