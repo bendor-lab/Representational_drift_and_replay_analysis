@@ -5,15 +5,14 @@ data = load("dataRegression.mat");
 data = data.data;
 set(0,'defaultfigurecolor',[1 1 1])
 
+%% 1. Stacked plot of sorted place field ----------------------------------
+
+%% A. Remapping Track 1 vs. Track 2
+
 session = data_folders_excl;
 session = session{6};
 
 load(session + "/extracted_place_fields.mat")
-load(session + "\extracted_lap_place_fields.mat")
-
-%% I. Stacked plot of sorted place field ----------------------------------
-
-%% a. Remapping Track 1 vs. Track 2
 
 goodCells = intersect(place_fields.track(3).good_cells, place_fields.track(4).good_cells);
 
@@ -47,7 +46,9 @@ stackPF(pfT2ST1, "Place fields on Track 2", "Cells (sorted by Track 1)");
 nexttile;
 stackPF(pfT2ST2, "Place fields on Track 2", "Cells (sorted by Track 2)");
 
-%% b. Remapping first vs. last lap RUN1
+%% B. Remapping first vs. last lap RUN1
+
+load(session + "\extracted_lap_place_fields.mat")
 
 goodCells = lap_place_fields(1).Complete_Lap{end}.good_cells;
 
@@ -76,7 +77,9 @@ mylabel = ylabel({"Cells          ", "(sorted by Lap 16)"}, "Rotation", 0, "Font
 nexttile;
 stackPF(pf_trackLapEnd(sortOrderLapEnd, :), "Place fields - Lap 16", "");
 
-%% c. Remapping last lap before sleep - first lap after sleep
+%% C. Remapping last lap before sleep - first lap after sleep
+
+load(session + "\extracted_lap_place_fields.mat")
 
 goodCells = lap_place_fields(4).Complete_Lap{1}.good_cells;
 
@@ -89,7 +92,7 @@ pf_trackEXP = normalize(pf_trackEXP, 2, "range");
 pf_trackREEXP = normalize(pf_trackREEXP, 2, "range");
 
 sortOrderLapEXP = findSortOrder(pf_trackEXP);
-sortOrderLapREEXP = findSortOrder(pf_trackREEXP);
+sortOrderLapEnd = findSortOrder(pf_trackREEXP);
 
 fig2 = figure;
 fig2.Position = [500, 500, 830,290];
@@ -98,30 +101,13 @@ set(gca,'fontname','times')  % Set it to times
 
 set(gcf,'color','w');
 nexttile;
-stackPF(pf_trackEXP(sortOrderLapREEXP, :), "Place fields - Lap before sleep", "");
+stackPF(pf_trackLap1(sortOrderLapEnd, :), "Place fields - Lap 1", "");
 
-mylabel = ylabel({"Cells                    ", "(sorted by first lap after sleep)"}, "Rotation", 0, "FontSize", 13);
+mylabel = ylabel({"Cells          ", "(sorted by Lap 16)"}, "Rotation", 0, "FontSize", 13);
 
 nexttile;
-stackPF(pf_trackREEXP(sortOrderLapREEXP, :), "Place fields - Lap after sleep", "");
+stackPF(pf_trackLapEnd(sortOrderLapEnd, :), "Place fields - Lap 16", "");
 
+%% 2. Refinement change with experience
 
-%% II. Remapping over laps -----------------------------------
-
-%% a. Population change
-
-% 1. PV - Correlation with the final place field
-
-
-
-% 2. PV- Correlation between one direction and the other (directionality)
-
-%% b. Cell change
-
-% 1. Center of mass
-
-% 2. Peak location
-
-% 3. Max firing rate
-
-
+% A. Center of Mass

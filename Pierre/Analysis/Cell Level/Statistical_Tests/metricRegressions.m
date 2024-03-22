@@ -96,73 +96,6 @@ disp(lme)
 
 % RESULTS : Condition is still significant, replay NS.
 
-%% Regressions - Interaction, Log Condition & animal-wise
-% Here, we take the mean of our metrics for each animal and condition
-summaryData = groupsummary(data, ["animal", "condition"], "median", ["partP1Rep", "refinCM", "refinFR", "refinPeak", "propPartRep"]);
-summaryData.logConditionC = log2(summaryData.condition) - mean(log2(summaryData.condition));
-summaryData.conditionC = summaryData.condition - mean(summaryData.condition);
-summaryData.replayPartC = summaryData.median_partP1Rep - mean(summaryData.median_partP1Rep, "omitnan");
-summaryData.propPartRepC = summaryData.median_propPartRep - mean(summaryData.median_propPartRep, "omitnan");
-
-
-% Center of mass refinement
-lme = fitlme(summaryData, "median_refinCM ~ logConditionC * replayPartC + (1|animal)");
-disp(lme)
-
-% RESULTS : No significant interaction.
-
-% Max firing rate refinement
-lme = fitlme(summaryData, "median_refinFR ~ logConditionC * replayPartC + (1|animal)");
-disp(lme)
-
-% RESULTS : No significant interaction.
-
-% Peak firing rate 
-lme = fitlme(summaryData, "median_refinPeak ~ logConditionC * replayPartC + (1|animal)");
-disp(lme)
-
-% RESULTS : No significant interaction
-
-%% Regressions - Log Condition & animal-wise
-
-% Center of mass refinement
-lme = fitlme(summaryData, "median_refinCM ~ logConditionC + replayPartC + (1|animal)");
-disp(lme)
-
-% RESULTS : Condition is significant, not replay.
-
-% Max firing rate refinement
-lme = fitlme(summaryData, "median_refinFR ~ logConditionC + replayPartC + (1|animal)");
-disp(lme)
-
-% RESULTS : Nothing is significant
-
-% Peak firing rate 
-lme = fitlme(summaryData, "median_refinPeak ~ logConditionC + replayPartC + (1|animal)");
-disp(lme)
-
-% RESULTS : Condition is not significant anymore, replay N.S
-
-%% Regressions - Condition non logged & animal-wise
-
-% Center of mass refinement
-lme = fitlme(summaryData, "median_refinCM ~ conditionC + replayPartC + (1|animal)");
-disp(lme)
-
-% RESULTS : Condition not significant
-
-% Max firing rate refinement
-lme = fitlme(summaryData, "median_refinFR ~ conditionC + replayPartC + (1|animal)");
-disp(lme)
-
-% Same as with logged condition.
-
-% Peak firing rate 
-lme = fitlme(summaryData, "median_refinPeak ~ conditionC + replayPartC + (1|animal)");
-disp(lme)
-
-% Replay NS, condition is still non-significant.
-
 
 %% Effect of condition and the RELATIVE quantity of replay
 % (replay participation / total number of replay)
@@ -205,5 +138,21 @@ disp(lme)
 
 % RESULTS : Effect of condition. No effect of replay.
 
+%% Regressions - Non-logged condition
 
+% Center of mass refinement
+lme = fitlme(data, "refinCM ~ conditionC + propPartRepC + (1|animal)");
+disp(lme)
+
+% Max firing rate refinement
+lme = fitlme(data, "refinFR ~ conditionC + propPartRepC + (1|animal)");
+disp(lme)
+
+% RESULTS : Significant effect of condition, no effect of replay.
+
+% Peak firing rate 
+lme = fitlme(data, "refinPeak ~ conditionC + propPartRepC + (1|animal)");
+disp(lme)
+
+% RESULTS : Effect of condition. No effect of replay.
 

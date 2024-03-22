@@ -55,8 +55,16 @@ for fileID = 1:length(sessions)
 
     for trackOI = 1:2
 
-        % Good cells : Cells that where good place cells during RUN1 / RUN2
-        goodCells = union(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
+        % Good cells : Cells that where good place cells during RUN1 or RUN2
+        % goodCells = union(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
+
+        % Control : Cells that where good place cells during RUN1 and RUN2 
+        % (no appearing / disappearing cells).
+        % goodCells = intersect(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
+        
+        % Control : Cells that were good place cells during RUN1 xor RUN2
+        % (only appearing / disappearing cells).
+        goodCells = setxor(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
 
         % We get the replay participation
 
@@ -194,4 +202,4 @@ condition = str2double(condition);
 
 data = table(animal, condition, cell, refinDir, partP1Rep, propPartRep);
 
-save("dataRegressionDirectionality.mat", "data")
+save("dataRegressionDirectionalityXor.mat", "data")

@@ -62,28 +62,21 @@ parfor cID = 1:length(sessions)
 
         % Definition : place field of the 6 last lap of RUN2.
 
-        % If we have enough laps, we just take the start and the end of those,
-        % otherwise we let the 16th one for the RUN2 decoding ad take the ones
-        % before for FPF
+        finalPlaceField = {};
+        
+        % For each cell, we create the final place field
+        for cellID = 1:length(place_fields.track(trackOI + 2).smooth)
+            temp = [];
 
-        % We find the start / end times of the 6 last laps
+            for lap = 1:6
+                temp = [temp; RUN2LapPFData{16 + lap}.smooth{cellID}];
+            end
 
-        totalLapsRUN2 = min(lap_times(trackOI + 2).number_completeLaps, length(lap_place_fields(trackOI + 2).Complete_Lap));
+            finalPlaceField(end + 1) = {mean(temp, 'omitnan')};
+        end
 
-        startTime = lap_times(trackOI + 2).completeLaps_start(16);
-        endTime = lap_times(trackOI + 2).completeLaps_stop(16 + 6);
-
-        % We then crop the position mat, and compute the place field
-        mutPositions = cropPositionsAtTime(position, trackOI + 2, startTime, endTime);
-
-        finalPlaceField = calculate_place_fields_LBL(2, mutPositions, clusters, allclusters_waveform);
-        finalPlaceField = finalPlaceField.track(trackOI + 2);
-
-        % For population vector analysis, we only use the good place cells of
-        % the FPF - cells that will become good cells
-
-        goodCells = finalPlaceField.good_cells;
-
+        
+        
         % We iterate over run 1 and 2
         for run = 1:2
             
