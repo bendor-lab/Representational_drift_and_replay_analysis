@@ -27,13 +27,34 @@
 
 clear 
 
-data = load("dataRegressionXor.mat");
+data = load("dataRegression.mat");
 data = data.data;
 
 data.logConditionC = log2(data.condition) - mean(log2(data.condition));
 data.conditionC = data.condition - mean(data.condition);
 data.replayPartC = data.partP1Rep - mean(data.partP1Rep, "omitnan");
 data.propPartRepC = data.propPartRep - mean(data.propPartRep);
+
+%% Do we see remapping over laps ?  ---------------------------------------
+
+dataLaps = load("timeSeries.mat");
+dataLaps = dataLaps.data;
+
+dataLaps.logConditionC = log2(dataLaps.condition) - mean(log2(dataLaps.condition));
+
+% We use a mixed model with animal as a random factor
+% Here we use the cell because a LOT of different measures.
+
+lme = fitlme(dataLaps, "CMdiff ~ logConditionC + lap + exposure + (1|animal) + (1|cell)");
+disp(lme);
+
+lme = fitlme(dataLaps, "FRdiff ~ logConditionC + lap + exposure + (1|animal) + (1|cell)");
+disp(lme);
+
+lme = fitlme(dataLaps, "PeakDiff ~ logConditionC + lap + exposure + (1|animal) + (1|cell)");
+disp(lme);
+
+% Lap is very significant, negative coefficient. Stabilisation.
 
 %% Effect of condition and the ABSOLUTE quantity of replay
 

@@ -116,12 +116,60 @@ stackPF(pf_trackREEXP(sortOrderLapREEXP, :), "Place fields - Lap after sleep", "
 
 % 2. PV- Correlation between one direction and the other (directionality)
 
-%% b. Cell change
+%% b. Cell change --------------------------------------------------------
+
+dataLap = load("timeSeries.mat");
+dataLap = dataLap.data;
+summaryLapData = groupsummary(dataLap, ["condition", "exposure", "lap"], ["median", "std"], ["CMdiff", "FRdiff", "PeakDiff"]);
 
 % 1. Center of mass
+f5 = figure; 
+f5.Position = [680,336,964,542];
+timeSeriesOverLap(summaryLapData, "median_CMdiff", "Center of Mass");
 
-% 2. Peak location
+% 2. Peak Location
+
+f6 = figure; 
+f6.Position = [680,336,964,542];
+timeSeriesOverLap(summaryLapData, "median_FRdiff", "Max Firing Rate");
 
 % 3. Max firing rate
 
+f7 = figure; 
+f7.Position = [680,336,964,542];
+timeSeriesOverLap(summaryLapData, "median_PeakDiff", "Peak Location");
 
+
+%% c. Cell change - 1 vs 16 vs 1 vs 16 vs FPF
+
+summaryLapDataAnim = groupsummary(dataLap, ["animal", "condition", "exposure", "lap"], ["mean", "std"], ["CMdiff", "FRdiff", "PeakDiff"]);
+
+f8 = figure;
+
+dataExpLap1 = summaryLapDataAnim(summaryLapDataAnim.lap == 1 & summaryLapDataAnim.exposure == 1, :);
+dataReExpLap1 = summaryLapDataAnim(summaryLapDataAnim.lap == 1 & summaryLapDataAnim.exposure == 2, :);
+dataExpLapEnd = summaryLapDataAnim(summaryLapDataAnim.lap == summaryLapDataAnim.condition & summaryLapDataAnim.exposure == 1, :);
+dataReExpLapEnd = summaryLapDataAnim(summaryLapDataAnim.lap == 16 & summaryLapDataAnim.exposure == 2, :);
+
+conditionCat = categorical(dataExpLap1.condition);
+
+
+subplot(1,4,1)
+boxchart(conditionCat, dataExpLap1.mean_CMdiff)
+title('Data 1')
+ylim([0 60])
+
+subplot(1,4,2)
+boxchart(conditionCat, dataExpLapEnd.mean_CMdiff)
+title('Data 2')
+ylim([0 60])
+
+subplot(1,4,3)
+boxchart(conditionCat, dataReExpLap1.mean_CMdiff)
+title('Data 3')
+ylim([0 60])
+
+subplot(1,4,4)
+boxchart(conditionCat, dataReExpLapEnd.mean_CMdiff)
+title('Data 4')
+ylim([0 60])

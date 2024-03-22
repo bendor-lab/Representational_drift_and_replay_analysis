@@ -52,41 +52,19 @@ parfor fileID = 1:length(sessions)
     for trackOI = 1:2
 
         % Good cells : Cells that where good place cells during RUN1 or RUN2
-        % goodCells = union(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
+        goodCells = union(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
 
         % Control : Cells that where good place cells during RUN1 and RUN2
         % (no appearing / disappearing cells).
-        goodCells = intersect(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
+        % goodCells = intersect(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
 
         % Control : Cells that were good place cells during RUN1 xor RUN2
         % (only appearing / disappearing cells).
         % goodCells = setxor(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
 
-        % We get the replay participation
-
-        % Fetch the significant replay events
-        temp = load(file + "\Replay\RUN1_Decoding\significant_replay_events_wcorr");
-        significant_replay_events = temp.significant_replay_events;
-
-        RE_current_track = significant_replay_events.track(trackOI);
-
-        % Fetch the sleep times to filter POST1 replay events
-        temp = load(file +  "/extracted_sleep_state");
-        sleep_state = temp.sleep_state;
-        startTime = sleep_state.state_time.INTER_post_start;
-        endTime = sleep_state.state_time.INTER_post_end;
-
-        % We get the IDs of all the sleep replay events
-        goodIDCurrent = getAllSleepReplay(trackOI, startTime, endTime, significant_replay_events, sleep_state);
-
-        nbReplay = numel(goodIDCurrent);
-
-        filteredReplayEventsSpikesCurrent = RE_current_track.spikes(goodIDCurrent);
-
         % We get the final place field : mean of the 6 laps following the
         % 16th lap of RUN2
 
-        RUN1LapPFData = lap_place_fields(trackOI).Complete_Lap;
         RUN2LapPFData = lap_place_fields(trackOI + 2).Complete_Lap;
 
         numberLapsRUN2 = length(RUN2LapPFData);
@@ -117,7 +95,7 @@ parfor fileID = 1:length(sessions)
 
         for exposureOI = 1:2
 
-            vTrack = trackOI + mod(trackOI + 1, 2)*2;
+            vTrack = trackOI + mod(exposureOI + 1, 2)*2;
 
             current_numberLaps = numel(lap_place_fields(vTrack).Complete_Lap);
 
@@ -138,7 +116,7 @@ parfor fileID = 1:length(sessions)
                 currentPeakLoc(isnan(currentCM)) = NaN;
 
                 current_CMDiff = abs(cmFPF - currentCM);
-                current_FRDiff = abs(frFPF - currentFR);
+                current_FRDiff = arrayfun(@(x1, x2) abs(x1 - x2)/(x1 + x2), frFPF, currentFR);
                 current_PeakLocDiff = abs(peakFPF - currentPeakLoc);
 
                 current_CMDiff = current_CMDiff(goodCells);
@@ -154,7 +132,7 @@ parfor fileID = 1:length(sessions)
                 track = [track; repelem(trackOI, nbGoodCells)'];
                 exposure = [exposure; repelem(exposureOI, nbGoodCells)'];
                 lap = [lap; repelem(lapOI, nbGoodCells)'];
-                cell = [cell; goodCells'];
+                cell = [cell; (goodCells + ident)'];
                 CMdiff = [CMdiff; current_CMDiff'];
                 FRdiff = [FRdiff; current_FRDiff'];
                 PeakDiff = [PeakDiff; current_PeakLocDiff'];
