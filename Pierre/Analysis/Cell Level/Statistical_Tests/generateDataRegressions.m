@@ -24,6 +24,7 @@ refinPeak = [];
 
 partP1Rep = [];
 propPartRep = []; % % of replay participated in 
+partSWR = [];
 
 % We take the absolute value of the difference over sum to get the relative
 % distance with the FPF, independently of the direction
@@ -70,6 +71,9 @@ parfor fileID = 1:length(sessions)
         temp = load(file + "\Replay\RUN1_Decoding\significant_replay_events_wcorr");
         significant_replay_events = temp.significant_replay_events;
 
+        temp = load(file + "\Replay\RUN1_Decoding\decoded_replay_events");
+        decoded_replay_events = temp.decoded_replay_events;
+
         RE_current_track = significant_replay_events.track(trackOI);
 
         % Fetch the sleep times to filter POST1 replay events
@@ -81,9 +85,13 @@ parfor fileID = 1:length(sessions)
         % We get the IDs of all the sleep replay events
         goodIDCurrent = getAllSleepReplay(trackOI, startTime, endTime, significant_replay_events, sleep_state);
 
+        % We get the ID of all the sleep SWR
+        sleepSWRID = getAllSleepReplay(trackOI, startTime, endTime, decoded_replay_events, sleep_state);
+
         nbReplay = numel(goodIDCurrent);
 
         filteredReplayEventsSpikesCurrent = RE_current_track.spikes(goodIDCurrent);
+        filteredSWR = {decoded_replay_events(trackOI).replay_events(sleepSWRID).spikes};
 
         % We get the final place field : mean of the 6 laps following the
         % 16th lap of RUN2
@@ -160,8 +168,12 @@ parfor fileID = 1:length(sessions)
             % We get the replay participation of the cell - in nb of events
             replayInvolvedCurrent = cellfun(@(ev) any(ev(:, 1) == cellOI), filteredReplayEventsSpikesCurrent);
             current_partP1Rep = sum(replayInvolvedCurrent);
-
             current_propPart = current_partP1Rep/nbReplay;
+
+            % We get the SWR participation of the cell - in nb of events
+            swrInvolvedCurrent = cellfun(@(ev) any(ev(:, 1) == cellOI), filteredSWR);
+            current_partSWR = sum(swrInvolvedCurrent);
+
 
             % Save the data
 
@@ -174,6 +186,7 @@ parfor fileID = 1:length(sessions)
             refinPeak = [refinPeak; current_refinPeak];
             partP1Rep = [partP1Rep; current_partP1Rep];
             propPartRep = [propPartRep; current_propPart];
+            partSWR = [partSWR; current_partSWR];
 
         end
     end
@@ -191,7 +204,7 @@ condition(track ~= 1) = newConditions(:, 2);
 condition = str2double(condition);
 
 
-data = table(animal, condition, cell, refinCM, refinFR, refinPeak, partP1Rep, propPartRep);
+data = table(animal, condition, cell, refinCM, refinFR, refinPeak, partP1Rep, propPartRep, partSWR);
 
 % save("dataRegression.mat", "data")
 % save("dataRegressionXor.mat", "data")

@@ -47,34 +47,57 @@ stackPF(pfT2ST1, "Place fields on Track 2", "Cells (sorted by Track 1)");
 nexttile;
 stackPF(pfT2ST2, "Place fields on Track 2", "Cells (sorted by Track 2)");
 
-%% b. Remapping first vs. last lap RUN1
+%% b. Remapping first vs. last lap RUN1, ordered by Final Place Field
 
 goodCells = lap_place_fields(1).Complete_Lap{end}.good_cells;
 
 pf_trackLap1 = cell2mat(lap_place_fields(1).Complete_Lap{1}.smooth');
 pf_trackLap1 = pf_trackLap1(goodCells, :);
+
+pf_trackLap2 = cell2mat(lap_place_fields(1).Complete_Lap{2}.smooth');
+pf_trackLap2 = pf_trackLap2(goodCells, :);
+
+pf_trackLap3 = cell2mat(lap_place_fields(1).Complete_Lap{3}.smooth');
+pf_trackLap3 = pf_trackLap3(goodCells, :);
+
 pf_trackLapEnd = cell2mat(lap_place_fields(1).Complete_Lap{end}.smooth');
 pf_trackLapEnd = pf_trackLapEnd(goodCells, :);
 
+% We get the final place field
+allLapsRUN2 = lap_place_fields(3).Complete_Lap;
+meanMat = zeros(numel(goodCells), 100, 6);
+
+for lap = 1:6
+    data = cell2mat(allLapsRUN2{16 + lap}.smooth');
+    data = data(goodCells, :);
+    meanMat(:, :, lap) = data;
+end
+
+meanMat = normalize(mean(meanMat, 3, 'omitnan'), 2, "range");
+
 pf_trackLap1 = normalize(pf_trackLap1, 2, "range");
+pf_trackLap2 = normalize(pf_trackLap2, 2, "range");
+pf_trackLap3 = normalize(pf_trackLap3, 2, "range");
 pf_trackLapEnd = normalize(pf_trackLapEnd, 2, "range");
 
-sortOrderLap1 = findSortOrder(pf_trackLap1);
-sortOrderLapEnd = findSortOrder(pf_trackLapEnd);
+sortOrder = findSortOrder(meanMat);
 
 fig2 = figure;
-fig2.Position = [500, 500, 830,290];
-t2 = tiledlayout(1, 2);
+fig2.Position = [200, 200, 1400,300];
+t2 = tiledlayout(1, 4);
 set(gca,'fontname','times')  % Set it to times
 
 set(gcf,'color','w');
 nexttile;
-stackPF(pf_trackLap1(sortOrderLapEnd, :), "Place fields - Lap 1", "");
-
-mylabel = ylabel({"Cells          ", "(sorted by Lap 16)"}, "Rotation", 0, "FontSize", 13);
+stackPF(pf_trackLap1(sortOrder, :), "Place fields - Lap 1", "");
+mylabel = ylabel({"Cells          ", "(sorted by FPF)"}, "Rotation", 0, "FontSize", 13);
 
 nexttile;
-stackPF(pf_trackLapEnd(sortOrderLapEnd, :), "Place fields - Lap 16", "");
+stackPF(pf_trackLap2(sortOrder, :), "Place fields - Lap 2", "");
+nexttile;
+stackPF(pf_trackLap3(sortOrder, :), "Place fields - Lap 3", "");
+nexttile;
+stackPF(pf_trackLapEnd(sortOrder, :), "Place fields - Lap 16", "");
 
 %% c. Remapping last lap before sleep - first lap after sleep
 
@@ -85,11 +108,22 @@ pf_trackEXP = pf_trackEXP(goodCells, :);
 pf_trackREEXP = cell2mat(lap_place_fields(4).Complete_Lap{1}.smooth');
 pf_trackREEXP = pf_trackREEXP(goodCells, :);
 
+% We get the final place field
+allLapsRUN2 = lap_place_fields(4).Complete_Lap;
+meanMat = zeros(numel(goodCells), 100, 6);
+
+for lap = 1:6
+    data = cell2mat(allLapsRUN2{16 + lap}.smooth');
+    data = data(goodCells, :);
+    meanMat(:, :, lap) = data;
+end
+
+meanMat = normalize(mean(meanMat, 3, 'omitnan'), 2, "range");
+
 pf_trackEXP = normalize(pf_trackEXP, 2, "range");
 pf_trackREEXP = normalize(pf_trackREEXP, 2, "range");
 
-sortOrderLapEXP = findSortOrder(pf_trackEXP);
-sortOrderLapREEXP = findSortOrder(pf_trackREEXP);
+sortOrder = findSortOrder(meanMat);
 
 fig2 = figure;
 fig2.Position = [500, 500, 830,290];
@@ -98,12 +132,12 @@ set(gca,'fontname','times')  % Set it to times
 
 set(gcf,'color','w');
 nexttile;
-stackPF(pf_trackEXP(sortOrderLapREEXP, :), "Place fields - Lap before sleep", "");
+stackPF(pf_trackEXP(sortOrder, :), "Place fields - Lap before sleep", "");
 
-mylabel = ylabel({"Cells                    ", "(sorted by first lap after sleep)"}, "Rotation", 0, "FontSize", 13);
+mylabel = ylabel({"Cells        ", "(sorted by FPF)"}, "Rotation", 0, "FontSize", 13);
 
 nexttile;
-stackPF(pf_trackREEXP(sortOrderLapREEXP, :), "Place fields - Lap after sleep", "");
+stackPF(pf_trackREEXP(sortOrder, :), "Place fields - Lap after sleep", "");
 
 
 %% II. Remapping over laps -----------------------------------

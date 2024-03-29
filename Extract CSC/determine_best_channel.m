@@ -22,7 +22,7 @@ else
 end
 
 % Looks into first CSC frequencies and finds periods with theta, ripple and delta oscillations
-if MODE(1)==1 %analyze theta, ripple and delta
+if MODE(1)==1 % analyze theta, ripple and delta
     if isfield(all_PSD,'PSD_F_awake')
         theta_index=find(all_PSD(1).PSD_F_awake>=parameters.theta_filter(1) & all_PSD(1).PSD_F_awake<=parameters.theta_filter(2));
         ripple_index=find(all_PSD(1).PSD_F_sleep>=parameters.ripple_filter(1) & all_PSD(1).PSD_F_sleep<=parameters.ripple_filter(2));
@@ -33,7 +33,7 @@ if MODE(1)==1 %analyze theta, ripple and delta
         delta_index=find(all_PSD(1).PSD_F >=parameters.delta_filter(1) & all_PSD(1).PSD_F <=parameters.delta_filter(2));
     end
 end
-if MODE(2)==1 %analyze spindle and high gamma
+if MODE(2)==1 % analyze spindle and high gamma
     if isfield(all_PSD,'PSD_F_awake')
         spindle_index=find(all_PSD(1).PSD_F_sleep>=parameters.spindle_filter(1) & all_PSD(1).PSD_F_sleep<=parameters.spindle_filter(2));
         high_gamma_index=find(all_PSD(1).PSD_F_awake>=parameters.high_gamma_filter(1) & all_PSD(1).PSD_F_awake<=parameters.high_gamma_filter(1));
