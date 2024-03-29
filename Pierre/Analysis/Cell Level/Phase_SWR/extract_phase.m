@@ -1,7 +1,7 @@
 % Function to extract the number of participation in SWR at a certain phase
 % Also returns the vector of cellID
 
-function [phasePartMatrice, meanPhaseVector, unique_cells] = extract_phase(CSC, sleep_state, decoded_replay_events)
+function [phasePartMatrice, meanPhaseVector, phaseLocking, unique_cells] = extract_phase(CSC, sleep_state, decoded_replay_events)
 
 %% 1. Loading & cropping
 
@@ -175,15 +175,22 @@ end
 %% 6. We get the mean phase of each cell
 
 meanPhaseVector = zeros(1, numel(unique_cells));
+phaseLocking = zeros(1, numel(unique_cells));
 
 for cellID = 1:numel(unique_cells)
     current_cell = unique_cells(cellID);
     current_coll_phases = allPhases(allSpikes == current_cell);
     current_meanPhase = circ_mean(current_coll_phases);
     meanPhaseVector(cellID) = current_meanPhase;
+    
+    current_count = phasePartMatrice(cellID, :);
+    current_count = current_count/numel(current_count);
+    current_PL = (max(current_count) - min(current_count))/mean(current_count);
+    phaseLocking(cellID) = current_PL;
 end
 
 meanPhaseVector = meanPhaseVector + pi; % We want the vector to go from 0 to 2pi
+
 
 end
 

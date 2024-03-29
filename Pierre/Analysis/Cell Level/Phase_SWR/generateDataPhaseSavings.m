@@ -16,11 +16,12 @@ refinFR = [];
 refinPeak = [];
 
 meanPhase = [];
+phaseLocking = [];
 label = [];
 
 %% Extraction & computation
 
-for fileID = 1:1 %length(sessions)
+parfor fileID = 1:length(sessions)
 
     disp(fileID);
     file = sessions{fileID}; % We get the current session
@@ -56,7 +57,7 @@ for fileID = 1:1 %length(sessions)
 
     %% We get the phase matrix for each cell
 
-    [resultMat, meanPhaseVector, allCells] = extract_phase(CSC, sleep_state, decoded_replay_events);
+    [resultMat, meanPhaseVector, current_phaseLocking, allCells] = extract_phase(CSC, sleep_state, decoded_replay_events);
 
     % Now we can z-score the resultMat
     resultMatZ = normalize(resultMat, 2, "zscore");
@@ -95,9 +96,10 @@ for fileID = 1:1 %length(sessions)
         current_refinCM = matching_data.refinCM(ismember(unique_cells_refin, common_cells));
         current_refinPeak = matching_data.refinPeak(ismember(unique_cells_refin, common_cells));
         current_refinFR = matching_data.refinFR(ismember(unique_cells_refin, common_cells));
-
+    
         meanPhaseVectorFilt = meanPhaseVector(ismember(allCells, common_cells));
         labelsFilt = labels(ismember(allCells, common_cells));
+        current_phaseLockingFilt = current_phaseLocking(ismember(allCells, common_cells));
 
         % We save the data
 
@@ -111,6 +113,7 @@ for fileID = 1:1 %length(sessions)
         refinPeak = [refinPeak; current_refinPeak];
         
         meanPhase = [meanPhase; meanPhaseVectorFilt'];
+        phaseLocking = [phaseLocking; current_phaseLockingFilt'];
         label = [label; labelsFilt'];
 
     end
@@ -125,6 +128,6 @@ condition(track ~= 1) = newConditions(:, 2);
 
 condition = str2double(condition);
 
-phase_data = table(animal, condition, track, cell, refinCM, refinFR, refinPeak, meanPhase, label);
+phase_data = table(animal, condition, track, cell, refinCM, refinFR, refinPeak, meanPhase, phaseLocking, label);
 
 save("phase_data.mat", "phase_data");
