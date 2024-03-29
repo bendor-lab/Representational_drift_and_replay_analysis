@@ -20,7 +20,7 @@ label = [];
 
 %% Extraction & computation
 
-for fileID = 1:length(sessions)
+for fileID = 1:1 %length(sessions)
 
     disp(fileID);
     file = sessions{fileID}; % We get the current session
@@ -50,7 +50,7 @@ for fileID = 1:length(sessions)
     place_fields = load(file + "\extracted_place_fields");
     place_fields = place_fields.place_fields;
 
-    data = load("D:\Representational_drift_and_replay_analysis\Pierre\Analysis\Cell Level\Statistical_Tests\dataRegression.mat");
+    data = load("C:\Users\pierre.varichon\Documents\Representational_drift_and_replay_analysis\Pierre\Analysis\Cell Level\Statistical_Tests\dataRegression.mat");
     data = data.data;
 
 
@@ -126,3 +126,5 @@ condition(track ~= 1) = newConditions(:, 2);
 condition = str2double(condition);
 
 phase_data = table(animal, condition, track, cell, refinCM, refinFR, refinPeak, meanPhase, label);
+
+save("phase_data.mat", "phase_data");
