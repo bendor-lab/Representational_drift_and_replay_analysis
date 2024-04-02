@@ -21,41 +21,56 @@ data = load("dataRegressionPop.mat");
 data = data.data;
 data.replayPartC = data.partP1Rep - mean(data.partP1Rep, 'omitnan');
 data.logCondC = log(data.condition) - mean(log(data.condition));
+data.amountSleepC = data.amountSleep - mean(data.amountSleep);
+data.numberSWRC = data.numberSWR - mean(data.numberSWR);
+
+%% Replay participation --------------------------------------------------
 
 %% Interaction, condition logged
 
-lme = fitlme(data, "refinCorr ~ logCondC * replayPartC + (1|animal)");
-disp(lme)
-
-% No interaction.
-
-lme = fitlme(data, "corrEndRUN1 ~ logCondC * replayPartC + (1|animal)");
+lme = fitlme(data, "refinCorr ~ logCondC * replayPartC * amountSleepC + (1|animal)");
 disp(lme)
 
 % No interaction.
 
 %% Without interaction, condition logged
 
-lme = fitlme(data, "refinCorr ~ logCondC + replayPartC + (1|animal)");
+lme = fitlme(data, "refinCorr ~ logCondC + replayPartC + amountSleepC + (1|animal)");
 disp(lme)
 
-% Significant intercept and effect of condition.
+% Significant intercept and effect of condition. No effect of replay /
+% sleep
 
-lme = fitlme(data, "corrEndRUN1 ~ logCondC + replayPartC + (1|animal)");
-disp(lme)
-
-% Significant intercept and effect of condition (expected). No effect of
-% replay.
 
 %% Without interaction, without logged condition
 
-lme = fitlme(data, "refinCorr ~ condition + replayPartC + (1|animal)");
+lme = fitlme(data, "refinCorr ~ condition + replayPartC + amountSleepC + (1|animal)");
 disp(lme)
 
-% Significant intercept and effect of condition.
+% Significant intercept and effect of condition. No effect of amount of
+% sleep or replay.
 
-lme = fitlme(data, "corrEndRUN1 ~ condition + replayPartC + (1|animal)");
+%% Number of SWR ---------------------------------------------------------
+
+%% Interaction, condition logged
+
+lme = fitlme(data, "refinCorr ~ logCondC * numberSWRC * amountSleepC + (1|animal)");
 disp(lme)
 
-% Significant intercept and effect of condition (expected). No effect of
-% replay.
+% No interaction.
+
+%% Without interaction, condition logged
+
+lme = fitlme(data, "refinCorr ~ logCondC + numberSWRC + amountSleepC + (1|animal)");
+disp(lme)
+
+% Significant intercept and effect of condition. No effect of sleep.
+% Weak effect of the number of SWR - 0.03. Seems to be due to outliers.
+
+%% Without interaction, without logged condition
+
+lme = fitlme(data, "refinCorr ~ condition + numberSWRC + amountSleepC + (1|animal)");
+disp(lme)
+
+% Significant intercept and effect of condition. Small effect of SWR. No
+% effect of sleep. 

@@ -34,6 +34,7 @@ data.logConditionC = log2(data.condition) - mean(log2(data.condition));
 data.conditionC = data.condition - mean(data.condition);
 data.replayPartC = data.partP1Rep - mean(data.partP1Rep, "omitnan");
 data.propPartRepC = data.propPartRep - mean(data.propPartRep);
+data.partSWRC = data.partSWR - mean(data.partSWR);
 
 %% Do we see remapping over laps ?  ---------------------------------------
 
@@ -56,7 +57,7 @@ disp(lme);
 
 % Lap is very significant, negative coefficient. Stabilisation.
 
-%% Effect of condition and the ABSOLUTE quantity of replay
+%% Effect of condition and the ABSOLUTE quantity of replay ----------------
 
 %% Regressions - Interactions & log condition
 
@@ -122,7 +123,7 @@ disp(lme)
 % RESULTS : Condition is still significant, replay NS.
 
 
-%% Effect of condition and the RELATIVE quantity of replay
+%% Effect of condition and the RELATIVE quantity of replay ----------------
 % (replay participation / total number of replay)
 
 %% Regressions - Interactions & log condition
@@ -181,3 +182,45 @@ disp(lme)
 
 % RESULTS : Effect of condition. No effect of replay.
 
+
+%% Effect of condition and the ABSOLUTE quantity of SWR -------------------
+
+%% Interaction - Log condition
+
+% Center of mass refinement
+lme = fitlme(data, "refinCM ~ logConditionC * partSWRC + (1|animal)");
+disp(lme)
+
+% RESULTS : No significant interaction.
+
+% Max firing rate refinement
+lme = fitlme(data, "refinFR ~ logConditionC * partSWRC + (1|animal)");
+disp(lme)
+
+% RESULTS : No significant interaction.
+
+% Peak firing rate 
+lme = fitlme(data, "refinPeak ~ logConditionC * partSWRC + (1|animal)");
+disp(lme)
+
+% RESULTS : No significant interaction.
+
+%% No interaction - log condition
+
+% Center of mass refinement
+lme = fitlme(data, "refinCM ~ logConditionC + partSWRC + (1|animal)");
+disp(lme)
+
+% RESULTS : No effect of SWR participation.
+
+% Max firing rate refinement
+lme = fitlme(data, "refinFR ~ logConditionC + partSWRC + (1|animal)");
+disp(lme)
+
+% RESULTS : No effect of SWR participation.
+
+% Peak firing rate 
+lme = fitlme(data, "refinPeak ~ logConditionC + partSWRC + (1|animal)");
+disp(lme)
+
+% RESULTS : No effect of SWR participation.

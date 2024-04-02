@@ -1,7 +1,7 @@
 % Function to get the sleep replay between certain timestamps
 % Only consider the cumulative first 30 minutes of sleeping times !
 
-function [allMatchingReplay] = getAllSleepReplay(track, startTime,stopTime, significant_replay_events, sleep_state)
+function [allMatchingReplay] = getAllSleepReplay(track, startTime,stopTime, replay_events, sleep_state)
 
 % We get the sleeping state each timepoint and we interpolate the correspondant time
 stateVec = sleep_state.state;
@@ -22,7 +22,12 @@ stateVec(id30Minutes:end) = 0;
 
 % Now we return all the replay events in that range
 
-allTimesReplay = significant_replay_events.track(track).event_times;
+% If the file is significant replay events
+if isfield(replay_events, "track")
+    allTimesReplay = replay_events.track(track).event_times;
+else % If this is decoded replay events
+    allTimesReplay = cellfun(@(x) x(1), {replay_events(track).replay_events.timebins_edges}); % Take the start of each SWR
+end
 
 allMatchingReplay = [];
 

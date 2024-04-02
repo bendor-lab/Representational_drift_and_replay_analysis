@@ -17,6 +17,8 @@ refinCorr = [];
 corrEndRUN1 = [];
 
 partP1Rep = [];
+amountSleep = [];
+numberSWR = [];
 
 parfor fileID = 1:length(sessions)
 
@@ -26,7 +28,6 @@ parfor fileID = 1:length(sessions)
 
     animalOI = string(animalOI);
     conditionOI = string(conditionOI); % We convert everything to string
-
 
     % Load the variables
 
@@ -49,6 +50,9 @@ parfor fileID = 1:length(sessions)
         temp = load(file + "\Replay\RUN1_Decoding\significant_replay_events_wcorr");
         significant_replay_events = temp.significant_replay_events;
 
+        temp = load(file + "\Replay\RUN1_Decoding\decoded_replay_events");
+        decoded_replay_events = temp.decoded_replay_events;
+
         RE_current_track = significant_replay_events.track(trackOI);
 
         % Fetch the sleep times to filter POST1 replay events
@@ -57,10 +61,18 @@ parfor fileID = 1:length(sessions)
         startTime = sleep_state.state_time.INTER_post_start;
         endTime = sleep_state.state_time.INTER_post_end;
 
+        sleepSWRID = getAllSleepReplay(trackOI, startTime, endTime, decoded_replay_events, sleep_state);
+        current_nbSWR = numel(sleepSWRID);
+
         % We get the IDs of all the sleep replay events
         goodIDCurrent = getAllSleepReplay(trackOI, startTime, endTime, significant_replay_events, sleep_state);
 
         nbReplayEvents = numel(goodIDCurrent);
+
+        % We get the amount of time slept
+        current_amountSleep = sum(sleep_state.state_binned == 1 & ...
+                                  sleep_state.time <= endTime & ...
+                                  sleep_state.time >= startTime);
 
         % We get the final place field : mean of the 6 laps following the
         % 16th lap of RUN2
@@ -102,6 +114,8 @@ parfor fileID = 1:length(sessions)
         refinCorr = [refinCorr; current_refinement];
         corrEndRUN1 = [corrEndRUN1; pvCorRUN1];
         partP1Rep = [partP1Rep; nbReplayEvents];
+        amountSleep = [amountSleep; current_amountSleep];
+        numberSWR = [numberSWR; current_nbSWR];
 
     end
 end
@@ -115,6 +129,6 @@ condition(track ~= 1) = newConditions(:, 2);
 
 condition = str2double(condition);
 
-data = table(animal, condition, refinCorr, corrEndRUN1, partP1Rep);
+data = table(animal, condition, refinCorr, corrEndRUN1, partP1Rep, amountSleep, numberSWR);
 
 save("dataRegressionPop.mat", "data")
