@@ -108,6 +108,39 @@ stackPF(pf_trackREEXP(sortOrderLapREEXP, :), "Place fields - Lap after sleep", "
 
 %% II. Remapping over laps -----------------------------------
 
+%% Visualisation of the center of mass, peak location and peak firing rate
+
+% Generate a range of x-values
+x = 0:200;
+
+% Compute the y-values of the Gaussian function
+y = normpdf(x, 160, 15);
+y2 = normpdf(x, 60, 20)*0.4;
+y = y + y2;
+
+maxY = max(y);
+peakLoc = find(y == maxY, 1);
+centerMass = sum(y.*(0:200)/sum(y));
+centerMassFR = y(floor(centerMass));
+
+% Plot the Gaussian bell curve
+figure;
+area(x, y, 'FaceAlpha', .4);
+xlabel('Position');
+ylabel('Firing rate');
+xticks([centerMass, peakLoc]);
+xticklabels({"Center of Mass", "Peak location"})
+yticks([maxY]);
+yticklabels({"Max FR"});
+
+% Firing rate
+line([0 peakLoc], [maxY maxY], 'Color', "#D95319", "LineWidth", 1.5);
+% Peak Location
+line([peakLoc peakLoc], [0 maxY], 'Color', 	"#7E2F8E", "LineWidth", 1.5);
+% Center of mass
+line([floor(centerMass) floor(centerMass)], [0 centerMassFR], 'Color', "#EDB120", "LineWidth", 1.5);
+
+
 %% a. Population change
 
 % 1. PV - Correlation with the final place field
@@ -124,19 +157,19 @@ summaryLapData = groupsummary(dataLap, ["condition", "exposure", "lap"], ["media
 
 % 1. Center of mass
 f5 = figure; 
-f5.Position = [680,336,964,542];
+f5.Position = [0,0,964,542];
 timeSeriesOverLap(summaryLapData, "median_CMdiff", "Center of Mass");
 
 % 2. Peak Location
 
 f6 = figure; 
-f6.Position = [680,336,964,542];
+f6.Position = [0, 0, 964, 542];
 timeSeriesOverLap(summaryLapData, "median_FRdiff", "Max Firing Rate");
 
 % 3. Max firing rate
 
 f7 = figure; 
-f7.Position = [680,336,964,542];
+f7.Position = [0, 0, 964, 542];
 timeSeriesOverLap(summaryLapData, "median_PeakDiff", "Peak Location");
 
 
@@ -145,31 +178,71 @@ timeSeriesOverLap(summaryLapData, "median_PeakDiff", "Peak Location");
 summaryLapDataAnim = groupsummary(dataLap, ["animal", "condition", "exposure", "lap"], ["mean", "std"], ["CMdiff", "FRdiff", "PeakDiff"]);
 
 f8 = figure;
+f8.Position = [0,0,900,420];
 
 dataExpLap1 = summaryLapDataAnim(summaryLapDataAnim.lap == 1 & summaryLapDataAnim.exposure == 1, :);
 dataReExpLap1 = summaryLapDataAnim(summaryLapDataAnim.lap == 1 & summaryLapDataAnim.exposure == 2, :);
 dataExpLapEnd = summaryLapDataAnim(summaryLapDataAnim.lap == summaryLapDataAnim.condition & summaryLapDataAnim.exposure == 1, :);
 dataReExpLapEnd = summaryLapDataAnim(summaryLapDataAnim.lap == 16 & summaryLapDataAnim.exposure == 2, :);
-
 conditionCat = categorical(dataExpLap1.condition);
 
+t8 = tiledlayout(1, 4);
+colors = [255, 215, 0;
+              255, 168, 0;
+              255, 98, 82;
+              205, 52, 181;
+              157, 2, 215;
+              0, 0, 255];
 
-subplot(1,4,1)
-boxchart(conditionCat, dataExpLap1.mean_CMdiff)
-title('Data 1')
+% Normalize the RGB values to be between 0 and 1
+colors = colors / 255;
+colors = flip(colors);
+
+n1 = nexttile(1);
+b1 = boxplot(dataExpLap1.mean_CMdiff, conditionCat);
+title('1^{st} lap - RUN1')
 ylim([0 60])
 
-subplot(1,4,2)
-boxchart(conditionCat, dataExpLapEnd.mean_CMdiff)
-title('Data 2')
+h = findobj(n1, 'Tag','Box');
+for j=1:length(h)
+    patch(get(h(j),'XData'),get(h(j),'YData'), colors(j, :),'FaceAlpha',.5);
+end
+
+n2 = nexttile(2);
+b2 = boxplot(dataExpLapEnd.mean_CMdiff, conditionCat);
+title('Last lap - RUN1')
 ylim([0 60])
 
-subplot(1,4,3)
-boxchart(conditionCat, dataReExpLap1.mean_CMdiff)
-title('Data 3')
+h = findobj(n2, 'Tag','Box');
+for j=1:length(h)
+    patch(get(h(j),'XData'),get(h(j),'YData'), colors(j, :),'FaceAlpha',.5);
+end
+
+n3 = nexttile(3);
+b3 = boxplot(dataReExpLap1.mean_CMdiff, conditionCat);
+title('1^{st} lap - RUN2')
 ylim([0 60])
 
-subplot(1,4,4)
-boxchart(conditionCat, dataReExpLapEnd.mean_CMdiff)
-title('Data 4')
+h = findobj(n3, 'Tag','Box');
+for j=1:length(h)
+    patch(get(h(j),'XData'),get(h(j),'YData'), colors(j, :),'FaceAlpha',.5);
+end
+
+n4 = nexttile(4);
+b4 = boxplot(dataReExpLapEnd.mean_CMdiff, conditionCat);
+title('16^{th} lap - RUN1')
 ylim([0 60])
+
+h = findobj(n4, 'Tag','Box');
+for j=1:length(h)
+    patch(get(h(j),'XData'),get(h(j),'YData'), colors(j, :),'FaceAlpha',.5);
+end
+
+n1.FontSize = 12;
+n2.FontSize = 12;
+n3.FontSize = 12;
+n4.FontSize = 12;
+
+xlabel(t8, "Condition", 'FontSize', 12)
+ylabel(t8, "\DeltaCM with the FPF", 'FontSize', 12)
+

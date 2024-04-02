@@ -83,18 +83,22 @@ disp(lme)
 % Center of mass refinement
 lme = fitlme(data, "refinCM ~ logConditionC + replayPartC + (1|animal)");
 disp(lme)
+disp("Eta2 = " + getEta2(lme, data.refinCM))
 
 % RESULTS : Significant effect of condition, no effect of replay.
 
 % Max firing rate refinement
 lme = fitlme(data, "refinFR ~ logConditionC + replayPartC + (1|animal)");
 disp(lme)
+disp("Eta2 = " + getEta2(lme, data.refinFR))
+
 
 % RESULTS : Significant effect of condition (.03), no effect of replay.
 
 % Peak firing rate 
 lme = fitlme(data, "refinPeak ~ logConditionC + replayPartC + (1|animal)");
 disp(lme)
+disp("Eta2 = " + getEta2(lme, data.refinPeak))
 
 % RESULTS : Effect of condition. No effect of replay.
 %% Regressions - Non logged condition
