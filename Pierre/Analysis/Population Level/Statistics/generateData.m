@@ -19,6 +19,7 @@ corrEndRUN1 = [];
 partP1Rep = [];
 amountSleep = [];
 numberSWR = [];
+expReexpBias = [];
 
 parfor fileID = 1:length(sessions)
 
@@ -42,7 +43,7 @@ parfor fileID = 1:length(sessions)
     for trackOI = 1:2
 
         % Good cells : cells that become good place cells on RUN2
-        goodCells = place_fields.track(trackOI + 2).good_cells;
+        goodCells = union(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
 
         % We get the replay participation
 
@@ -106,6 +107,20 @@ parfor fileID = 1:length(sessions)
 
         current_refinement = pvCorRUN2 - pvCorRUN1;
 
+        % Get all the sleep replay Exposure vs. Re-exposure
+
+        track_label = ['Replay_T', int2str(trackOI), '_vs_T', int2str(trackOI + 2)];
+        temp = load(file + "\" + track_label + "\significant_replay_events_wcorr");
+        Exp_Rexp = temp.significant_replay_events;
+
+        replayExpSleep = getAllSleepReplay(1, startTime, endTime, Exp_Rexp, sleep_state);
+        replayReexpSleep = getAllSleepReplay(2, startTime, endTime, Exp_Rexp, sleep_state);
+
+        nbfiltExpRepSpikes = numel(Exp_Rexp.track(1).spikes(replayExpSleep));
+        nbfiltReexpRepSpikes = numel(Exp_Rexp.track(2).spikes(replayReexpSleep));
+
+        ratioReexp = nbfiltReexpRepSpikes/nbfiltExpRepSpikes;
+
         % Save the data
 
         animal = [animal; animalOI];
@@ -116,6 +131,7 @@ parfor fileID = 1:length(sessions)
         partP1Rep = [partP1Rep; nbReplayEvents];
         amountSleep = [amountSleep; current_amountSleep];
         numberSWR = [numberSWR; current_nbSWR];
+        expReexpBias = [expReexpBias; ratioReexp];
 
     end
 end
@@ -129,6 +145,6 @@ condition(track ~= 1) = newConditions(:, 2);
 
 condition = str2double(condition);
 
-data = table(animal, condition, refinCorr, corrEndRUN1, partP1Rep, amountSleep, numberSWR);
+data = table(animal, condition, refinCorr, corrEndRUN1, partP1Rep, amountSleep, numberSWR, expReexpBias);
 
 save("dataRegressionPop.mat", "data")

@@ -1,0 +1,107 @@
+% Bayesian Bias analysis
+
+clear
+
+% PATH things
+PATH.SCRIPT = fileparts(mfilename('fullpath'));
+cd(PATH.SCRIPT)
+
+sessions = data_folders_excl; % Use the function to get all the file paths
+
+mode = 1; % 1 - All events ; 2 - Significant RE ; 3 - NS RE
+% Replay events are poled from exp vs. re-exp
+
+% Initiate the final files
+
+sessionID = [];
+animal = [];
+condition = [];
+track = [];
+bayesian_bias = [];
+
+% For each session
+
+for fID = 1:1 %length(sessions)
+
+    file = sessions{fID};
+    disp(fID);
+
+    % Parse the name to get infos
+    [animalOI, conditionOI] = parseNameFile(file); % We get the informations about the current data
+    animalOI = string(animalOI);
+    conditionOI = string(conditionOI);
+    disp(conditionOI);
+
+    % We load all the put. rep. ev EXP vs. REEXP
+
+    temp = load(file + "\Replay_T1_vs_T3\decoded_replay_events");
+    decoded_replay_eventsT1 = temp.decoded_replay_events;
+
+    temp = load(file + "\Replay_T2_vs_T4\decoded_replay_events");
+    decoded_replay_eventsT2 = temp.decoded_replay_events;
+
+    % Load sleep data
+    temp = load(file + "\extracted_sleep_state");
+    sleep_state = temp.sleep_state;
+
+    % We get the start / end of POST1
+    startTime = sleep_state.state_time.INTER_post_start;
+    endTime = sleep_state.state_time.INTER_post_end;
+
+    % We get all the sleep replay events during POST1
+    sleepSWRID = getAllSleepReplay(1, startTime, endTime, decoded_replay_eventsT1, sleep_state);
+
+    for trackOI = 1:2
+
+        % If mode ~= 1, we filter this ID list
+        if mode == 2
+            % We find all the significant replay events
+            path2get = [file, '\Replay_T', num2str(trackOI), '_vs_T', num2str(trackOI + 2)];
+            temp = load(path2get + "\significant_replay_events_wcorr");
+            significant_replay_events
+        end
+
+        current_nbSWR = numel(sleepSWRID);
+        avgBBT1 = zeros(current_nbSWR, 1);
+        avgBBT2 = zeros(current_nbSWR, 1);
+
+        % We iterate through each replay event
+        for rID = 1:current_nbSWR
+
+            replayID = sleepSWRID(rID);
+            current_time = decoded_replay_eventsT1(1).replay_events(replayID).timebins_edges(1);
+
+            decodedPosT1 = decoded_replay_eventsT1(1).replay_events(replayID).decoded_position;
+            decodedPosT3 = decoded_replay_eventsT1(2).replay_events(replayID).decoded_position;
+            decodedPosT2 = decoded_replay_eventsT2(1).replay_events(replayID).decoded_position;
+            decodedPosT4 = decoded_replay_eventsT2(2).replay_events(replayID).decoded_position;
+
+            bb_T1 = log10(sum(sum(decodedPosT3))/sum(sum(decodedPosT1)));
+            bb_T2 = log10(sum(sum(decodedPosT4))/sum(sum(decodedPosT2)));
+
+            avgBBT1(rID) = bb_T1;
+            avgBBT2(rID) = bb_T2;
+        end
+
+        avgBBT1 = median(avgBBT1, 'omitnan');
+        avgBBT2 = median(avgBBT2, 'omitnan');
+
+        sessionID = [sessionID; [fID; fID]];
+        animal = [animal; [animalOI; animalOI]];
+        condition = [condition; [conditionOI; conditionOI]];
+        track = [track; [1; 2]];
+        bayesian_bias = [bayesian_bias; [avgBBT1; avgBBT2]];
+
+    end
+end
+
+condition(track == 1) = 16;
+newConditions = split(condition(track ~= 1), 'x');
+condition(track ~= 1) = newConditions(:, 2);
+condition = str2double(condition);
+
+data = table(sessionID, animal, condition, bayesian_bias);
+
+%% Plot
+
+boxchart(data.condition, data.bayesian_bias);

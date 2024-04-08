@@ -1,9 +1,13 @@
-function place_fields = calculate_place_fields(x_bins_width, tracks_compared, path2save)
+function place_fields = calculate_place_fields(x_bins_width, tracks_compared, path2save, timeWindow)
 % INPUTS:
 %   x_bin_width: enter width value (2 for fine resolution, 10 for bayesian
 %   decoding).
 %   tracks_compared : array of tracks to do the PF calculation, OPTIONNAL
 %   path2save : path to save the place field file, OPTIONNAL
+%   timeWindow : [startTimeT1 endTimeT1; 
+%                 startTimeT3 endTimeT3;
+%                 startTimeT2 endTimeT2;
+%                 startTimeT4 endTimeT4], OPTIONNAL
 %
 % Load : list_of_parameters.m, extracted_clusters.mat,extracted_position.mat, extracted_waveform.mat
 % uses function skaggs_information.m
@@ -28,6 +32,20 @@ end
 
 if isempty(path2save) % By default, we save in the current folder
     path2save = "";
+end
+
+% We mutate position if a custom time range has been given
+
+if ~isempty(timeWindow)
+    timesExpT1 = timeWindow(1, :);
+    timesReexpT1 = timeWindow(2, :);
+    timesExpT2 = timeWindow(3, :);
+    timesReexpT2 = timeWindow(4, :);
+
+    position.linear(1).linear(position.t < timesExpT1(1) | position.t > timesExpT1(2)) = NaN;
+    position.linear(3).linear(position.t < timesReexpT1(1) | position.t > timesReexpT1(2)) = NaN;
+    position.linear(2).linear(position.t < timesExpT2(1) | position.t > timesExpT2(2)) = NaN;
+    position.linear(4).linear(position.t < timesReexpT2(1) | position.t > timesReexpT2(2)) = NaN;
 end
 
 %% Pre-calculations

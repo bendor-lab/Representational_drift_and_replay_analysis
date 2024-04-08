@@ -8,7 +8,7 @@ cd(PATH.SCRIPT)
 
 sessions = data_folders_excl; % Use the function to get all the file paths
 
-globalNumMin = 45; % Number of cumulative sleep replay to find events
+globalNumMin = 30; % Number of cumulative sleep replay to find events
 
 % Initiate the final files
 
@@ -128,9 +128,17 @@ xlabel("Cumulative sleep time (min)")
 figure;
 
 subplot(1, 2, 1)
-plot(cumsum(mean(replayT1, 'omitnan')))
+cumsumReplayT1 = cumsum(replayT1, 2, 'omitnan');
+normCumT1 = normalize(cumsumReplayT1, 2, "range");
+plot(normCumT1', "k");
 hold on;
-plot(-cumsum(mean(replayT3, 'omitnan')))
+
+cumsumReplayT3 = cumsum(replayT3, 2, 'omitnan');
+normCumT3 = normalize(cumsumReplayT3, 2, "range");
+plot(normCumT3', "r");
+
+cumsumDiff = normCumT1 - normCumT3;
+plot(cumsumDiff');
 hold off;
 
 subplot(1, 2, 2)
@@ -140,4 +148,33 @@ plot(-cumsum(mean(replayT4, 'omitnan')))
 hold off;
 
 legend({"Past track replay", "Futur track replay"})
+
+%%
+
+figure;
+
+% Generate the plot
+allConditions = unique(conditionVec);
+
+for cID = 1:length(allConditions)
+    current_condition = allConditions(cID);
+
+    subplot(length(allConditions), 2, 2*cID - 1)
+    bar(mean(replayT1(conditionVec == current_condition, :), 'omitnan'));
+    hold on;
+    bar(-mean(replayT3(conditionVec == current_condition, :), 'omitnan'))
+
+    title(current_condition + " - Track 1 vs. Track 3")
+    ylim([-2, 6]);
+    hold off;
+
+    subplot(length(allConditions), 2, 2*cID)
+    bar(mean(replayT2(conditionVec == current_condition, :), 'omitnan'));
+    hold on;
+    bar(-mean(replayT4(conditionVec == current_condition, :), 'omitnan'))
+    title(current_condition + " - Track 2 vs. Track 4")
+    ylim([-2, 6]);
+    hold off;
+
+end
 

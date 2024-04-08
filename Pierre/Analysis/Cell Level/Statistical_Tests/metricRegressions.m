@@ -35,6 +35,7 @@ data.conditionC = data.condition - mean(data.condition);
 data.replayPartC = data.partP1Rep - mean(data.partP1Rep, "omitnan");
 data.propPartRepC = data.propPartRep - mean(data.propPartRep);
 data.partSWRC = data.partSWR - mean(data.partSWR);
+data.expReexpBiasC = data.expReexpBias - mean(data.expReexpBias, 'omitnan');
 
 %% Do we see remapping over laps ?  ---------------------------------------
 
@@ -220,3 +221,77 @@ lme = fitlme(data, "refinPeak ~ logConditionC + partSWRC + (1|animal)");
 disp(lme)
 
 % RESULTS : No effect of SWR participation.
+
+%% Effect of condition and the relative amount of exp / re-exp replay
+
+lme = fitlme(data, "expReexpBiasC ~ logConditionC + (1|animal)");
+disp(lme)
+
+lme = fitlme(data, "refinCM ~ expReexpBiasC + (1|animal)");
+disp(lme)
+
+% No effect of exp / re-exp on CM
+
+lme = fitlme(data, "refinFR ~ expReexpBiasC + (1|animal)");
+disp(lme)
+
+% No effect of exp / re-exp on FR
+
+lme = fitlme(data, "refinPeak ~ expReexpBiasC + (1|animal)");
+disp(lme)
+
+% Significant effect on peak (p = .02).
+for nsession = 1:19
+    a(nsession) = mean(data.expReexpBias(data.cell<(1+nsession)*1000 &data.cell>nsession*1000 & data.refinPeak>0 & data.condition==16),'omitnan')...
+        /mean(data.expReexpBias(data.cell<(1+nsession)*1000 &data.cell>nsession*1000 & data.refinPeak<0 & data.condition==16),'omitnan');
+    
+    b(nsession) = mean(data.expReexpBias(data.cell<(1+nsession)*1000 &data.cell>nsession*1000 & data.refinPeak>0 & data.condition~=16),'omitnan')...
+        /mean(data.expReexpBias(data.cell<(1+nsession)*1000 &data.cell>nsession*1000 & data.refinPeak<0 & data.condition~=16),'omitnan');
+
+    hold on;
+
+end
+
+scatter(ones(1,length(a)),a); 
+hold on;
+scatter(1.5*ones(1,length(b)),b)
+
+for n = 1:numel(a)
+    line([1, 1.5], [a(n) b(n)]);
+end
+
+a(1)=[];
+b(1)=[];
+[p,h] = signrank(a,b);
+
+hold off;
+
+data.refinCM(data.refinCM>0)
+
+
+%%
+count= 1;
+for ncell= 1:length(data.cell)
+    this_cell_index = find(data.cell==data.cell(ncell));
+    if length(this_cell_index)==1
+        continue
+    end
+    a(count) = data.expReexpBias(this_cell_index(1));
+
+    b(count) = data.expReexpBias(this_cell_index(2));
+    count = count + 1;
+end
+
+scatter(ones(1,length(a)),a); 
+hold on;
+scatter(1.5*ones(1,length(b)),b)
+
+for n = 1:numel(a)
+    line([1, 1.5], [a(n) b(n)]);
+end
+[p,h] = signrank(a,b);
+
+plot(cumsum(b-a,'omitnan'))
+hold on;
+
+

@@ -3,6 +3,6 @@
 folders = data_folders_excl;
 tracks_compared = [2, 4];
 
-folders = folders(10:end);
+folders = folders(1:1);
 
-replay_sequence_analysis(folders, tracks_compared)
+replay_sequence_analysis(folders, tracks_compared, "balanced_analysis")

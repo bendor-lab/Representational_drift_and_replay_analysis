@@ -10,7 +10,7 @@ function estimated_position = bayesian_decoding(place_fields_BAYESIAN,bayesian_s
 
 % This function load extracted_position.mat and list_of_parameters (needs to be in the PATH)
 
-% Pierre Varichon 2024
+% Modified by Pierre Varichon 2024
 
 %% Loading data
 % Get the parameters for analysis

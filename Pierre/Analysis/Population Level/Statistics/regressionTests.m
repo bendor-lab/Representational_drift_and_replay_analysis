@@ -23,6 +23,7 @@ data.replayPartC = data.partP1Rep - mean(data.partP1Rep, 'omitnan');
 data.logCondC = log(data.condition) - mean(log(data.condition));
 data.amountSleepC = data.amountSleep - mean(data.amountSleep);
 data.numberSWRC = data.numberSWR - mean(data.numberSWR);
+data.expReexpBiasC = data.expReexpBias - mean(data.expReexpBias);
 
 %% Replay participation --------------------------------------------------
 
@@ -54,14 +55,14 @@ disp(lme)
 
 %% Interaction, condition logged
 
-lme = fitlme(data, "refinCorr ~ logCondC * numberSWRC * amountSleepC + (1|animal)");
+lme = fitlme(data, "refinCorr ~ logCondC * numberSWRC * numberSWRC + (1|animal)");
 disp(lme)
 
 % No interaction.
 
 %% Without interaction, condition logged
 
-lme = fitlme(data, "refinCorr ~ logCondC + numberSWRC + amountSleepC + (1|animal)");
+lme = fitlme(data, "refinCorr ~ logCondC + numberSWRC + numberSWRC + (1|animal)");
 disp(lme)
 
 % Significant intercept and effect of condition. No effect of sleep.
@@ -69,8 +70,22 @@ disp(lme)
 
 %% Without interaction, without logged condition
 
-lme = fitlme(data, "refinCorr ~ condition + numberSWRC + amountSleepC + (1|animal)");
+lme = fitlme(data, "refinCorr ~ condition + numberSWRC + numberSWRC + (1|animal)");
 disp(lme)
 
 % Significant intercept and effect of condition. Small effect of SWR. No
 % effect of sleep. 
+
+
+%% Proportion of re-exposure replay vs. exposure replay
+
+lme = fitlme(data, "expReexpBiasC ~ logCondC + (1|animal)");
+disp(lme)
+
+% Significant negative effect of the condition on the expression / re-expression
+% bias (p = .005).
+
+lme = fitlme(data, "refinCorr ~ expReexpBiasC + (1|animal)");
+disp(lme)
+
+% Tendencial effect of the exp / re-exp bias on the refinement.
