@@ -155,7 +155,7 @@ for folderID = 1:length(folders)
     significant_replay_events = number_of_significant_replays_new(0.05, 3, "wcorr", tracks_compared, globalPath);
     
     % We clear to let more memory
-    clearvars -except scoringType num_shuffles shuffle_choice folders folderID tracks_compared
+    clearvars -except folderSave scoringType num_shuffles shuffle_choice folders folderID tracks_compared
 end
 
 end
