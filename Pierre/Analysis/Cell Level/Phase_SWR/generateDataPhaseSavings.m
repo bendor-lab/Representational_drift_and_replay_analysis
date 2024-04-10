@@ -6,6 +6,7 @@ cd(PATH.SCRIPT)
 
 sessions = data_folders_excl_legacy; % We fetch all the sessions folders paths
 
+sessionID = [];
 animal = [];
 condition = [];
 track = [];
@@ -102,7 +103,8 @@ parfor fileID = 1:length(sessions)
         current_phaseLockingFilt = current_phaseLocking(ismember(allCells, common_cells));
 
         % We save the data
-
+        
+        sessionID = [sessionID; repelem(trackOI, numel(common_cells))'];
         animal = [animal; repelem(animalOI, numel(common_cells))'];
         condition = [condition; repelem(conditionOI, numel(common_cells))'];
         track = [track; repelem(trackOI, numel(common_cells))'];
@@ -128,6 +130,6 @@ condition(track ~= 1) = newConditions(:, 2);
 
 condition = str2double(condition);
 
-phase_data = table(animal, condition, track, cell, refinCM, refinFR, refinPeak, meanPhase, phaseLocking, label);
+phase_data = table(sessionID, animal, condition, track, cell, refinCM, refinFR, refinPeak, meanPhase, phaseLocking, label);
 
 save("phase_data.mat", "phase_data");

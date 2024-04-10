@@ -13,6 +13,7 @@ identifiers = identifiers* 1000;
 
 % Arrays to hold all the data
 
+sessionID = [];
 animal = [];
 condition = [];
 track = [];
@@ -56,7 +57,7 @@ parfor fileID = 1:length(sessions)
     for trackOI = 1:2
 
         % Good cells : Cells that where good place cells during RUN1 or RUN2
-        goodCells = union(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
+        % goodCells = union(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
 
         % Control : Cells that where good place cells during RUN1 and RUN2 
         % (no appearing / disappearing cells).
@@ -64,7 +65,7 @@ parfor fileID = 1:length(sessions)
         
         % Control : Cells that were good place cells during RUN1 xor RUN2
         % (only appearing / disappearing cells).
-        % goodCells = setxor(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
+        goodCells = setxor(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
 
         % We get the replay participation
 
@@ -195,7 +196,8 @@ parfor fileID = 1:length(sessions)
 
 
             % Save the data
-
+            
+            sessionID = [sessionID; fileID];
             animal = [animal; animalOI];
             condition = [condition; conditionOI];
             track = [track; trackOI];
@@ -223,9 +225,9 @@ condition(track ~= 1) = newConditions(:, 2);
 
 condition = str2double(condition);
 
-data = table(animal, condition, cell, refinCM, refinFR, refinPeak, ...
+data = table(sessionID, animal, condition, cell, refinCM, refinFR, refinPeak, ...
              partP1Rep, propPartRep, partSWR, expReexpBias);
 
-save("dataRegression.mat", "data")
-% save("dataRegressionXor.mat", "data")
+% save("dataRegression.mat", "data")
+save("dataRegressionXor.mat", "data")
 % save("dataRegressionIntersection.mat", "data")

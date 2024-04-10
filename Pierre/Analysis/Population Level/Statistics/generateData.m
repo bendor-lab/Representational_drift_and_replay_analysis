@@ -9,6 +9,7 @@ sessions = data_folders_excl; % We fetch all the sessions folders paths
 
 % Arrays to hold all the data
 
+sessionID = [];
 animal = [];
 condition = [];
 track = [];
@@ -122,7 +123,8 @@ parfor fileID = 1:length(sessions)
         ratioReexp = nbfiltReexpRepSpikes/nbfiltExpRepSpikes;
 
         % Save the data
-
+        
+        sessionID = [sessionID; fileID];
         animal = [animal; animalOI];
         condition = [condition; conditionOI];
         track = [track; trackOI];
@@ -145,6 +147,7 @@ condition(track ~= 1) = newConditions(:, 2);
 
 condition = str2double(condition);
 
-data = table(animal, condition, refinCorr, corrEndRUN1, partP1Rep, amountSleep, numberSWR, expReexpBias);
+data = table(sessionID, animal, condition, refinCorr, corrEndRUN1, ...
+             partP1Rep, amountSleep, numberSWR, expReexpBias);
 
 save("dataRegressionPop.mat", "data")

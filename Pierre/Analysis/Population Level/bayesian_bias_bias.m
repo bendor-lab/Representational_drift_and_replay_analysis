@@ -8,7 +8,7 @@ cd(PATH.SCRIPT)
 
 sessions = data_folders_excl; % Use the function to get all the file paths
 
-mode = 1; % 1 - All events ; 2 - Significant RE ; 3 - NS RE
+mode = 2; % 1 - All events ; 2 - Significant RE ; 3 - NS RE
 % Replay events are poled from exp vs. re-exp
 
 % Initiate the final files
@@ -51,9 +51,10 @@ parfor fID = 1:length(sessions)
     endTime = sleep_state.state_time.INTER_post_end;
 
     % We get all the sleep replay events during POST1
-    sleepSWRID = getAllSleepReplay(1, startTime, endTime, decoded_replay_eventsT1, sleep_state);
+    [sleepSWRID, timeSWR] = getAllSleepReplay(1, startTime, endTime, decoded_replay_eventsT1, sleep_state);
     sleepID = sleepSWRID;
-    
+    timeRep = timeSWR;
+
     for trackOI = 1:2
 
         if trackOI == 1
@@ -67,11 +68,15 @@ parfor fID = 1:length(sessions)
 
             % We find all the significant replay events
             path2get = [file, '\Replay_T', num2str(trackOI), '_vs_T', num2str(trackOI + 2)];
+            path2get = [file, '\Replay\RUN1_Decoding'];
             temp = load(path2get + "\significant_replay_events_wcorr");
             significant_replay_events = temp.significant_replay_events;
-            good_ids = [significant_replay_events.track(1).ref_index, ...
-                        significant_replay_events.track(2).ref_index];
+            % good_ids = [significant_replay_events.track(1).ref_index, ...
+            %             significant_replay_events.track(2).ref_index];
+            good_ids = significant_replay_events.track(1).ref_index;
+            good_ids = significant_replay_events.track(trackOI - 1 + mod(trackOI, 2)*2).ref_index;
             sleepID = intersect(sleepSWRID, good_ids);
+            timeRep = timeSWR(ismember(sleepSWRID, sleepID));
 
         elseif mode == 3
 
@@ -80,19 +85,19 @@ parfor fID = 1:length(sessions)
             temp = load(path2get + "\significant_replay_events_wcorr");
             significant_replay_events = temp.significant_replay_events;
             good_ids = [significant_replay_events.track(1).ref_index, ...
-                        significant_replay_events.track(2).ref_index];
+                significant_replay_events.track(2).ref_index];
             sleepID = setdiff(sleepSWRID, good_ids);
+            timeRep = timeSWR(ismember(sleepSWRID, sleepID));
 
         end
 
-        current_nbSWR = numel(sleepID);
+        current_nbReplay = numel(sleepID);
 
         % We iterate through each replay event
-        for rID = 1:current_nbSWR
+        for rID = 1:current_nbReplay
 
             replayID = sleepID(rID);
-            current_time = decoded_replay_events(1).replay_events(replayID).timebins_edges(1);
-            current_time = current_time - decoded_replay_events(1).replay_events(sleepID(1)).timebins_edges(1)
+            current_time = timeRep(rID);
 
             decodedPosExp = decoded_replay_events(1).replay_events(replayID).decoded_position;
             decodedPosReexp = decoded_replay_events(2).replay_events(replayID).decoded_position;
@@ -103,7 +108,7 @@ parfor fID = 1:length(sessions)
             animal = [animal; animalOI];
             condition = [condition; conditionOI];
             track = [track; trackOI];
-            replay_id = [replay_id; rID];
+            replay_id = [replay_id; rID/current_nbReplay];
             replay_time = [replay_time; current_time];
             bayesian_bias = [bayesian_bias; bb];
         end
@@ -118,6 +123,59 @@ condition = str2double(condition);
 
 data = table(sessionID, animal, condition, replay_id, replay_time, bayesian_bias);
 
-%% Plot
+%% Stats - mixed model
 
-boxchart(data.condition, data.bayesian_bias);
+fitlme(data, "bayesian_bias ~ condition + replay_time + (1|animal)")
+fitlme(data, "bayesian_bias ~ condition + replay_id + (1|animal)")
+
+
+%% Plot - scatter all points
+
+scatter(data.replay_time, data.bayesian_bias);
+grid on;
+
+%% Plot - take the mean each 1 minutes
+
+data.timeDisc = discretize(data.replay_time, 0:60:1800)*3 - 3;
+boxchart(data.timeDisc, data.bayesian_bias);
+grid on;
+
+%% Plot separate for each animal
+allAnimals = unique(animal);
+allConditions = [1, 2, 3, 4, 8, 16];
+
+for anID = 1:numel(allAnimals)
+    figure;
+    tiledlayout(3, 2)
+
+    for cID = 1:numel(allConditions)
+        current_data = data(data.animal == allAnimals(anID) ...
+            & data.condition == allConditions(cID), :);
+
+        nexttile;
+        if allConditions(cID) == 16
+            allSessions = unique(current_data.sessionID);
+            for sID = 1:numel(allSessions)
+                plot(current_data(current_data.sessionID == allSessions(sID), :).replay_time, ...
+                     current_data(current_data.sessionID == allSessions(sID), :).bayesian_bias);
+                hold on;
+            end
+            hold off;
+
+        else
+            plot(current_data.replay_time, current_data.bayesian_bias);
+        end
+
+        title("Condition : " + num2str(allConditions(cID)) + " laps")
+        ylim([-1, 1])
+        xlim([0, 1800])
+    end
+
+end
+
+%%
+figure;
+scatter(data.replay_time(data.condition ~= 16), data.bayesian_bias(data.condition ~= 16))
+
+figure;
+scatter(data.replay_time(data.condition == 16), data.bayesian_bias(data.condition == 16))
