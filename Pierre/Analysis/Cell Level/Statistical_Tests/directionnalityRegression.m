@@ -2,7 +2,7 @@
 
 clear 
 
-data = load("dataRegressionDirectionalityXor.mat");
+data = load("dataRegressionDirectionality.mat");
 data = data.data;
 
 data.logConditionC = log2(data.condition) - mean(log2(data.condition));
@@ -27,23 +27,4 @@ disp(lme)
 %% Regressions - Non-logged conditon
 
 lme = fitlme(data, "refinDir ~ conditionC + replayPartC + (1|animal)");
-disp(lme)
-
-%% Effect of the RELATIVE amount of replay -------------------------------
-
-%% Regressions - Interaction & Log Condition
-
-lme = fitlme(data, "refinDir ~ logConditionC * propPartRepC + (1|animal)");
-disp(lme)
-
-% No significant interaction
-
-%% Regressions - Log condition
-
-lme = fitlme(data, "refinDir ~ logConditionC + propPartRepC + (1|animal)");
-disp(lme)
-
-%% Regressions - Non-logged conditon
-
-lme = fitlme(data, "refinDir ~ conditionC + propPartRepC + (1|animal)");
 disp(lme)

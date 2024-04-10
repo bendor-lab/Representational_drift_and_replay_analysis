@@ -70,7 +70,7 @@ disp(lme)
 
 %% Without interaction, without logged condition
 
-lme = fitlme(data, "refinCorr ~ condition + numberSWRC + numberSWRC + (1|animal)");
+lme = fitlme(data, "refinCorr ~ condition + numberSWRC + (1|animal)");
 disp(lme)
 
 % Significant intercept and effect of condition. Small effect of SWR. No

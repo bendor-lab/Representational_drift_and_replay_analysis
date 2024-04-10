@@ -116,19 +116,12 @@ parfor iter = 1:1000
     p = anova1(data_concat);
     svd = ranksum(subset_stable, subset_dis);
     sva = ranksum(subset_stable, allApp);
-    dva = ranksum(subset_dis, allApp);
-
+    dva = ranksum(subset_stable, allApp);
+    
     p_values(iter) = p;
-    stable_vs_dis = svd;
-    stable_vs_app = sva;
-    dis_vs_app = dva;
 end
 
-p_under_05 = sum(p_values <= 0.00001)/numel(p_values);
-svd_under_05 = sum(stable_vs_dis <= 0.00001)/numel(stable_vs_dis);
-sva_under_05 = sum(stable_vs_app <= 0.00001)/numel(stable_vs_app);
-dva_under_05 = sum(dis_vs_app <= 0.00001)/numel(dis_vs_app);
-
+proportion_under_05 = sum(p_values <= 0.00001)/numel(p_values);
 
 %% 
 scatter(phase_data.phaseLocking, phase_data.refinCM)

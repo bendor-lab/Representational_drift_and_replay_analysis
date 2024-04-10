@@ -14,12 +14,14 @@ identifiers = identifiers* 1000;
 
 % Arrays to hold all the data
 
+sessionID = [];
 animal = [];
 condition = [];
 track = [];
 cell = [];
 
 refinDir = [];
+refinStabDir = [];
 
 partP1Rep = [];
 propPartRep = []; % % of replay participated in
@@ -167,7 +169,8 @@ for fileID = 1:length(sessions)
             endRUN1DistFPF = abs(dirFPF(cellOI) - endRUN1Direc);
             startRUN2DistFPF = abs(dirFPF(cellOI) - startRUN2Direc);
 
-            current_refinDir = endRUN1DistFPF - startRUN2DistFPF;
+            current_refinStabDir = endRUN1DistFPF - startRUN2DistFPF;
+            current_refinDir = startRUN2Direc - endRUN1Direc;
 
             % We get the replay participation of the cell - in nb of events
             replayInvolvedCurrent = cellfun(@(ev) any(ev(:, 1) == cellOI), filteredReplayEventsSpikesCurrent);
@@ -175,12 +178,14 @@ for fileID = 1:length(sessions)
             current_propPart = current_partP1Rep/nbReplay;
 
             % Save the data
-
+            
+            sessionID = [sessionID; fileID];
             animal = [animal; animalOI];
             condition = [condition; conditionOI];
             track = [track; trackOI];
             cell = [cell; cellOI];
             refinDir = [refinDir; current_refinDir];
+            refinStabDir = [refinStabDir; current_refinStabDir];
             partP1Rep = [partP1Rep; current_partP1Rep];
             propPartRep = [propPartRep; current_propPart]; % % of replay participated in
 
@@ -200,6 +205,6 @@ condition(track ~= 1) = newConditions(:, 2);
 
 condition = str2double(condition);
 
-data = table(animal, condition, cell, refinDir, partP1Rep, propPartRep);
+data = table(animal, condition, cell, refinDir, refinStabDir, partP1Rep, propPartRep);
 
 save("dataRegressionDirectionalityXor.mat", "data")
