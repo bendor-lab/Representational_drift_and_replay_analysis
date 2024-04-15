@@ -23,7 +23,7 @@ bayesian_bias = [];
 
 % For each session
 
-parfor fID = 1:length(sessions)
+for fID = 1:length(sessions)
 
     file = sessions{fID};
     disp(fID);
@@ -36,10 +36,10 @@ parfor fID = 1:length(sessions)
 
     % We load all the put. rep. ev EXP vs. REEXP
 
-    temp = load(file + "\Replay_T1_vs_T3\decoded_replay_events");
+    temp = load(file + "\balanced_analysis\Replay_T1_vs_T3\decoded_replay_events");
     decoded_replay_eventsT1 = temp.decoded_replay_events;
 
-    temp = load(file + "\Replay_T2_vs_T4\decoded_replay_events");
+    temp = load(file + "\balanced_analysis\Replay_T2_vs_T4\decoded_replay_events");
     decoded_replay_eventsT2 = temp.decoded_replay_events;
 
     % Load sleep data
@@ -67,25 +67,37 @@ parfor fID = 1:length(sessions)
         if mode == 2
 
             % We find all the significant replay events
-            path2get = [file, '\Replay_T', num2str(trackOI), '_vs_T', num2str(trackOI + 2)];
+            % path2get = [file, '\Replay_T', num2str(trackOI), '_vs_T', num2str(trackOI + 2)];
             path2get = [file, '\Replay\RUN1_Decoding'];
+            path2get2 = [file, '\Replay\RUN2_Decoding'];
+
             temp = load(path2get + "\significant_replay_events_wcorr");
-            significant_replay_events = temp.significant_replay_events;
-            % good_ids = [significant_replay_events.track(1).ref_index, ...
-            %             significant_replay_events.track(2).ref_index];
-            good_ids = significant_replay_events.track(1).ref_index;
-            good_ids = significant_replay_events.track(trackOI - 1 + mod(trackOI, 2)*2).ref_index;
+            significant_replay_eventsExp = temp.significant_replay_events;
+
+            temp = load(path2get2 + "\significant_replay_events_wcorr");
+            significant_replay_eventsReexp = temp.significant_replay_events;
+
+            good_ids = union(significant_replay_eventsExp.track(trackOI).ref_index, ...
+                             significant_replay_eventsReexp.track(trackOI).ref_index);
+
             sleepID = intersect(sleepSWRID, good_ids);
             timeRep = timeSWR(ismember(sleepSWRID, sleepID));
 
         elseif mode == 3
 
             % We find all the significant replay events
-            path2get = [file, '\Replay_T', num2str(trackOI), '_vs_T', num2str(trackOI + 2)];
+            path2get = [file, '\Replay\RUN1_Decoding'];
+            path2get2 = [file, '\Replay\RUN2_Decoding'];
+
             temp = load(path2get + "\significant_replay_events_wcorr");
-            significant_replay_events = temp.significant_replay_events;
-            good_ids = [significant_replay_events.track(1).ref_index, ...
-                significant_replay_events.track(2).ref_index];
+            significant_replay_eventsExp = temp.significant_replay_events;
+
+            temp = load(path2get2 + "\significant_replay_events_wcorr");
+            significant_replay_eventsReexp = temp.significant_replay_events;
+
+            good_ids = union(significant_replay_eventsExp.track(trackOI).ref_index, ...
+                             significant_replay_eventsReexp.track(trackOI).ref_index);
+
             sleepID = setdiff(sleepSWRID, good_ids);
             timeRep = timeSWR(ismember(sleepSWRID, sleepID));
 
@@ -123,17 +135,10 @@ condition = str2double(condition);
 
 data = table(sessionID, animal, condition, replay_id, replay_time, bayesian_bias);
 
-%% Stats - mixed model
-
-fitlme(data, "bayesian_bias ~ condition + replay_time + (1|animal)")
-fitlme(data, "bayesian_bias ~ condition + replay_id + (1|animal)")
-
-
 %% Plot - scatter all points
-
+figure;
 scatter(data.replay_time, data.bayesian_bias);
 grid on;
-
 %% Plot - take the mean each 1 minutes
 
 data.timeDisc = discretize(data.replay_time, 0:60:1800)*3 - 3;
@@ -175,7 +180,62 @@ end
 
 %%
 figure;
+tiledlayout(1, 2)
+nexttile;
 scatter(data.replay_time(data.condition ~= 16), data.bayesian_bias(data.condition ~= 16))
+hold on;
+
+mdl = fitlm(data.replay_time(data.condition ~= 16), data.bayesian_bias(data.condition ~= 16));
+intercept = mdl.Coefficients.Estimate(1);
+slope     = mdl.Coefficients.Estimate(2);
+plot(data.replay_time(data.condition ~= 16), data.replay_time(data.condition ~= 16)*slope + intercept, "r")
+hold off;
+
+title("< 16 laps conditions")
+grid on;
+
+nexttile;
+scatter(data.replay_time(data.condition == 16), data.bayesian_bias(data.condition == 16))
+hold on;
+
+mdl = fitlm(data.replay_time(data.condition == 16), data.bayesian_bias(data.condition == 16));
+intercept = mdl.Coefficients.Estimate(1);
+slope     = mdl.Coefficients.Estimate(2);
+plot(data.replay_time(data.condition == 16), data.replay_time(data.condition == 16)*slope + intercept, "r")
+hold off;
+title("16 laps condition")
+grid on;
+
+linkaxes
+
+%% First half vs. second half of sleep
+
+g = groupsummary(data, ["sessionID", "animal", "condition"]);
+
+mean_bb_first = [];
+mean_bb_second = [];
+
+for l = 1:numel(g(:, 1))
+    sessionOI = g{l, 1};
+    conditionOI = g{l, 3};
+    allMatching = data(data.sessionID == sessionOI & data.condition == conditionOI, :);
+    currentBbFirst = mean(allMatching.bayesian_bias(allMatching.replay_time < 900), 'omitnan');
+    currentBbSecond = mean(allMatching.bayesian_bias(allMatching.replay_time >= 900), 'omitnan');
+
+    mean_bb_first(end + 1) = currentBbFirst;
+    mean_bb_second(end + 1) = currentBbSecond;
+end
+
+g.mean_bb_first = mean_bb_first';
+g.mean_bb_second = mean_bb_second';
 
 figure;
-scatter(data.replay_time(data.condition == 16), data.bayesian_bias(data.condition == 16))
+gscatter(g.mean_bb_first, g.mean_bb_second, g.condition)
+xlabel("Mean BB - first 15 minutes")
+ylabel("Mean BB - rest of sleep")
+L = legend;
+grid on;
+hold on;
+
+plot(-0.3:0.01:0.1, -0.3:0.01:0.1, "--r", "LineWidth", 1.5)
+L.String{end} = "y=x";

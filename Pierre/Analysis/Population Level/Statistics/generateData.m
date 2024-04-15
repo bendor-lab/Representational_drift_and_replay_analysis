@@ -111,16 +111,26 @@ parfor fileID = 1:length(sessions)
         % Get all the sleep replay Exposure vs. Re-exposure
 
         track_label = ['Replay_T', int2str(trackOI), '_vs_T', int2str(trackOI + 2)];
+        % temp = load(file + "\balanced_analysis\" + track_label + "\significant_replay_events_wcorr");
         temp = load(file + "\" + track_label + "\significant_replay_events_wcorr");
         Exp_Rexp = temp.significant_replay_events;
 
         replayExpSleep = getAllSleepReplay(1, startTime, endTime, Exp_Rexp, sleep_state);
         replayReexpSleep = getAllSleepReplay(2, startTime, endTime, Exp_Rexp, sleep_state);
 
+        commonReplayID = intersect(Exp_Rexp.track(1).ref_index(replayExpSleep), ...
+                                 Exp_Rexp.track(2).ref_index(replayReexpSleep));
+
+        disp("X :" + numel(commonReplayID))
+
+        replayExpSleep = replayExpSleep(~ismember(Exp_Rexp.track(1).ref_index(replayExpSleep), commonReplayID));
+        replayReexpSleep = replayReexpSleep(~ismember(Exp_Rexp.track(2).ref_index(replayReexpSleep), commonReplayID));
+
         nbfiltExpRepSpikes = numel(Exp_Rexp.track(1).spikes(replayExpSleep));
         nbfiltReexpRepSpikes = numel(Exp_Rexp.track(2).spikes(replayReexpSleep));
 
-        ratioReexp = nbfiltReexpRepSpikes/nbfiltExpRepSpikes;
+        ratioReexp = (nbfiltReexpRepSpikes - nbfiltExpRepSpikes)/...
+                     (nbfiltReexpRepSpikes + nbfiltExpRepSpikes);
 
         % Save the data
         

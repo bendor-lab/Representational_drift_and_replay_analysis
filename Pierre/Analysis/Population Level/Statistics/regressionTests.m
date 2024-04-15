@@ -17,7 +17,7 @@
 
 clear
 
-data = load("dataRegressionPop.mat");
+data = load("dataRegressionPopBalanced.mat");
 data = data.data;
 data.replayPartC = data.partP1Rep - mean(data.partP1Rep, 'omitnan');
 data.logCondC = log(data.condition) - mean(log(data.condition));
@@ -89,3 +89,10 @@ lme = fitlme(data, "refinCorr ~ expReexpBiasC + (1|animal)");
 disp(lme)
 
 % Tendencial effect of the exp / re-exp bias on the refinement.
+
+beeswarm(data.condition, data.expReexpBias)
+xlabel("Number of laps");
+ylabel("Replay bias (-1 : Exposure ; 1 : Re-exposure)")
+xticks([1, 2, 3, 4, 8, 16])
+
+gscatter(data.expReexpBias(data.condition ~= 16), data.refinCorr(data.condition ~= 16), data.condition(data.condition ~= 16))
