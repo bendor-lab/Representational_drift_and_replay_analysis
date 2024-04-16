@@ -95,9 +95,9 @@ stable_vs_dis = zeros(1, 1000);
 stable_vs_app = zeros(1, 1000);
 dis_vs_app = zeros(1, 1000);
 
-allStable = phase_data.phaseLocking(phase_data.label == "Stable");
-allApp = phase_data.phaseLocking(phase_data.label == "Appears");
-allDis = phase_data.phaseLocking(phase_data.label == "Disappear");
+allStable = phase_data_sig.phaseLocking(phase_data_sig.label == "Stable");
+allApp = phase_data_sig.phaseLocking(phase_data_sig.label == "Appears");
+allDis = phase_data_sig.phaseLocking(phase_data_sig.label == "Disappear");
 
 for iter = 1:1000
     if mod(iter, 100) == 0
