@@ -97,7 +97,7 @@ end
 figure;
 t = tiledlayout(3, 2);
 
-nexttile([1 2]);
+nexttile;
 
 histogram(allDifferencesPhase);
 hold on;
@@ -111,10 +111,10 @@ L.Orientation = "vertical";
 xlabel("Phase difference");
 ylabel("Count")
 
-nexttile([1 2]);
-h1 = histogram(allDifferencesLocking);
+nexttile;
+histogram(allDifferencesLocking);
 hold on;
-h2 = histogram(allDifferencesLockingNRep);
+histogram(allDifferencesLockingNRep);
 hold off;
 
 L = legend({"Replay", "Non-replay"});
@@ -125,17 +125,5 @@ xlabel("Phase locking difference");
 ylabel("Count")
 
 nexttile;
-p1 = plotQuadrant(allDifferencesSig(:, 1), allDifferencesSig(:, 2));
-p1.MarkerFaceColor = [0.8500 0.3250 0.0980];
-xlabel("Phase Locking T1");
-ylabel("Phase Locking T2");
-
-nexttile;
-p2 = plotQuadrant(allDifferencesSigNRep(:, 1), allDifferencesSigNRep(:, 2));
-p2.MarkerFaceColor = [0 0.4470 0.7410];
-xlabel("Phase Locking T1");
-ylabel("Phase Locking T2");
-
-L = legend([p2, p1], {"Replay", "Non-replay"});
-L.Location = "eastoutside";
-L.Orientation = "vertical";
+data1 = [sum(allDifferencesSig(:, 1) == 0 & allDifferencesSig(:, 2) == 0) ...
+         sum(allDifferencesSig(:, 1) == 1 & allDifferencesSig(:, 2) == 0)];

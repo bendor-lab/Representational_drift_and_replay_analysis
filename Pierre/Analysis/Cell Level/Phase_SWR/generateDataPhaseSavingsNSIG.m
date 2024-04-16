@@ -74,8 +74,9 @@ for fileID = 1:length(sessions)
         
         struct2add = struct;
 
+        % [resultMat, meanPhaseVector, current_phaseLocking, sig, allCells] = extract_phase_NSIG(CSC, sleep_state, decoded_replay_events, significant_replay_events, trackOI);
         [resultMat, meanPhaseVector, current_phaseLocking, sig, allCells] = extract_phase_NSIG(CSC, sleep_state, decoded_replay_events, significant_replay_events, trackOI);
-
+        
         %% We find the label of the cell (appearing, disappearing, stable)
 
         pcExp = place_fields.track(trackOI).good_cells;
