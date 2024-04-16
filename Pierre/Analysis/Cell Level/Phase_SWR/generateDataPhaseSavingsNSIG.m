@@ -29,7 +29,7 @@ allTuningMat.tuningMat = {};
 
 %% Extraction & computation
 
-for fileID = 1:length(sessions)
+parfor fileID = 1:length(sessions)
 
     disp(fileID);
     file = sessions{fileID}; % We get the current session
@@ -167,5 +167,5 @@ condition = str2double(condition);
 
 phase_data = table(sessionID, animal, condition, track, cell, refinCM, refinFR, refinPeak, meanPhase, phaseLocking, significance, label);
 
-save("phase_data_NSIG.mat", "phase_data");
+save("phase_data_NSIG_split.mat", "phase_data");
 % save("tuning_curves_sig", "allTuningMat");
