@@ -26,7 +26,7 @@ allTuningMat = struct("sessionID", {}, "animal", {}, "condition", {}, "tuningMat
 
 %% Extraction & computation
 
-for fileID = 1:length(sessions)
+parfor fileID = 1:length(sessions)
 
     disp(fileID);
     file = sessions{fileID}; % We get the current session

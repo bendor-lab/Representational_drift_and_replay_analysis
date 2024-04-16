@@ -22,7 +22,11 @@ phaseLocking = [];
 significance = [];
 label = [];
 
-allTuningMat = struct("sessionID", {}, "animal", {}, "condition", {}, "tuningMat", {});
+allTuningMat.sessionID = {};
+allTuningMat.animal = {};
+allTuningMat.condition = {};
+allTuningMat.tuningMat = {};
+
 
 %% Extraction & computation
 
@@ -44,7 +48,7 @@ for fileID = 1:length(sessions)
 
     %% We load the files we need
 
-    CSC = load(file_leg + "\extracted_CSC");
+    CSC = load(file_legacy + "\extracted_CSC");
     CSC = CSC.CSC;
     disp("Loaded CSC");
 
@@ -125,13 +129,22 @@ for fileID = 1:length(sessions)
         label = [label; labelsFilt'];
 
         if trackOI == 1
-            allTuningMat = [allTuningMat; struct("sessionID", {fileID}, "animal", {animalOI}, ...
-                "condition", {16}, "tuningMat", {resultMat})];
+            struct2add.sessionID = fileID;
+            struct2add.animal = animalOI;
+            struct2add.condition = 16;
+            struct2add.tuningMat = {resultMat};
+            
+            allTuningMat = [allTuningMat; struct2add];
         else
             condition2add = split(conditionOI, 'x');
             condition2add = str2double(condition2add(end));
-            allTuningMat = [allTuningMat; struct("sessionID", {fileID}, "animal", {animalOI}, ...
-                "condition", {condition2add}, "tuningMat", {resultMat})];
+            
+            struct2add.sessionID = fileID;
+            struct2add.animal = animalOI;
+            struct2add.condition = condition2add;
+            struct2add.tuningMat = {resultMat};
+            
+            allTuningMat = [allTuningMat; struct2add];
         end
 
     end
