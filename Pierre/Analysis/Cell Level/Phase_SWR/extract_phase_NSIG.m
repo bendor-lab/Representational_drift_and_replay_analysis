@@ -35,11 +35,11 @@ allGoodDec = getAllSleepReplay(track, startTime, endTime, decoded_replay_events,
 sleepSWR = getAllSleepReplay(track, startTime, endTime, significant_replay_events, sleep_state);
 sigIndex = significant_replay_events.track(track).ref_index(sleepSWR);
 
-sleepSWR = sediff(allGoodDec, sigIndex);
+sleepSWR = setdiff(allGoodDec, sigIndex);
 
 a = []; % structure to hold every spike / spike time / replay id
 for replayID = 1:numel(sleepSWR)
-    dataCurrentRep = decoded_replay_events(sleepSWR(replayID)).spikes;
+    dataCurrentRep = decoded_replay_events(track).replay_events(sleepSWR(replayID)).spikes;
     dataCurrentRep(:, 3) = sleepSWR(replayID);
     a = [a; dataCurrentRep];
 end

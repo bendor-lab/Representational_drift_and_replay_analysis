@@ -1,16 +1,21 @@
 clear
 
-phase_data_sig = load("phase_data_sig.mat");
+% Load the data
+
+phase_data_sig = load("phase_data_SIG.mat");
 phase_data_sig = phase_data_sig.phase_data;
 
-load("phase_data.mat");
+phase_data_nsig = load("phase_data_NSIG.mat");
+phase_data_nsig = phase_data_nsig.phase_data;
 
+load("phase_data.mat");
 
 % For now, as a filter for 1-spike cells, we remove all cells with 1 phase
 % lock
 
 phase_data(phase_data.phaseLocking > 0.95, :) = [];
 phase_data_sig(phase_data_sig.phaseLocking > 0.95, :) = [];
+phase_data_nsig(phase_data_nsig.phaseLocking > 0.95, :) = [];
 
 %% Look at the tuning
 load("tuning_curves.mat");
@@ -21,7 +26,6 @@ tuningMat = normalize(tuningMat, 2, "zscore");
 [sortedPeaks, order] = sort(allPeaks);
 tuningMat = tuningMat(order, :);
 imagesc(tuningMat);
-
 
 %% Analysis : difference in mean phase between appearing / disappearing cells / stable cells / unstable ?
 
