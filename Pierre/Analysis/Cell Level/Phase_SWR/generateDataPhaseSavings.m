@@ -22,7 +22,10 @@ phaseLocking = [];
 significance = [];
 label = [];
 
-allTuningMat = struct("sessionID", {}, "animal", {}, "condition", {}, "tuningMat", {});
+allTuningMat.sessionID = {};
+allTuningMat.animal = {};
+allTuningMat.condition = {};
+allTuningMat.tuningMat = {};
 
 %% Extraction & computation
 
@@ -68,6 +71,8 @@ parfor fileID = 1:length(sessions)
     [resultMat, meanPhaseVector, current_phaseLocking, sig, allCells] = extract_phase(CSC, sleep_state, decoded_replay_events);
 
     for trackOI = 1:2
+        
+        struct2add = struct;
 
         %% We find the label of the cell (appearing, disappearing, stable)
 
@@ -125,13 +130,22 @@ parfor fileID = 1:length(sessions)
         label = [label; labelsFilt'];
 
         if trackOI == 1
-            allTuningMat = [allTuningMat; struct("sessionID", {fileID}, "animal", {animalOI}, ...
-                            "condition", {16}, "tuningMat", {resultMat})];
+            struct2add.sessionID = fileID;
+            struct2add.animal = animalOI;
+            struct2add.condition = 16;
+            struct2add.tuningMat = {resultMat};
+            
+            allTuningMat = [allTuningMat; struct2add];
         else
             condition2add = split(conditionOI, 'x');
             condition2add = str2double(condition2add(end));
-            allTuningMat = [allTuningMat; struct("sessionID", {fileID}, "animal", {animalOI}, ...
-                            "condition", {condition2add}, "tuningMat", {resultMat})];
+            
+            struct2add.sessionID = fileID;
+            struct2add.animal = animalOI;
+            struct2add.condition = condition2add;
+            struct2add.tuningMat = {resultMat};
+            
+            allTuningMat = [allTuningMat; struct2add];
         end
 
     end

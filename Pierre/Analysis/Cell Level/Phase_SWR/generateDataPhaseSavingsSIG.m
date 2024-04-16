@@ -161,5 +161,5 @@ condition = str2double(condition);
 
 phase_data = table(sessionID, animal, condition, track, cell, refinCM, refinFR, refinPeak, meanPhase, phaseLocking, significance, label);
 
-save("phase_data_SIG_balanced.mat", "phase_data");
+save("phase_data_SIG.mat", "phase_data");
 % save("tuning_curves_sig", "allTuningMat");
