@@ -193,7 +193,7 @@ for cellID = 1:numel(unique_cells)
     current_v_strength = sqrt(sum(current_y)^2 + sum(current_x)^2)/sum(allSpikes == current_cell);
 
     % We get the Rayleigh value. If >= 13.8, p < .001
-    isSig = 2*sum(allSpikes == current_cell)*current_v_strength^2 >= 13.8;
+    isSig = circ_rtest(current_coll_phases) <= 0.05;
 
     meanPhaseVector(cellID) = current_mean_phase;
     phaseLocking(cellID) = current_v_strength;
