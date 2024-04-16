@@ -33,7 +33,7 @@ allGoodDec = getAllSleepReplay(track, startTime, endTime, decoded_replay_events,
 
 % Find all the significant events during sleep
 sleepSWR = getAllSleepReplay(track, startTime, endTime, significant_replay_events, sleep_state);
-sigIndex = significant_replay_events.track(track).ref_indexs(sleepSWR);
+sigIndex = significant_replay_events.track(track).ref_index(sleepSWR);
 
 sleepSWR = sediff(allGoodDec, sigIndex);
 
