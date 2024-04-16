@@ -67,21 +67,21 @@ histogram(phase_data.meanPhase(phase_data.label == "Disappear"), 20);
 figure;
 tiledlayout(2, 3);
 nexttile;
-histogram(phase_data.phaseLocking(phase_data.label == "Appears"), 20);
+histogram(phase_data_sig.phaseLocking(phase_data_sig.label == "Appears"), 20);
 title("Appears")
 ylabel("Count")
 
 nexttile;
-histogram(phase_data.phaseLocking(phase_data.label == "Disappear"), 20);
+histogram(phase_data_sig.phaseLocking(phase_data_sig.label == "Disappear"), 20);
 title("Disappear")
 xlabel("Phase locking")
 
 nexttile;
-histogram(phase_data.phaseLocking(phase_data.label == "Stable"), 20);
+histogram(phase_data_sig.phaseLocking(phase_data_sig.label == "Stable"), 20);
 title("Stable")
 
 nexttile([1, 3])
-boxchart(categorical(phase_data.label), phase_data.phaseLocking);
+boxchart(categorical(phase_data_sig.label), phase_data_sig.phaseLocking);
 ylabel("Phase locking")
 
 % Slight difference
@@ -100,9 +100,6 @@ allApp = phase_data_sig.phaseLocking(phase_data_sig.label == "Appears");
 allDis = phase_data_sig.phaseLocking(phase_data_sig.label == "Disappear");
 
 for iter = 1:1000
-    if mod(iter, 100) == 0
-        disp(iter);
-    end
 
     subset_stable = allStable(randperm(numel(allStable), numel(allApp)));
     subset_dis = allDis(randperm(numel(allDis), numel(allApp)));
