@@ -7,7 +7,7 @@ clear
 phase_data_sig = load("../phase_data_SIG.mat");
 phase_data_sig = phase_data_sig.phase_data;
 
-phase_data_nsig = load("../phase_data_NSIG.mat");
+phase_data_nsig = load("../phase_data_NSIG_split.mat");
 phase_data_nsig = phase_data_nsig.phase_data;
 
 load("../phase_data.mat");
