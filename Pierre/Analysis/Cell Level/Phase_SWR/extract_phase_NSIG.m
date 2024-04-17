@@ -1,7 +1,7 @@
 % Function to extract the number of participation in SWR at a certain phase
 % Also returns the vector of cellID
 
-function [phasePartMatrice, meanPhaseVector, phaseLocking, significance, unique_cells] = extract_phase(CSC, sleep_state, decoded_replay_events)
+function [phasePartMatrice, meanPhaseVector, phaseLocking, significance, unique_cells] = extract_phase_NSIG(CSC, sleep_state, decoded_replay_events, significant_replay_events, track)
 
 %% 1. Loading & cropping
 
@@ -26,14 +26,20 @@ swr_phase = angle(hilbert(swr_vector));
 swr_power = abs(hilbert(swr_vector));
 swr_unwrap = unwrap(swr_phase); % unwrap for interpolation
 
+
 %% 3. We find every sleep replay event
 
-% Find all the candidate events during the first 30 minutes of sleep
-sleepSWR = getAllSleepReplay(1, startTime, endTime, decoded_replay_events, sleep_state);
+allGoodDec = getAllSleepReplay(track, startTime, endTime, decoded_replay_events, sleep_state);
+
+% Find all the significant events during sleep
+sleepSWR = getAllSleepReplay(track, startTime, endTime, significant_replay_events, sleep_state);
+sigIndex = significant_replay_events.track(track).ref_index(sleepSWR);
+
+sleepSWR = setdiff(allGoodDec, sigIndex);
 
 a = []; % structure to hold every spike / spike time / replay id
 for replayID = 1:numel(sleepSWR)
-    dataCurrentRep = decoded_replay_events(1).replay_events(sleepSWR(replayID)).spikes;
+    dataCurrentRep = decoded_replay_events(track).replay_events(sleepSWR(replayID)).spikes;
     dataCurrentRep(:, 3) = sleepSWR(replayID);
     a = [a; dataCurrentRep];
 end
@@ -43,7 +49,7 @@ disp("Found all sleep SWR");
 %% 4. Now we keep only the spikes that happened during the real SWR (band between peak and 1 STD)
 
 % We z-score the filtered LFP
-z_swr = normalize(swr_power, "zscore"); 
+z_swr = normalize(swr_power, "zscore");
 
 validSpikesBool = [];
 
@@ -56,6 +62,10 @@ for replayID = 1:numel(sleepSWR)
     % We get the ripple power between those times
     current_zswr = z_swr(lfp_times <= enTime & lfp_times >= stTime);
     current_swr_time = lfp_times(lfp_times <= enTime & lfp_times >= stTime);
+
+    if isempty(current_zswr)
+        continue;
+    end
 
     % We find the all the local max > 5 std
     [local_maxs, loc_local_maxs] = findpeaks(current_zswr);
@@ -78,7 +88,7 @@ for replayID = 1:numel(sleepSWR)
         % Define the current max
         current_max = local_maxs(lID);
         max_location = loc_local_maxs(lID);
-        
+
         % Find the indices of all the transition points
         allLower = find(transPoints == -1);
         allLower(allLower > max_location) = [];
@@ -93,14 +103,14 @@ for replayID = 1:numel(sleepSWR)
             distanceToPeakLow = abs(allLower - max_location); % Distance from the peak
 
             % Find the ID of the closest -1 transition point
-            current_lower_ID = allLower(distanceToPeakLow == min(distanceToPeakLow));   
-                
+            current_lower_ID = allLower(distanceToPeakLow == min(distanceToPeakLow));
+
             % We take whether point on each side of the tranisition which has
             % the smallest difference with 0;
-            
+
             values_trans = current_zswr(current_lower_ID);
             concurrentPointLow = current_zswr(current_lower_ID + 1);
-    
+
             if abs(values_trans - 1) > abs(concurrentPointLow - 1)
                 current_lower_ID = current_lower_ID + 1;
             end
@@ -110,22 +120,22 @@ for replayID = 1:numel(sleepSWR)
             current_upper_ID = numel(current_zswr);
         else
             % Find the distance of all these transition points with the index
-        % of the max
-       
-        distanceToPeakHigh = abs(allUpper - max_location);
-    
-        % Find the ID of the closest -1 transition point
-        current_upper_ID = allUpper(distanceToPeakHigh == min(distanceToPeakHigh));
+            % of the max
 
-        % We take whether point on each side of the tranisition which has
-        % the smallest difference with 0;
-        
-        values_trans = current_zswr(current_upper_ID);
-        concurrentPointLow = current_zswr(current_upper_ID - 1);
+            distanceToPeakHigh = abs(allUpper - max_location);
 
-        if abs(values_trans - 1) > abs(concurrentPointLow - 1)
-            current_upper_ID = current_upper_ID - 1;
-        end
+            % Find the ID of the closest -1 transition point
+            current_upper_ID = allUpper(distanceToPeakHigh == min(distanceToPeakHigh));
+
+            % We take whether point on each side of the tranisition which has
+            % the smallest difference with 0;
+
+            values_trans = current_zswr(current_upper_ID);
+            concurrentPointLow = current_zswr(current_upper_ID - 1);
+
+            if abs(values_trans - 1) > abs(concurrentPointLow - 1)
+                current_upper_ID = current_upper_ID - 1;
+            end
 
         end
 
@@ -136,7 +146,7 @@ for replayID = 1:numel(sleepSWR)
         % Now we can assign 1 to every values between those bounds
         spikeValidityMat(allTimes <= timeStopValid & allTimes >= timeStartValid) = 1;
     end
-    
+
     % Now we can add to our spike register only the SWR spikes
 
     validSpikesBool = [validSpikesBool; spikeValidityMat];
@@ -156,9 +166,9 @@ allPhases = mod(allPhases, 2*pi); % We re-wrap
 
 % We bin the phases to 2pi/8
 allPhasesBinned = discretize(allPhases, 0:pi/4:2*pi);
-occupancyPhase = histcounts(allPhasesBinned, 0:8);
+occupancyPhase = allPhasesBinned;
 
-unique_phases = unique(allPhasesBinned);
+unique_phases = 1:8;
 unique_cells = unique(allSpikes);
 phasePartMatrice = zeros(numel(unique_cells), numel(unique_phases));
 
@@ -181,6 +191,7 @@ significance = zeros(1, numel(unique_cells));
 
 for cellID = 1:numel(unique_cells)
     current_cell = unique_cells(cellID);
+
     % We get the phase of each spike
     current_coll_phases = allPhases(allSpikes == current_cell);
 
@@ -201,7 +212,6 @@ for cellID = 1:numel(unique_cells)
 end
 
 meanPhaseVector = meanPhaseVector + pi; % We want the vector to go from 0 to 2pi
-
 
 end
 

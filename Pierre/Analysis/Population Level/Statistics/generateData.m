@@ -9,6 +9,7 @@ sessions = data_folders_excl; % We fetch all the sessions folders paths
 
 % Arrays to hold all the data
 
+sessionID = [];
 animal = [];
 condition = [];
 track = [];
@@ -19,6 +20,7 @@ corrEndRUN1 = [];
 partP1Rep = [];
 amountSleep = [];
 numberSWR = [];
+expReexpBias = [];
 
 parfor fileID = 1:length(sessions)
 
@@ -42,7 +44,7 @@ parfor fileID = 1:length(sessions)
     for trackOI = 1:2
 
         % Good cells : cells that become good place cells on RUN2
-        goodCells = place_fields.track(trackOI + 2).good_cells;
+        goodCells = union(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
 
         % We get the replay participation
 
@@ -106,8 +108,33 @@ parfor fileID = 1:length(sessions)
 
         current_refinement = pvCorRUN2 - pvCorRUN1;
 
-        % Save the data
+        % Get all the sleep replay Exposure vs. Re-exposure
 
+        track_label = ['Replay_T', int2str(trackOI), '_vs_T', int2str(trackOI + 2)];
+        % temp = load(file + "\balanced_analysis\" + track_label + "\significant_replay_events_wcorr");
+        temp = load(file + "\" + track_label + "\significant_replay_events_wcorr");
+        Exp_Rexp = temp.significant_replay_events;
+
+        replayExpSleep = getAllSleepReplay(1, startTime, endTime, Exp_Rexp, sleep_state);
+        replayReexpSleep = getAllSleepReplay(2, startTime, endTime, Exp_Rexp, sleep_state);
+
+        commonReplayID = intersect(Exp_Rexp.track(1).ref_index(replayExpSleep), ...
+                                 Exp_Rexp.track(2).ref_index(replayReexpSleep));
+
+        disp("X :" + numel(commonReplayID))
+
+        replayExpSleep = replayExpSleep(~ismember(Exp_Rexp.track(1).ref_index(replayExpSleep), commonReplayID));
+        replayReexpSleep = replayReexpSleep(~ismember(Exp_Rexp.track(2).ref_index(replayReexpSleep), commonReplayID));
+
+        nbfiltExpRepSpikes = numel(Exp_Rexp.track(1).spikes(replayExpSleep));
+        nbfiltReexpRepSpikes = numel(Exp_Rexp.track(2).spikes(replayReexpSleep));
+
+        ratioReexp = (nbfiltReexpRepSpikes - nbfiltExpRepSpikes)/...
+                     (nbfiltReexpRepSpikes + nbfiltExpRepSpikes);
+
+        % Save the data
+        
+        sessionID = [sessionID; fileID];
         animal = [animal; animalOI];
         condition = [condition; conditionOI];
         track = [track; trackOI];
@@ -116,6 +143,7 @@ parfor fileID = 1:length(sessions)
         partP1Rep = [partP1Rep; nbReplayEvents];
         amountSleep = [amountSleep; current_amountSleep];
         numberSWR = [numberSWR; current_nbSWR];
+        expReexpBias = [expReexpBias; ratioReexp];
 
     end
 end
@@ -129,6 +157,7 @@ condition(track ~= 1) = newConditions(:, 2);
 
 condition = str2double(condition);
 
-data = table(animal, condition, refinCorr, corrEndRUN1, partP1Rep, amountSleep, numberSWR);
+data = table(sessionID, animal, condition, refinCorr, corrEndRUN1, ...
+             partP1Rep, amountSleep, numberSWR, expReexpBias);
 
 save("dataRegressionPop.mat", "data")

@@ -1,9 +1,10 @@
 % New function to analyse and score replay events
 
-function [] = replay_sequence_analysis(folders, tracks_compared)
+function [] = replay_sequence_analysis(folders, tracks_compared, folderSave)
 
 % INPUT : List of data folders to run the analysis, array of tracks we
 % want to compare during bayesian decoding (across track normalisation)
+% folderSave : folder to get the place field data / to save the data
 % OUTPUT : None, creation of a folder with all the relevant files in it
 % Loads : extracted_place_fields_BAYESIAN.mat
 
@@ -33,17 +34,22 @@ for folderID = 1:length(folders)
     targetFolder = ['Replay_', strjoin(formatted_strings, '_vs_')];
     
     % We check if the folder exist in the current folder
-    
-    if ~exist(targetFolder, 'dir')
-        mkdir(targetFolder);
+
+    if isempty(folderSave)
+        folderSave = "";
     end
     
+    if ~exist(folderSave + "\" + targetFolder, 'dir')
+        mkdir(folderSave + "\" + targetFolder);
+    end
+
+    
     % We create the global path to save all the data
-    globalPath = folder + "\" + targetFolder + "\";
+    globalPath = folder + "\" + folderSave + "\" + targetFolder + "\";
     
     %% Load data
-    
-    load("extracted_place_fields_BAYESIAN");
+
+    load(folder + "\" + folderSave + "\extracted_place_fields_BAYESIAN");
     
     %% Extract replay events and Bayesian decoding
   
@@ -149,7 +155,7 @@ for folderID = 1:length(folders)
     significant_replay_events = number_of_significant_replays_new(0.05, 3, "wcorr", tracks_compared, globalPath);
     
     % We clear to let more memory
-    clearvars -except scoringType num_shuffles shuffle_choice folders folderID tracks_compared
+    clearvars -except folderSave scoringType num_shuffles shuffle_choice folders folderID tracks_compared
 end
 
 end

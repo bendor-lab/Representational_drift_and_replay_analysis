@@ -1,7 +1,7 @@
 % Function to get the sleep replay between certain timestamps
 % Only consider the cumulative first 30 minutes of sleeping times !
 
-function [allMatchingReplay, timeVector] = getAllSleepReplay(track, startTime,stopTime, replay_events, sleep_state)
+function [allMatchingReplay, timeVector] = getAllAwakeReplay(track, startTime,stopTime, replay_events, sleep_state)
 
 % We get the sleeping state each timepoint and we interpolate the correspondant time
 stateVec = sleep_state.state;
@@ -9,16 +9,17 @@ timeVec = linspace(sleep_state.time(1), sleep_state.time(end), numel(stateVec));
 freq = timeVec(end) - timeVec(end - 1); % number of second per bin
 
 stateVec = stateVec(timeVec <= stopTime & timeVec >= startTime);
-stateVec(stateVec == -1) = 0; % We convert to a logical
+stateVec(stateVec == 1) = 0; % We convert to a logical
+stateVec(stateVec == -1) = 1; % We convert to a logical
 stateVec = logical(stateVec);
 timeVec = timeVec(timeVec <= stopTime & timeVec >= startTime);
 
-% We find when the cumulative duration of sleep is bigger than 30 minutes, 
-% and we switch everything after to 0 (awake)
+% We find when the cumulative duration of awakeness is bigger than 30 minutes, 
+% and we switch everything after to 0 (sleep)
 
 cumsumSleep = cumsum(stateVec)*freq;
-id30Minutes = find(cumsumSleep >= 1800, 1);
-stateVec(id30Minutes:end) = 0;
+% id30Minutes = find(cumsumSleep >= 1800, 1);
+% stateVec(id30Minutes:end) = 0;
 
 % Now we return all the replay events in that range
 

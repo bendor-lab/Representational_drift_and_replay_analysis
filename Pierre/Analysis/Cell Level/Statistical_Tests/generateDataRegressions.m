@@ -13,6 +13,7 @@ identifiers = identifiers* 1000;
 
 % Arrays to hold all the data
 
+sessionID = [];
 animal = [];
 condition = [];
 track = [];
@@ -25,6 +26,7 @@ refinPeak = [];
 partP1Rep = [];
 propPartRep = []; % % of replay participated in 
 partSWR = [];
+expReexpBias = [];
 
 % We take the absolute value of the difference over sum to get the relative
 % distance with the FPF, independently of the direction
@@ -55,11 +57,11 @@ parfor fileID = 1:length(sessions)
     for trackOI = 1:2
 
         % Good cells : Cells that where good place cells during RUN1 or RUN2
-        % goodCells = union(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
+        goodCells = union(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
 
         % Control : Cells that where good place cells during RUN1 and RUN2 
         % (no appearing / disappearing cells).
-        goodCells = intersect(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
+        % goodCells = intersect(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
         
         % Control : Cells that were good place cells during RUN1 xor RUN2
         % (only appearing / disappearing cells).
@@ -87,6 +89,28 @@ parfor fileID = 1:length(sessions)
 
         % We get the ID of all the sleep SWR
         sleepSWRID = getAllSleepReplay(trackOI, startTime, endTime, decoded_replay_events, sleep_state);
+
+        % Get all the sleep replay Exposure vs. Re-exposure
+
+        track_label = ['Replay_T', int2str(trackOI), '_vs_T', int2str(trackOI + 2)];
+        % temp = load(file + "\balanced_analysis\" + track_label + "\significant_replay_events_wcorr");
+        temp = load(file + "\" + track_label + "\significant_replay_events_wcorr");
+        Exp_Rexp = temp.significant_replay_events;
+
+        replayExpSleep = getAllSleepReplay(1, startTime, endTime, Exp_Rexp, sleep_state);
+        replayReexpSleep = getAllSleepReplay(2, startTime, endTime, Exp_Rexp, sleep_state);
+
+        commonReplayID = intersect(Exp_Rexp.track(1).ref_index(replayExpSleep), ...
+                                 Exp_Rexp.track(2).ref_index(replayReexpSleep));
+
+        disp("X : " + numel(commonReplayID));
+
+        replayExpSleep = replayExpSleep(~ismember(Exp_Rexp.track(1).ref_index(replayExpSleep), commonReplayID));
+        replayReexpSleep = replayReexpSleep(~ismember(Exp_Rexp.track(2).ref_index(replayReexpSleep), commonReplayID));
+
+
+        filtExpRepSpikes = Exp_Rexp.track(1).spikes(replayExpSleep);
+        filtReexpRepSpikes = Exp_Rexp.track(2).spikes(replayReexpSleep);
 
         nbReplay = numel(goodIDCurrent);
 
@@ -158,6 +182,7 @@ parfor fileID = 1:length(sessions)
 
             current_refinCM = abs(cmFPF(cellOI) - endRUN1CM) - abs(cmFPF(cellOI) - startRUN2CM);
 
+
             current_refinFR = diffSum(frFPF(cellOI), endRUN1MaxFR) ...
                             - diffSum(frFPF(cellOI), startRUN2MaxFR);
             
@@ -174,9 +199,16 @@ parfor fileID = 1:length(sessions)
             swrInvolvedCurrent = cellfun(@(ev) any(ev(:, 1) == cellOI), filteredSWR);
             current_partSWR = sum(swrInvolvedCurrent);
 
+            % We get the participation in RUN1 vs. RUN3 replay
+            partExpReplay = sum(cellfun(@(ev) any(ev(:, 1) == cellOI), filtExpRepSpikes));
+            partReexpReplay = sum(cellfun(@(ev) any(ev(:, 1) == cellOI), filtReexpRepSpikes));
+
+            current_expReexpBias = (partReexpReplay - partExpReplay) / (partExpReplay + partReexpReplay);
+
 
             % Save the data
-
+            
+            sessionID = [sessionID; fileID];
             animal = [animal; animalOI];
             condition = [condition; conditionOI];
             track = [track; trackOI];
@@ -187,6 +219,7 @@ parfor fileID = 1:length(sessions)
             partP1Rep = [partP1Rep; current_partP1Rep];
             propPartRep = [propPartRep; current_propPart];
             partSWR = [partSWR; current_partSWR];
+            expReexpBias = [expReexpBias; current_expReexpBias];
 
         end
     end
@@ -203,9 +236,9 @@ condition(track ~= 1) = newConditions(:, 2);
 
 condition = str2double(condition);
 
+data = table(sessionID, animal, condition, cell, refinCM, refinFR, refinPeak, ...
+             partP1Rep, propPartRep, partSWR, expReexpBias);
 
-data = table(animal, condition, cell, refinCM, refinFR, refinPeak, partP1Rep, propPartRep, partSWR);
-
-% save("dataRegression.mat", "data")
+save("dataRegression.mat", "data")
 % save("dataRegressionXor.mat", "data")
-save("dataRegressionIntersection.mat", "data")
+% save("dataRegressionIntersection.mat", "data")

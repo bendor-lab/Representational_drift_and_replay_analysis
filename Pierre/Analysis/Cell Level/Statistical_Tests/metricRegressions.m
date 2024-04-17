@@ -27,7 +27,7 @@
 
 clear 
 
-data = load("dataRegression.mat");
+data = load("dataRegressionBalanced.mat");
 data = data.data;
 
 data.logConditionC = log2(data.condition) - mean(log2(data.condition));
@@ -35,6 +35,7 @@ data.conditionC = data.condition - mean(data.condition);
 data.replayPartC = data.partP1Rep - mean(data.partP1Rep, "omitnan");
 data.propPartRepC = data.propPartRep - mean(data.propPartRep);
 data.partSWRC = data.partSWR - mean(data.partSWR);
+data.expReexpBiasC = data.expReexpBias - mean(data.expReexpBias, 'omitnan');
 
 %% Do we see remapping over laps ?  ---------------------------------------
 
@@ -224,3 +225,23 @@ lme = fitlme(data, "refinPeak ~ logConditionC + partSWRC + (1|animal)");
 disp(lme)
 
 % RESULTS : No effect of SWR participation.
+
+%% Effect of condition and the relative amount of exp / re-exp replay
+
+lme = fitlme(data, "expReexpBiasC ~ logConditionC + (1|animal)");
+disp(lme)
+
+lme = fitlme(data, "refinCM ~ expReexpBiasC + (1|animal)");
+disp(lme)
+
+% No effect of exp / re-exp on CM
+
+lme = fitlme(data, "refinFR ~ expReexpBiasC + (1|animal)");
+disp(lme)
+
+% No effect of exp / re-exp on FR
+
+lme = fitlme(data, "refinPeak ~ expReexpBiasC + (1|animal)");
+disp(lme)
+
+% Significant effect on peak (p = .02) - not when common events are removed
