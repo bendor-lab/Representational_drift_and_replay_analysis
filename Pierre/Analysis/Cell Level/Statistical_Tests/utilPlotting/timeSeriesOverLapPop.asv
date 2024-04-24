@@ -1,4 +1,4 @@
-function [] = timeSeriesOverLap(data, var, std_var, varName)
+function [] = timeSeriesOverLapPop(data, var, std_var, varName)
 
 allConditions = unique(data.condition);
 colors = lines(length(allConditions));
@@ -47,8 +47,7 @@ for i = 1:length(allConditions) % We iterate through conditions
 
     if condition == 1
         hold on;
-        errorbar(1, Y(1), std1_data(1), "-s", "MarkerSize", 5, "Color", color, "CapSize", 6, ...
-            "LineWidth", 1.5, "MarkerFaceColor", color);
+        scatter(1, Y(1), 30, color, "filled");
     end
 
     hold on;
@@ -69,11 +68,11 @@ legend({'', '', ' 1 lap', '', ...
         '', '', ' 4 laps', ...
         '', '', ' 8 laps', ...
         '', '', ' 16 laps'}, 'Location','southoutside','NumColumns', 6, 'FontSize', 12);
-
 legend('show');
 xlabel("Lap")
-ylabel("Median " + varName + " difference with the FPF", 'FontSize', 12)
+ylabel("Median " + varName, 'FontSize', 12)
 title("1^{st} exposure" + repelem(' ', 80) + "2^{nd} exposure")
+
 
 grid on;
 

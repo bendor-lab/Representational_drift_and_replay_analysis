@@ -45,6 +45,7 @@ parfor fileID = 1:length(sessions)
 
         % Good cells : cells that become good place cells on RUN2
         goodCells = union(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
+        % goodCells = intersect(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
 
         % We get the replay participation
 
@@ -111,8 +112,8 @@ parfor fileID = 1:length(sessions)
         % Get all the sleep replay Exposure vs. Re-exposure
 
         track_label = ['Replay_T', int2str(trackOI), '_vs_T', int2str(trackOI + 2)];
-        % temp = load(file + "\balanced_analysis\" + track_label + "\significant_replay_events_wcorr");
-        temp = load(file + "\" + track_label + "\significant_replay_events_wcorr");
+        temp = load(file + "\balanced_analysis\one_lap_all\" + track_label + "\significant_replay_events_wcorr");
+        % temp = load(file + "\" + track_label + "\significant_replay_events_wcorr");
         Exp_Rexp = temp.significant_replay_events;
 
         replayExpSleep = getAllSleepReplay(1, startTime, endTime, Exp_Rexp, sleep_state);
@@ -160,4 +161,4 @@ condition = str2double(condition);
 data = table(sessionID, animal, condition, refinCorr, corrEndRUN1, ...
              partP1Rep, amountSleep, numberSWR, expReexpBias);
 
-save("dataRegressionPop.mat", "data")
+save("dataRegressionPopBalanced1L.mat", "data")

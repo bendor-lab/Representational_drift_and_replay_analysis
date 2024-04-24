@@ -6,9 +6,9 @@ cd(PATH.SCRIPT)
 
 sessions = data_folders_excl; % We fetch all the sessions folders paths
 
-% We create identifiers for cells from each session. 
+% We create identifiers for cells from each session.
 % Format is : IDENT-00-XXX
-identifiers = 1:numel(sessions); 
+identifiers = 1:numel(sessions);
 identifiers = identifiers* 1000;
 
 % Arrays to hold all the data
@@ -18,13 +18,17 @@ animal = [];
 condition = [];
 track = [];
 cell = [];
+label = [];
+peakEndRUN1 = [];
+peakStartRUN2 = [];
+firingRateRUN1 = [];
 
 refinCM = [];
 refinFR = [];
 refinPeak = [];
 
 partP1Rep = [];
-propPartRep = []; % % of replay participated in 
+propPartRep = []; % % of replay participated in
 partSWR = [];
 expReexpBias = [];
 
@@ -56,16 +60,36 @@ parfor fileID = 1:length(sessions)
 
     for trackOI = 1:2
 
-        % Good cells : Cells that where good place cells during RUN1 or RUN2
-        goodCells = union(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
+        goodPCRUN1 = lap_place_fields(trackOI).Complete_Lap{end}.good_cells;
+        goodPCRUN2 = lap_place_fields(trackOI + 2).Complete_Lap{1}.good_cells;
 
-        % Control : Cells that where good place cells during RUN1 and RUN2 
+        other_track = mod(trackOI + 1, 2) + mod(trackOI, 2)*2;
+
+        goodPCRUN1Other = lap_place_fields(other_track).Complete_Lap{end}.good_cells;
+        goodPCRUN2Other = lap_place_fields(other_track + 2).Complete_Lap{1}.good_cells;
+
+        % Good cells : Cells that where good place cells during RUN1 or RUN2
+        goodCells = union(goodPCRUN1, goodPCRUN2);
+
+        % Control : Cells that where good place cells during RUN1 and RUN2
         % (no appearing / disappearing cells).
-        % goodCells = intersect(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
-        
+        % goodCells = intersect(goodPCRUN1, goodPCRUN2);
+
         % Control : Cells that were good place cells during RUN1 xor RUN2
         % (only appearing / disappearing cells).
-        % goodCells = setxor(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
+        % goodCells = setxor(goodPCRUN1, goodPCRUN2);
+
+        % We get the labels
+
+        isGoodPCRUN1 = ismember(goodCells, goodPCRUN1);
+        isGoodPCRUN2 = ismember(goodCells, goodPCRUN2);
+        isGoodPCRUN1Other = ismember(goodCells, goodPCRUN1Other);
+        isGoodPCRUN2Other = ismember(goodCells, goodPCRUN2Other);
+
+        current_label = repelem("Unstable", 1, numel(goodCells));
+        current_label(isGoodPCRUN1 & isGoodPCRUN2)= "Stable";
+        current_label(isGoodPCRUN1 & ~isGoodPCRUN2 & isGoodPCRUN2Other)= "Disappear";
+        current_label(~isGoodPCRUN1 & isGoodPCRUN2 & isGoodPCRUN1Other)= "Appear";
 
         % We get the replay participation
 
@@ -93,7 +117,7 @@ parfor fileID = 1:length(sessions)
         % Get all the sleep replay Exposure vs. Re-exposure
 
         track_label = ['Replay_T', int2str(trackOI), '_vs_T', int2str(trackOI + 2)];
-        % temp = load(file + "\balanced_analysis\" + track_label + "\significant_replay_events_wcorr");
+        % temp = load(file + "\balanced_analysis\one_lap_all\" + track_label + "\significant_replay_events_wcorr");
         temp = load(file + "\" + track_label + "\significant_replay_events_wcorr");
         Exp_Rexp = temp.significant_replay_events;
 
@@ -101,7 +125,7 @@ parfor fileID = 1:length(sessions)
         replayReexpSleep = getAllSleepReplay(2, startTime, endTime, Exp_Rexp, sleep_state);
 
         commonReplayID = intersect(Exp_Rexp.track(1).ref_index(replayExpSleep), ...
-                                 Exp_Rexp.track(2).ref_index(replayReexpSleep));
+            Exp_Rexp.track(2).ref_index(replayReexpSleep));
 
         disp("X : " + numel(commonReplayID));
 
@@ -119,15 +143,15 @@ parfor fileID = 1:length(sessions)
 
         % We get the final place field : mean of the 6 laps following the
         % 16th lap of RUN2
-        
+
         RUN1LapPFData = lap_place_fields(trackOI).Complete_Lap;
         RUN2LapPFData = lap_place_fields(trackOI + 2).Complete_Lap;
 
         numberLapsRUN2 = length(RUN2LapPFData);
 
         finalPlaceField = {};
-        
-        % For each cell, we create the final place field
+
+        % For each cell (good or not), we create the final place field
         for cellID = 1:length(place_fields.track(trackOI + 2).smooth)
             temp = [];
 
@@ -184,11 +208,11 @@ parfor fileID = 1:length(sessions)
 
 
             current_refinFR = diffSum(frFPF(cellOI), endRUN1MaxFR) ...
-                            - diffSum(frFPF(cellOI), startRUN2MaxFR);
-            
+                - diffSum(frFPF(cellOI), startRUN2MaxFR);
+
             current_refinPeak = abs(peakFPF(cellOI) - endRUN1PeakLoc) - ...
-                                abs(peakFPF(cellOI) - startRUN2PeakLoc);
-            
+                abs(peakFPF(cellOI) - startRUN2PeakLoc);
+
 
             % We get the replay participation of the cell - in nb of events
             replayInvolvedCurrent = cellfun(@(ev) any(ev(:, 1) == cellOI), filteredReplayEventsSpikesCurrent);
@@ -207,12 +231,17 @@ parfor fileID = 1:length(sessions)
 
 
             % Save the data
-            
+
             sessionID = [sessionID; fileID];
             animal = [animal; animalOI];
             condition = [condition; conditionOI];
             track = [track; trackOI];
             cell = [cell; ident + cellOI];
+            label = [label; current_label(cellID)];
+            peakEndRUN1 = [peakEndRUN1; abs(peakFPF(cellOI) - endRUN1PeakLoc)];
+            peakStartRUN2 = [peakStartRUN2; abs(peakFPF(cellOI) - startRUN2PeakLoc)];
+            firingRateRUN1 = [firingRateRUN1; endRUN1MaxFR];
+
             refinCM = [refinCM; current_refinCM];
             refinFR = [refinFR; current_refinFR];
             refinPeak = [refinPeak; current_refinPeak];
@@ -236,9 +265,86 @@ condition(track ~= 1) = newConditions(:, 2);
 
 condition = str2double(condition);
 
-data = table(sessionID, animal, condition, cell, refinCM, refinFR, refinPeak, ...
-             partP1Rep, propPartRep, partSWR, expReexpBias);
+data = table(sessionID, animal, condition, cell, label, ...
+    refinCM, refinFR, refinPeak, ...
+    partP1Rep, propPartRep, partSWR, expReexpBias);
 
 save("dataRegression.mat", "data")
 % save("dataRegressionXor.mat", "data")
 % save("dataRegressionIntersection.mat", "data")
+
+%%
+
+% boxchart(categorical(data.label), data.firingRateRUN1);
+% ylabel("Max FR during last lap RUN1");
+% 
+% allCond = [1, 2, 3, 4, 8, 16];
+% for c = 1:16
+%     figure;
+%     cc = allCond(c);
+%     boxchart(categorical(data.label(data.condition == cc)), data.firingRateRUN1(data.condition == cc));
+%     ylabel("Distance with FPF");
+% end
+
+% boxchart(data.condition(data.label == "Appear"), data.peakStartRUN2(data.label == "Appear"))
+% grid on;
+% xlabel("Number of laps");
+% ylabel("Distance with FPF");
+% title("Distance of appearing cells with FPF during 1st lap - RUN2")
+% 
+% allCond = [1, 2, 3, 4, 8, 16];
+% for c = 1:16
+%     figure;
+%     cc = allCond(c);
+%     boxchart(categorical(data.label(data.condition == cc)), data.peakEndRUN1(data.condition == cc));
+%     ylabel("Distance with FPF");
+% end
+
+% subdata = data(data.condition ~=1111, :);
+% 
+% figure;
+% subplot(1, 2, 1);
+% hist(subdata.peakEndRUN1, 30);
+% subplot(1, 2, 2);
+% hist(subdata.peakStartRUN2, 30);
+% 
+% figure;
+% subplot(1, 3, 1);
+% hist(subdata.peakEndRUN1(subdata.label == "Disappear"), 30);
+% subplot(1, 3, 2);
+% hist(subdata.peakStartRUN2(subdata.label == "Appear"), 30);
+% subplot(1, 3, 3);
+% hist(subdata.peakStartRUN2(subdata.label == "Stable"), 30);
+% 
+% %% Calculate the redundancy of place fields
+% allSessionID = unique(subdata.sessionID);
+% run1Red = [];
+% run2Red = [];
+% 
+% for id = 1:numel(allSessionID)
+%     matchingData = subdata(subdata.sessionID == allSessionID(id), :);
+%     allRun1Peak = matchingData.peakEndRUN1;
+%     allRun2Peak = matchingData.peakStartRUN2;
+% 
+%     for c = 1:numel(matchingData(:, "cell"))
+%         run1Peak = allRun1Peak(c);
+%         run2Peak = allRun2Peak(c);
+% 
+%         % Redudancy is defined as the proportion of cells within 20 cm of
+%         % the peak
+% 
+%         current_red_run1 = sum(allRun1Peak >= run1Peak - 10 & allRun1Peak <= run1Peak + 10)/numel(allRun1Peak);
+%         current_red_run2 = sum(allRun2Peak >= run2Peak - 10 & allRun2Peak <= run2Peak + 10)/numel(allRun2Peak);
+% 
+%         if isnan(run1Peak)
+%             current_red_run1 = NaN;
+%         end
+% 
+%         if isnan(run2Peak)
+%             current_red_run2 = NaN;
+%         end
+% 
+%         run1Red(end + 1) = current_red_run1;
+%         run2Red(end + 1) = current_red_run2;
+%     end
+% end
