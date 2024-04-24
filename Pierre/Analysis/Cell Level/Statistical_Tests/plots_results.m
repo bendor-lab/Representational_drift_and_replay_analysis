@@ -143,6 +143,30 @@ stackPF(pf_trackREEXP(sortOrder, :), "Place fields - Lap after sleep", "");
 %% II. Remapping over laps -----------------------------------
 
 
+% Generate a range of x-values
+x = 0:200;
+
+% Compute the y-values of the Gaussian function
+y = normpdf(x, 160, 15);
+y2 = normpdf(x, 60, 20)*0.4;
+y = y + y2;
+
+z = normpdf(x, 160, 10)*0.3;
+z2 = normpdf(x, 60, 15)*0.12;
+
+z = z + z2;
+
+maxY = max(y);
+peakLoc = find(y == maxY, 1) - 0.5;
+
+% Plot the Gaussian bell curve
+figure;
+area(x, y, 'FaceAlpha', .4);
+hold on;
+area(x, z, 'FaceAlpha', .4);
+
+xticks([]);
+yticks([]);
 %% a. Population change
 
 % 1. PV - Correlation with the final place field
