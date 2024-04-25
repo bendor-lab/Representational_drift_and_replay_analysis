@@ -143,30 +143,6 @@ stackPF(pf_trackREEXP(sortOrder, :), "Place fields - Lap after sleep", "");
 %% II. Remapping over laps -----------------------------------
 
 
-% Generate a range of x-values
-x = 0:200;
-
-% Compute the y-values of the Gaussian function
-y = normpdf(x, 160, 15);
-y2 = normpdf(x, 60, 20)*0.4;
-y = y + y2;
-
-z = normpdf(x, 160, 10)*0.3;
-z2 = normpdf(x, 60, 15)*0.12;
-
-z = z + z2;
-
-maxY = max(y);
-peakLoc = find(y == maxY, 1) - 0.5;
-
-% Plot the Gaussian bell curve
-figure;
-area(x, y, 'FaceAlpha', .4);
-hold on;
-area(x, z, 'FaceAlpha', .4);
-
-xticks([]);
-yticks([]);
 %% a. Population change
 
 % 1. PV - Correlation with the final place field
@@ -174,11 +150,10 @@ yticks([]);
 dataLapCorr = load("../../Population Level/Statistics/timeSeries.mat");
 dataLapCorr = dataLapCorr.data;
 summaryLapDataCorr = groupsummary(dataLapCorr, ["condition", "exposure", "lap"], ["median", "std"], ["pvCorr"]);
-summaryLapDataCorr.se_pvCorr = summaryLapDataCorr.std_pvCorr./sqrt(summaryLapDataCorr.GroupCount);
 
 f4_5 = figure; 
 f4_5.Position = [0,0,964,542];
-timeSeriesOverLapPop(summaryLapDataCorr, "median_pvCorr", "se_pvCorr", "PV correlation with the FPF");
+timeSeriesOverLapPop(summaryLapDataCorr, "median_pvCorr", "median_pvCorr", "PV correlation with the FPF");
 
 
 % 2. PV- Correlation between one direction and the other (directionality)
@@ -186,38 +161,33 @@ timeSeriesOverLapPop(summaryLapDataCorr, "median_pvCorr", "se_pvCorr", "PV corre
 dataLapCorr = load("../../Population Level/Statistics/timeSeriesDirectionnality.mat");
 dataLapCorr = dataLapCorr.data;
 summaryLapDataCorr = groupsummary(dataLapCorr, ["condition", "exposure", "lap"], ["median", "std"], ["pvCorr"]);
-summaryLapDataCorr.se_pvCorr = summaryLapDataCorr.std_pvCorr./sqrt(summaryLapDataCorr.GroupCount);
 
-f4_7 = figure; 
-f4_7.Position = [0,0,964,542];
-timeSeriesOverLapPop(summaryLapDataCorr, "median_pvCorr", "se_pvCorr", "PV correlation between opposite direction PF");
+f4_5 = figure; 
+f4_5.Position = [0,0,964,542];
+timeSeriesOverLapPop(summaryLapDataCorr, "median_pvCorr", "PV correlation between opposite direction PF");
 
 %% b. Cell change --------------------------------------------------------
 
 dataLap = load("timeSeries.mat");
 dataLap = dataLap.data;
 summaryLapData = groupsummary(dataLap, ["condition", "exposure", "lap"], ["median", "std"], ["CMdiff", "FRdiff", "PeakDiff"]);
-summaryLapData.se_CMdiff = summaryLapData.std_CMdiff./sqrt(summaryLapData.GroupCount);
-summaryLapData.se_FRdiff = summaryLapData.std_FRdiff./sqrt(summaryLapData.GroupCount);
-summaryLapData.se_PeakDiff = summaryLapData.std_PeakDiff./sqrt(summaryLapData.GroupCount);
-
 
 % 1. Center of mass
 f5 = figure; 
 f5.Position = [0,0,964,542];
-timeSeriesOverLap(summaryLapData, "median_CMdiff", "se_CMdiff", "Center of Mass");
+timeSeriesOverLap(summaryLapData, "median_CMdiff", "Center of Mass");
 
 % 2. Peak Location
 
 f6 = figure; 
 f6.Position = [0, 0, 964, 542];
-timeSeriesOverLap(summaryLapData, "median_FRdiff", "se_FRdiff", "Max Firing Rate");
+timeSeriesOverLap(summaryLapData, "median_FRdiff", "Max Firing Rate");
 
 % 3. Max firing rate
 
 f7 = figure; 
 f7.Position = [0, 0, 964, 542];
-timeSeriesOverLap(summaryLapData, "median_PeakDiff", "se_PeakDiff", "Peak Location");
+timeSeriesOverLap(summaryLapData, "median_PeakDiff", "Peak Location");
 
 
 %% c. Cell change - 1 vs 16 vs 1 vs 16 vs FPF

@@ -27,7 +27,7 @@
 
 clear 
 
-data = load("dataRegressionBalanced.mat");
+data = load("dataRegressionBalanced1L.mat");
 data = data.data;
 
 data.logConditionC = log2(data.condition) - mean(log2(data.condition));

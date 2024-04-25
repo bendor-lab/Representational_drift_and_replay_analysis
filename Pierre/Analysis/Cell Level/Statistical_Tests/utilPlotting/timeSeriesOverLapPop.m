@@ -1,4 +1,4 @@
-function [] = timeSeriesOverLap(data, var, std_var, varName)
+function [] = timeSeriesOverLapPop(data, var, std_var, varName)
 
 allConditions = unique(data.condition);
 colors = lines(length(allConditions));
@@ -72,8 +72,9 @@ legend({'', '', ' 1 lap', '', ...
 
 legend('show');
 xlabel("Lap")
-ylabel("Median " + varName + " difference with the FPF", 'FontSize', 12)
+ylabel("Median " + varName, 'FontSize', 12)
 title("1^{st} exposure" + repelem(' ', 80) + "2^{nd} exposure")
+
 
 grid on;
 

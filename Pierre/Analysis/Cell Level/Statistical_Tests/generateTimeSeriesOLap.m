@@ -45,6 +45,7 @@ parfor fileID = 1:length(sessions)
     place_fields = temp.place_fields;
 
     temp = load(file + "\extracted_lap_place_fields.mat");
+    %temp = load(file + "\extracted_directional_lap_place_fields");
     lap_place_fields = temp.lap_place_fields;
 
     % Track loop
