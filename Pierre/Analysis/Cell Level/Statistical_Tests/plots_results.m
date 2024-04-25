@@ -143,30 +143,18 @@ stackPF(pf_trackREEXP(sortOrder, :), "Place fields - Lap after sleep", "");
 %% II. Remapping over laps -----------------------------------
 
 
-% Generate a range of x-values
-x = 0:200;
+x = linspace(-5, 5, 100);
+y1 = normpdf(x, 0, 1.2);
+y2 = 0.3 *normpdf(x, 0, 1.2);
 
-% Compute the y-values of the Gaussian function
-y = normpdf(x, 160, 15);
-y2 = normpdf(x, 60, 20)*0.4;
-y = y + y2;
-
-z = normpdf(x, 160, 10)*0.3;
-z2 = normpdf(x, 60, 15)*0.12;
-
-z = z + z2;
-
-maxY = max(y);
-peakLoc = find(y == maxY, 1) - 0.5;
-
-% Plot the Gaussian bell curve
 figure;
-area(x, y, 'FaceAlpha', .4);
 hold on;
-area(x, z, 'FaceAlpha', .4);
+area(x, y1, 'FaceColor', '#4789bb', 'EdgeColor', 'none');
+area(x, y2, 'FaceColor', '#e15e4e', 'EdgeColor', 'none');
+hold off;
+axis off;
+axis square;
 
-xticks([]);
-yticks([]);
 %% a. Population change
 
 % 1. PV - Correlation with the final place field
@@ -324,6 +312,108 @@ yticks([0.5, 10.5, 20.5]);
 yticklabels([200, 100, 0])
 title("Bayesian reconstruction")
 colorbar;
+
+%% Explaining Final Place Field and PV-correlation
+
+%% Final place field
+
+% 6 x 1 subplots of place fields during consecutive laps
+f = figure;
+cellChosen = goodCells(11);
+xChosen = 25:27;
+fpf = zeros(1, 100);
+
+f.Position = [680   122   560   756];
+
+for i = 1:6
+    pf_trackLap = cell2mat(lap_place_fields(3).Complete_Lap{16 + i}.smooth');
+    pf_trackLap = pf_trackLap(cellChosen, :);
+    fpf = fpf + pf_trackLap;
+    
+    subplot(8, 1, i)
+    area(pf_trackLap, "EdgeColor", "none", "FaceColor", '#4789bb');
+    hold on;
+    area(xChosen, pf_trackLap(xChosen), "EdgeColor", "none", "FaceColor", '#e15e4e');
+    axis off
+
+end
+
+fpf = fpf/6;
+
+subplot(8, 1, 8);
+area(fpf, "EdgeColor", "none", "FaceColor", '#4789bb');
+hold on;
+area(xChosen, fpf(xChosen), "EdgeColor", "none", "FaceColor", '#e15e4e');
+
+h=gca; 
+h.Box = "off";
+h.XAxis.TickLength = [0 0];
+h.YAxis.TickLength = [0 0];
+ylabel("FR")
+xlabel("Position (cm)")
+
+%% PV correlation
+
+f = figure;
+f.Position = [680   122   560   756];
+
+cellsChosen = [16 60 61 31];
+cellsChosen = goodCells(cellsChosen);
+xChosen = 50:54;
+
+cellsPFLap1 = cell2mat(lap_place_fields(1).Complete_Lap{6}.smooth');
+cellsPFLap1 = cellsPFLap1(cellsChosen, :);
+
+cellsFPF = zeros(size(cellsPFLap1));
+
+for cellID = 1:numel(cellsChosen)
+    current_cell = cellsChosen(cellID);
+    fpf = zeros(1, 100);
+
+    for i = 1:6
+        current_pf = lap_place_fields(3).Complete_Lap{16 + i}.smooth{current_cell};
+        fpf = fpf + current_pf;
+    end
+    cellsFPF(cellID, :) = fpf/6;
+end
+
+ylimLap1 = max(max(cellsPFLap1));
+ylimFPF =  max(max(cellsFPF));
+
+current_ylim = max([ylimLap1, ylimFPF]);
+
+for cellID = 1:numel(cellsChosen)
+
+    current_cell = cellsChosen(cellID);
+    subplot(numel(cellsChosen) + 1, 2, 2*cellID - 1)
+    area(cellsPFLap1(cellID, :), "EdgeColor", "none", "FaceColor", '#4789bb')
+    ylim([0 current_ylim]);
+    hold on;
+    area(xChosen, cellsPFLap1(cellID, xChosen), "EdgeColor", "none", "FaceColor", '#e15e4e');
+    axis off;
+
+    subplot(numel(cellsChosen) + 1, 2, 2*cellID)
+    area(cellsFPF(cellID, :), "EdgeColor", "none", "FaceColor", '#4789bb')
+    ylim([0 current_ylim]);
+    hold on;
+    area(xChosen, cellsFPF(cellID, xChosen), "EdgeColor", "none", "FaceColor", '#e15e4e');
+    axis off;
+
+    subplot(numel(cellsChosen) + 1, 2, 2*numel(cellsChosen) + 1)
+    area(xChosen - 22 + cellID * 10, cellsPFLap1(cellID, xChosen), "EdgeColor", "none", "FaceColor", '#e15e4e');
+    hold on;
+    axis off;
+    xlim([0 100]);
+    ylim([0 current_ylim]);
+
+    subplot(numel(cellsChosen) + 1, 2, 2*numel(cellsChosen) + 2)
+    area(xChosen - 22 + cellID * 10, cellsFPF(cellID, xChosen), "EdgeColor", "none", "FaceColor", '#e15e4e');
+    hold on;
+    axis off;
+    xlim([0 100]);
+    ylim([0 current_ylim]);
+
+end
 
 
 
