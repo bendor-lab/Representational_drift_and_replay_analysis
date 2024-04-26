@@ -415,5 +415,15 @@ for cellID = 1:numel(cellsChosen)
 
 end
 
+%% Suplementary stuff
 
+% Look at firing rate for dis / app / stable
+
+dataLap = load("timeSeries.mat");
+dataLap = dataLap.data;
+summaryLapData = groupsummary(dataLap, ["condition", "exposure", "lap", "label"], ["median", "std"], ["CMdiff", "FRdiff", "PeakDiff", "meanFR"]);
+summaryLapData.se_meanFR = summaryLapData.std_meanFR./sqrt(summaryLapData.GroupCount);
+
+timeSeriesOverLap(summaryLapData(summaryLapData.label == "Appear", :), "median_meanFR", "se_meanFR", "Firing rate");
+ylim([0 0.8])
 

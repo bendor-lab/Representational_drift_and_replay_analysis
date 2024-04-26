@@ -357,9 +357,9 @@ xlabel("Position (cm)")
 f = figure;
 f.Position = [680   122   560   756];
 
-cellsChosen = [12 3 22 31];
+cellsChosen = [16 60 61 31];
 cellsChosen = goodCells(cellsChosen);
-xChosen = 45:49;
+xChosen = 50:54;
 
 cellsPFLap1 = cell2mat(lap_place_fields(1).Complete_Lap{6}.smooth');
 cellsPFLap1 = cellsPFLap1(cellsChosen, :);
@@ -382,9 +382,7 @@ ylimFPF =  max(max(cellsFPF));
 
 current_ylim = max([ylimLap1, ylimFPF]);
 
-for cellID = 1:numel(goodCells)
-
-    current_cell = 
+for cellID = 1:numel(cellsChosen)
 
     current_cell = cellsChosen(cellID);
     subplot(numel(cellsChosen) + 1, 2, 2*cellID - 1)
@@ -417,5 +415,14 @@ for cellID = 1:numel(goodCells)
 
 end
 
+%% Suplementary stuff
+
+% Look at firing rate for dis / app / stable
+
+dataLap = load("timeSeries.mat");
+dataLap = dataLap.data;
+summaryLapData = groupsummary(dataLap, ["condition", "exposure", "lap", "label"], ["median", "std"], ["CMdiff", "FRdiff", "PeakDiff", "meanFR"]);
+
+timeSeriesOverLap(summaryLapData, "median_CMdiff", "se_CMdiff", "Center of Mass");
 
 

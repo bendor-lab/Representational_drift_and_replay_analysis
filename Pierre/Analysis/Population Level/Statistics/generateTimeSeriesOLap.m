@@ -13,6 +13,7 @@ identifiers = identifiers* 1000;
 
 % Arrays to hold all the data
 
+sessionID = [];
 animal = [];
 condition = [];
 track = [];
@@ -40,8 +41,8 @@ parfor fileID = 1:length(sessions)
     temp = load(file + "\extracted_place_fields.mat");
     place_fields = temp.place_fields;
 
-    % temp = load(file + "\extracted_lap_place_fields.mat");
-    % lap_place_fields = temp.lap_place_fields;
+    temp = load(file + "\extracted_lap_place_fields.mat");
+    lap_place_fields = temp.lap_place_fields;
 
     temp = load(file + "\extracted_directional_lap_place_fields");
     lap_directional_place_fields = temp.lap_directional_place_fields;
@@ -64,30 +65,30 @@ parfor fileID = 1:length(sessions)
         % We get the final place field : mean of the 6 laps following the
         % 16th lap of RUN2
 
-        % RUN1LapPFData = lap_place_fields(trackOI).Complete_Lap;
-        % RUN2LapPFData = lap_place_fields(trackOI + 2).Complete_Lap;
+        RUN1LapPFData = lap_place_fields(trackOI).Complete_Lap;
+        RUN2LapPFData = lap_place_fields(trackOI + 2).Complete_Lap;
 
-        % numberLapsRUN2 = length(RUN2LapPFData);
-        % 
-        % finalPlaceField = {};
-        % 
-        % % For each cell, we create the final place field
-        % for cellID = 1:length(place_fields.track(trackOI + 2).smooth)
-        %     temp = [];
-        % 
-        %     for clap = 1:6
-        %         temp = [temp; RUN2LapPFData{16 + clap}.smooth{cellID}];
-        %     end
-        % 
-        %     finalPlaceField(end + 1) = {mean(temp, 'omitnan')};
-        % end
+        numberLapsRUN2 = length(RUN2LapPFData);
+
+        finalPlaceField = {};
+
+        % For each cell, we create the final place field
+        for cellID = 1:length(place_fields.track(trackOI + 2).smooth)
+            temp = [];
+
+            for clap = 1:6
+                temp = [temp; RUN2LapPFData{16 + clap}.smooth{cellID}];
+            end
+
+            finalPlaceField(end + 1) = {mean(temp, 'omitnan')};
+        end
 
         for exposureOI = 1:2
 
             vTrack = trackOI + mod(exposureOI + 1, 2)*2;
 
-            % current_numberLaps = numel(lap_directional_place_fields.dir1(vTrack).Complete_Lap);
-            current_numberLaps = numel(lap_directional_place_fields(vTrack).dir1.Complete_Lap);
+            current_numberLaps = numel(lap_place_fields(vTrack).Complete_Lap);
+            % current_numberLaps = numel(lap_directional_place_fields(vTrack).dir1.Complete_Lap);
 
             if current_numberLaps > 16
                 current_numberLaps = 16;
@@ -95,21 +96,23 @@ parfor fileID = 1:length(sessions)
 
             for lapOI = 1:current_numberLaps
 
-                % current_lap_data = lap_place_fields(vTrack).Complete_Lap{lapOI};
-                % current_place_fields = current_lap_data.smooth;
+                current_lap_data = lap_place_fields(vTrack).Complete_Lap{lapOI};
+                current_place_fields = current_lap_data.smooth;
 
-                current_lap_data_DIR1 = lap_directional_place_fields(vTrack).dir1.Complete_Lap{lapOI};
-                current_place_fields_DIR1 = current_lap_data_DIR1.smooth;
+                % current_lap_data_DIR1 = lap_directional_place_fields(vTrack).dir1.Complete_Lap{lapOI};
+                % current_place_fields_DIR1 = current_lap_data_DIR1.smooth;
+                % 
+                % current_lap_data_DIR2 = lap_directional_place_fields(vTrack).dir2.Complete_Lap{lapOI};
+                % current_place_fields_DIR2 = current_lap_data_DIR2.smooth;
 
-                current_lap_data_DIR2 = lap_directional_place_fields(vTrack).dir2.Complete_Lap{lapOI};
-                current_place_fields_DIR2 = current_lap_data_DIR2.smooth;
-
-                % current_pvCorr = getPVCor(goodCells, current_place_fields, finalPlaceField, "pvCorrelation");
-                current_pvCorr = getPVCor(goodCells, current_place_fields_DIR1, current_place_fields_DIR2, "pvCorrelation");
+                current_pvCorr = getPVCor(goodCells, current_place_fields, finalPlaceField, "pvCorrelation");
+                % current_pvCorr = getPVCor(goodCells, current_place_fields_DIR1, current_place_fields_DIR2, "pvCorrelation");
+                
                 current_pvCorr = median(current_pvCorr, 'omitnan');
 
                 % Save the data
-
+                
+                sessionID = [sessionID; fileID];
                 animal = [animal; animalOI];
                 condition = [condition; conditionOI];
                 track = [track; trackOI];
@@ -134,6 +137,6 @@ condition(track ~= 1) = newConditions(:, 2);
 
 condition = str2double(condition);
 
-data = table(animal, condition, exposure, lap, pvCorr);
+data = table(sessionID, animal, condition, exposure, lap, pvCorr);
 
-save("timeSeriesDirectionnality.mat", "data")
+save("timeSeries.mat", "data")
