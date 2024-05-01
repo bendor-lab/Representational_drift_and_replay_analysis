@@ -17,7 +17,7 @@
 
 clear
 
-data = load("dataRegressionPopIntersect.mat");
+data = load("dataRegressionPopDirectionalityIntersect.mat");
 data = data.data;
 data.replayPartC = data.partP1Rep - mean(data.partP1Rep, 'omitnan');
 data.logCondC = log(data.condition) - mean(log(data.condition));
