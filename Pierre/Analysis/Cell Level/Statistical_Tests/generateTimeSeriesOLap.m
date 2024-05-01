@@ -19,9 +19,11 @@ track = [];
 exposure = [];
 lap = [];
 cell = [];
+label = [];
 CMdiff = [];
 FRdiff = [];
 PeakDiff = [];
+meanFR = [];
 
 % We take the absolute value of the difference over sum to get the relative
 % distance with the FPF, independently of the direction
@@ -52,6 +54,20 @@ parfor fileID = 1:length(sessions)
 
     for trackOI = 1:2
 
+        % goodPCRUN1 = lap_place_fields(trackOI).Complete_Lap{end}.good_cells;
+        % goodPCRUN2 = lap_place_fields(trackOI + 2).Complete_Lap{2}.good_cells;
+        
+        goodPCRUN1 = place_fields.track(trackOI).good_cells;
+        goodPCRUN2 = place_fields.track(trackOI + 2).good_cells;
+
+        other_track = mod(trackOI + 1, 2) + mod(trackOI, 2)*2;
+
+        % goodPCRUN1Other = lap_place_fields(other_track).Complete_Lap{end}.good_cells;
+        % goodPCRUN2Other = lap_place_fields(other_track + 2).Complete_Lap{1}.good_cells;
+
+        goodPCRUN1Other = place_fields.track(other_track).good_cells;
+        goodPCRUN2Other = place_fields.track(other_track + 2).good_cells;
+
         % Good cells : Cells that where good place cells during RUN1 or RUN2
         goodCells = union(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
 
@@ -65,6 +81,16 @@ parfor fileID = 1:length(sessions)
 
         % We get the final place field : mean of the 6 laps following the
         % 16th lap of RUN2
+
+        isGoodPCRUN1 = ismember(goodCells, goodPCRUN1);
+        isGoodPCRUN2 = ismember(goodCells, goodPCRUN2);
+        isGoodPCRUN1Other = ismember(goodCells, goodPCRUN1Other);
+        isGoodPCRUN2Other = ismember(goodCells, goodPCRUN2Other);
+
+        current_label = repelem("Unstable", 1, numel(goodCells));
+        current_label(isGoodPCRUN1 & isGoodPCRUN2)= "Stable";
+        current_label(isGoodPCRUN1 & ~isGoodPCRUN2 & isGoodPCRUN2Other)= "Disappear";
+        current_label(~isGoodPCRUN1 & isGoodPCRUN2 & isGoodPCRUN1Other)= "Appear";
 
         RUN2LapPFData = lap_place_fields(trackOI + 2).Complete_Lap;
 
@@ -113,6 +139,8 @@ parfor fileID = 1:length(sessions)
                 currentFR = cellfun(@max, current_place_fields);
                 currentPeakLoc = cellfun(@(x) find(x == max(x), 1), current_place_fields);
 
+                current_meanFR = current_lap_data.mean_rate_lap;
+
                 currentFR(isnan(currentCM)) = NaN;
                 currentPeakLoc(isnan(currentCM)) = NaN;
 
@@ -124,6 +152,8 @@ parfor fileID = 1:length(sessions)
                 current_FRDiff = current_FRDiff(goodCells);
                 current_PeakLocDiff = current_PeakLocDiff(goodCells);
 
+                current_meanFR = current_meanFR(goodCells);
+
                 nbGoodCells = numel(goodCells);
 
                 % Save the data
@@ -134,9 +164,11 @@ parfor fileID = 1:length(sessions)
                 exposure = [exposure; repelem(exposureOI, nbGoodCells)'];
                 lap = [lap; repelem(lapOI, nbGoodCells)'];
                 cell = [cell; (goodCells + ident)'];
+                label = [label; current_label'];
                 CMdiff = [CMdiff; current_CMDiff'];
                 FRdiff = [FRdiff; current_FRDiff'];
                 PeakDiff = [PeakDiff; current_PeakLocDiff'];
+                meanFR = [meanFR; current_meanFR'];
 
             end
         end
@@ -155,6 +187,6 @@ condition(track ~= 1) = newConditions(:, 2);
 condition = str2double(condition);
 
 
-data = table(animal, condition, exposure, lap, cell, CMdiff, FRdiff, PeakDiff);
+data = table(animal, condition, exposure, lap, cell, label, CMdiff, FRdiff, PeakDiff, meanFR);
 
 save("timeSeries.mat", "data")
