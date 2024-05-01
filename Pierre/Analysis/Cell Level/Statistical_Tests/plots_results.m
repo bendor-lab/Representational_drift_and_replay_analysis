@@ -421,9 +421,10 @@ end
 
 dataLap = load("timeSeries.mat");
 dataLap = dataLap.data;
+dataLap.condition(dataLap.condition <= 8) = 8;
 summaryLapData = groupsummary(dataLap, ["condition", "exposure", "lap", "label"], ["median", "std"], ["CMdiff", "FRdiff", "PeakDiff", "meanFR"]);
 summaryLapData.se_meanFR = summaryLapData.std_meanFR./sqrt(summaryLapData.GroupCount);
+summaryLapData.se_CMdiff = summaryLapData.std_CMdiff./sqrt(summaryLapData.GroupCount);
+summaryLapData.se_FRdiff = summaryLapData.std_FRdiff./sqrt(summaryLapData.GroupCount);
 
-timeSeriesOverLap(summaryLapData(summaryLapData.label == "Appear", :), "median_meanFR", "se_meanFR", "Firing rate");
-ylim([0 0.8])
-
+timeSeriesOverLap(summaryLapData(summaryLapData.label == "Appear", :), "median_FRdiff", "se_FRdiff", "Max FR");
