@@ -1,6 +1,6 @@
 % Script to generate plots for the population-level results
 
-data = load("dataRegressionPop.mat");
+data = load("dataRegressionPopIntersect.mat");
 data = data.data;
 data.conditionC = categorical(data.condition);
 
