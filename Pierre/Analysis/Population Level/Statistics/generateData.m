@@ -22,7 +22,7 @@ amountSleep = [];
 numberSWR = [];
 expReexpBias = [];
 
-parfor fileID = 1:length(sessions)
+for fileID = 1:length(sessions)
 
     disp(fileID);
     file = sessions{fileID}; % We get the current session
@@ -39,13 +39,16 @@ parfor fileID = 1:length(sessions)
     temp = load(file + "\extracted_lap_place_fields.mat");
     lap_place_fields = temp.lap_place_fields;
 
+    temp = load(file + "\extracted_directional_lap_place_fields");
+    lap_directional_place_fields = temp.lap_directional_place_fields;
+
     % Track loop
 
     for trackOI = 1:2
 
         % Good cells : cells that become good place cells on RUN2
-        goodCells = union(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
-        % goodCells = intersect(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
+        % goodCells = union(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
+        goodCells = intersect(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
 
         % We get the replay participation
 
@@ -98,22 +101,35 @@ parfor fileID = 1:length(sessions)
             finalPlaceField(end + 1) = {mean(temp, 'omitnan')};
         end
 
+        % IF USING DIRECTIONAL
+        pfDir1RUN1 = lap_directional_place_fields(trackOI).dir1.Complete_Lap{end};
+        pfDir2RUN1 = lap_directional_place_fields(trackOI).dir2.Complete_Lap{end};
+
+        pfDir1RUN2 = lap_directional_place_fields(trackOI + 2).dir1.Complete_Lap{1};
+        pfDir2RUN2 = lap_directional_place_fields(trackOI + 2).dir2.Complete_Lap{1};
+
+        directionalityRUN1 = getPVCor(goodCells, pfDir1RUN1.smooth, pfDir2RUN1.smooth, "pvCorrelation");
+        directionalityRUN2 = getPVCor(goodCells, pfDir1RUN2.smooth, pfDir2RUN2.smooth, "pvCorrelation");
+        
+        current_refinement = median(directionalityRUN2, "omitnan") - ...
+                             median(directionalityRUN1, "omitnan");
+
         % We can now find the PV correlation of the last lap RUN1 and first
         % lap RUN2 with the FPF
 
         pvCorRUN1 = getPVCor(goodCells, RUN1LapPFData{end}.smooth, finalPlaceField, "pvCorrelation");
         pvCorRUN1 = median(pvCorRUN1, 'omitnan');
-
-        pvCorRUN2 = getPVCor(goodCells, RUN2LapPFData{1}.smooth, finalPlaceField, "pvCorrelation");
-        pvCorRUN2 = median(pvCorRUN2, 'omitnan');
-
-        current_refinement = pvCorRUN2 - pvCorRUN1;
+        % 
+        % pvCorRUN2 = getPVCor(goodCells, RUN2LapPFData{1}.smooth, finalPlaceField, "pvCorrelation");
+        % pvCorRUN2 = median(pvCorRUN2, 'omitnan');
+        % 
+        % current_refinement = pvCorRUN2 - pvCorRUN1;
 
         % Get all the sleep replay Exposure vs. Re-exposure
 
         track_label = ['Replay_T', int2str(trackOI), '_vs_T', int2str(trackOI + 2)];
-        temp = load(file + "\balanced_analysis\one_lap_all\" + track_label + "\significant_replay_events_wcorr");
-        % temp = load(file + "\" + track_label + "\significant_replay_events_wcorr");
+        % temp = load(file + "\balanced_analysis\one_lap_all\" + track_label + "\significant_replay_events_wcorr");
+        temp = load(file + "\" + track_label + "\significant_replay_events_wcorr");
         Exp_Rexp = temp.significant_replay_events;
 
         replayExpSleep = getAllSleepReplay(1, startTime, endTime, Exp_Rexp, sleep_state);
@@ -161,4 +177,4 @@ condition = str2double(condition);
 data = table(sessionID, animal, condition, refinCorr, corrEndRUN1, ...
              partP1Rep, amountSleep, numberSWR, expReexpBias);
 
-save("dataRegressionPopBalanced1L.mat", "data")
+save("dataRegressionPopDirectionalityIntersect.mat", "data")

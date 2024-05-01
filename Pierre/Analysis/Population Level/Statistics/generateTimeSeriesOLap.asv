@@ -27,7 +27,7 @@ diffSum = @(x1, x2) abs(x1 - x2)/(x1 + x2);
 
 %% Extraction & computation
 
-for fileID = 1:length(sessions)
+for fileID = 2:length(sessions)
 
     disp(fileID);
     file = sessions{fileID}; % We get the current session
@@ -43,7 +43,7 @@ for fileID = 1:length(sessions)
 
     temp = load(file + "\extracted_lap_place_fields.mat");
     lap_place_fields = temp.lap_place_fields;
-    % 
+
     % temp = load(file + "\extracted_directional_lap_place_fields");
     % lap_directional_place_fields = temp.lap_directional_place_fields;
 
@@ -104,7 +104,7 @@ for fileID = 1:length(sessions)
 
             vTrack = trackOI + mod(exposureOI + 1, 2)*2;
 
-            current_numberLaps = numel(lap_place_fields(vTrack).Complete_Lap);
+            % current_numberLaps = numel(lap_place_fields(vTrack).Complete_Lap);
             % current_numberLaps = numel(lap_directional_place_fields(vTrack).dir1.Complete_Lap);
 
             if current_numberLaps > 16
@@ -113,17 +113,17 @@ for fileID = 1:length(sessions)
 
             for lapOI = 1:current_numberLaps
 
-                current_lap_data = lap_place_fields(vTrack).Complete_Lap{lapOI};
-                current_place_fields = current_lap_data.smooth;
+                % current_lap_data = lap_place_fields(vTrack).Complete_Lap{lapOI};
+                % current_place_fields = current_lap_data.smooth;
 
-                % current_lap_data_DIR1 = lap_directional_place_fields(vTrack).dir1.Complete_Lap{lapOI};
-                % current_place_fields_DIR1 = current_lap_data_DIR1.smooth;
-                % 
-                % current_lap_data_DIR2 = lap_directional_place_fields(vTrack).dir2.Complete_Lap{lapOI};
-                % current_place_fields_DIR2 = current_lap_data_DIR2.smooth;
+                % % current_lap_data_DIR1 = lap_directional_place_fields(vTrack).dir1.Complete_Lap{lapOI};
+                % % current_place_fields_DIR1 = current_lap_data_DIR1.smooth;
+                % % 
+                % % current_lap_data_DIR2 = lap_directional_place_fields(vTrack).dir2.Complete_Lap{lapOI};
+                % % current_place_fields_DIR2 = current_lap_data_DIR2.smooth;
 
-                current_pvCorr = getPVCor(goodCells, current_place_fields, finalPlaceField, "pvCorrelation");
-                % current_pvCorr = getPVCor(goodCells, current_place_fields_DIR1, current_place_fields_DIR2, "pvCorrelation");
+                % current_pvCorr = getPVCor(goodCells, current_place_fields, finalPlaceField, "pvCorrelation");
+                current_pvCorr = getPVCor(goodCells, current_place_fields_DIR1, current_place_fields_DIR2, "pvCorrelation");
                 
                 current_pvCorr = median(current_pvCorr, 'omitnan');
 
@@ -156,4 +156,4 @@ condition = str2double(condition);
 
 data = table(sessionID, animal, condition, exposure, lap, pvCorr);
 
-save("timeSeriesStable.mat", "data")
+save("timeSeriesDirectionalityStable.mat", "data")

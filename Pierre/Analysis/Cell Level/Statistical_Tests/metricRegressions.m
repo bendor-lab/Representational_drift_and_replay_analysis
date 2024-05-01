@@ -30,6 +30,9 @@ clear
 data = load("dataRegression.mat");
 data = data.data;
 
+% We filter toget only STABLE CELLS
+data(data.label ~= "Stable", :) = [];
+
 data.logConditionC = log2(data.condition) - mean(log2(data.condition));
 data.conditionC = data.condition - mean(data.condition);
 data.replayPartC = data.partP1Rep - mean(data.partP1Rep, "omitnan");
@@ -63,19 +66,19 @@ disp(lme);
 %% Regressions - Interactions & log condition
 
 % Center of mass refinement
-lme = fitlme(data, "refinCM ~ logConditionC * replayPartC + (1|animal)");
+lme = fitlme(data, "refinCM ~ logConditionC * replayPartC + (1|animal) + (1|cell:animal)");
 disp(lme)
 
 % RESULTS : No significant interaction.
 
 % Max firing rate refinement
-lme = fitlme(data, "refinFR ~ logConditionC * replayPartC + (1|animal)");
+lme = fitlme(data, "refinFR ~ logConditionC * replayPartC + (1|animal) + (1|cell:animal)");
 disp(lme)
 
 % RESULTS : No significant interaction.
 
 % Peak firing rate 
-lme = fitlme(data, "refinPeak ~ logConditionC * replayPartC + (1|animal)");
+lme = fitlme(data, "refinPeak ~ logConditionC * replayPartC + (1|animal) + (1|cell:animal)");
 disp(lme)
 
 % RESULTS : No significant interaction.
@@ -83,14 +86,19 @@ disp(lme)
 %% Regressions - Log condition
 
 % Center of mass refinement
-lme = fitlme(data, "refinCM ~ logConditionC + replayPartC + (1|animal)");
+lme = fitlme(data, "refinCM ~ logConditionC + replayPartC + (1|animal) + (1|cell:animal)");
 disp(lme)
 disp("Eta2 = " + getEta2(lme, data.refinCM))
+
+grpstats(data, "condition", "mean", "DataVars", ["refinCM"])
+
+grpstats(data, "condition", "std", "DataVars", ["refinCM"])
+
 
 % RESULTS : Significant effect of condition, no effect of replay.
 
 % Max firing rate refinement
-lme = fitlme(data, "refinFR ~ logConditionC + replayPartC + (1|animal)");
+lme = fitlme(data, "refinFR ~ logConditionC + replayPartC + (1|animal) + (1|cell:animal)");
 disp(lme)
 disp("Eta2 = " + getEta2(lme, data.refinFR))
 
@@ -98,7 +106,7 @@ disp("Eta2 = " + getEta2(lme, data.refinFR))
 % RESULTS : Significant effect of condition (.03), no effect of replay.
 
 % Peak firing rate 
-lme = fitlme(data, "refinPeak ~ logConditionC + replayPartC + (1|animal)");
+lme = fitlme(data, "refinPeak ~ logConditionC + replayPartC + (1|animal) + (1|cell:animal)");
 disp(lme)
 disp("Eta2 = " + getEta2(lme, data.refinPeak))
 
@@ -106,19 +114,19 @@ disp("Eta2 = " + getEta2(lme, data.refinPeak))
 %% Regressions - Non logged condition
 
 % Center of mass refinement
-lme = fitlme(data, "refinCM ~ conditionC + replayPartC + (1|animal)");
+lme = fitlme(data, "refinCM ~ conditionC + replayPartC + (1|animal) + (1|cell:animal)");
 disp(lme)
 
 % RESULTS : Condition is still significant, no effect of replay
 
 % Max firing rate refinement
-lme = fitlme(data, "refinFR ~ conditionC + replayPartC + (1|animal)");
+lme = fitlme(data, "refinFR ~ conditionC + replayPartC + (1|animal) + (1|cell:animal)");
 disp(lme)
 
 % RESULTS : NS
 
 % Peak firing rate 
-lme = fitlme(data, "refinPeak ~ conditionC + replayPartC + (1|animal)");
+lme = fitlme(data, "refinPeak ~ conditionC + replayPartC + (1|animal) + (1|cell:animal)");
 disp(lme)
 
 % RESULTS : Condition is still significant, replay NS.
@@ -130,19 +138,19 @@ disp(lme)
 %% Regressions - Interactions & log condition
 
 % Center of mass refinement
-lme = fitlme(data, "refinCM ~ logConditionC * propPartRepC + (1|animal)");
+lme = fitlme(data, "refinCM ~ logConditionC * propPartRepC + (1|animal) + (1|cell:animal)");
 disp(lme)
 
 % RESULTS : No sig interaction, effect of condition.
 
 % Max firing rate refinement
-lme = fitlme(data, "refinFR ~ logConditionC * propPartRepC + (1|animal)");
+lme = fitlme(data, "refinFR ~ logConditionC * propPartRepC + (1|animal) + (1|cell:animal)");
 disp(lme)
 
 % RESULTS : No significant interaction.
 
 % Peak firing rate 
-lme = fitlme(data, "refinPeak ~ logConditionC * propPartRepC + (1|animal)");
+lme = fitlme(data, "refinPeak ~ logConditionC * propPartRepC + (1|animal) + (1|cell:animal)");
 disp(lme)
 
 % RESULTS : No significant interaction.
@@ -150,17 +158,17 @@ disp(lme)
 %% Regressions - Log condition
 
 % Center of mass refinement
-lme = fitlme(data, "refinCM ~ logConditionC + propPartRepC + (1|animal)");
+lme = fitlme(data, "refinCM ~ logConditionC + propPartRepC + (1|animal) + (1|cell:animal)");
 disp(lme)
 
 % Max firing rate refinement
-lme = fitlme(data, "refinFR ~ logConditionC + propPartRepC + (1|animal)");
+lme = fitlme(data, "refinFR ~ logConditionC + propPartRepC + (1|animal) + (1|cell:animal)");
 disp(lme)
 
 % RESULTS : Significant effect of condition, no effect of replay.
 
 % Peak firing rate 
-lme = fitlme(data, "refinPeak ~ logConditionC + propPartRepC + (1|animal)");
+lme = fitlme(data, "refinPeak ~ logConditionC + propPartRepC + (1|animal) + (1|cell:animal)");
 disp(lme)
 
 % RESULTS : Effect of condition. No effect of replay.
@@ -168,17 +176,17 @@ disp(lme)
 %% Regressions - Non-logged condition
 
 % Center of mass refinement
-lme = fitlme(data, "refinCM ~ conditionC + propPartRepC + (1|animal)");
+lme = fitlme(data, "refinCM ~ conditionC + propPartRepC + (1|animal) + (1|cell:animal)");
 disp(lme)
 
 % Max firing rate refinement
-lme = fitlme(data, "refinFR ~ conditionC + propPartRepC + (1|animal)");
+lme = fitlme(data, "refinFR ~ conditionC + propPartRepC + (1|animal) + (1|cell:animal)");
 disp(lme)
 
 % RESULTS : Significant effect of condition, no effect of replay.
 
 % Peak firing rate 
-lme = fitlme(data, "refinPeak ~ conditionC + propPartRepC + (1|animal)");
+lme = fitlme(data, "refinPeak ~ conditionC + propPartRepC + (1|animal) + (1|cell:animal)");
 disp(lme)
 
 % RESULTS : Effect of condition. No effect of replay.
@@ -189,19 +197,19 @@ disp(lme)
 %% Interaction - Log condition
 
 % Center of mass refinement
-lme = fitlme(data, "refinCM ~ logConditionC * partSWRC + (1|animal)");
+lme = fitlme(data, "refinCM ~ logConditionC * partSWRC + (1|animal) + (1|cell:animal)");
 disp(lme)
 
 % RESULTS : No significant interaction.
 
 % Max firing rate refinement
-lme = fitlme(data, "refinFR ~ logConditionC * partSWRC + (1|animal)");
+lme = fitlme(data, "refinFR ~ logConditionC * partSWRC + (1|animal) + (1|cell:animal)");
 disp(lme)
 
 % RESULTS : No significant interaction.
 
 % Peak firing rate 
-lme = fitlme(data, "refinPeak ~ logConditionC * partSWRC + (1|animal)");
+lme = fitlme(data, "refinPeak ~ logConditionC * partSWRC + (1|animal) + (1|cell:animal)");
 disp(lme)
 
 % RESULTS : No significant interaction.
@@ -209,39 +217,39 @@ disp(lme)
 %% No interaction - log condition
 
 % Center of mass refinement
-lme = fitlme(data, "refinCM ~ logConditionC + partSWRC + (1|animal)");
+lme = fitlme(data, "refinCM ~ logConditionC + partSWRC + (1|animal) + (1|cell:animal)");
 disp(lme)
 
 % RESULTS : No effect of SWR participation.
 
 % Max firing rate refinement
-lme = fitlme(data, "refinFR ~ logConditionC + partSWRC + (1|animal)");
+lme = fitlme(data, "refinFR ~ logConditionC + partSWRC + (1|animal) + (1|cell:animal)");
 disp(lme)
 
 % RESULTS : No effect of SWR participation.
 
 % Peak firing rate 
-lme = fitlme(data, "refinPeak ~ logConditionC + partSWRC + (1|animal)");
+lme = fitlme(data, "refinPeak ~ logConditionC + partSWRC + (1|animal) + (1|cell:animal)");
 disp(lme)
 
 % RESULTS : No effect of SWR participation.
 
 %% Effect of condition and the relative amount of exp / re-exp replay
 
-lme = fitlme(data, "expReexpBiasC ~ logConditionC + (1|animal)");
+lme = fitlme(data, "expReexpBiasC ~ logConditionC + (1|animal) + (1|cell:animal)");
 disp(lme)
 
-lme = fitlme(data, "refinCM ~ expReexpBiasC + (1|animal)");
+lme = fitlme(data, "refinCM ~ expReexpBiasC + (1|animal) + (1|cell:animal)");
 disp(lme)
 
-% No effect of exp / re-exp on CM
+% No effect of exp / re-exp on CM (tendential)
 
-lme = fitlme(data, "refinFR ~ expReexpBiasC + (1|animal)");
+lme = fitlme(data, "refinFR ~ expReexpBiasC + (1|animal) + (1|cell:animal)");
 disp(lme)
 
 % No effect of exp / re-exp on FR
 
-lme = fitlme(data, "refinPeak ~ expReexpBiasC + (1|animal)");
+lme = fitlme(data, "refinPeak ~ expReexpBiasC + (1|animal) + (1|cell:animal)");
 disp(lme)
 
 % Significant effect on peak (p = .02) - not when common events are removed

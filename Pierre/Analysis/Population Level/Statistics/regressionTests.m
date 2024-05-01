@@ -17,7 +17,7 @@
 
 clear
 
-data = load("dataRegressionPopBalanced1L.mat");
+data = load("dataRegressionPopIntersect.mat");
 data = data.data;
 data.replayPartC = data.partP1Rep - mean(data.partP1Rep, 'omitnan');
 data.logCondC = log(data.condition) - mean(log(data.condition));
@@ -29,15 +29,20 @@ data.expReexpBiasC = data.expReexpBias - mean(data.expReexpBias);
 
 %% Interaction, condition logged
 
-lme = fitlme(data, "refinCorr ~ logCondC * replayPartC * amountSleepC + (1|animal)");
+lme = fitlme(data, "refinCorr ~ logCondC * replayPartC * amountSleep + (1|animal) + (1|sessionID:animal)");
 disp(lme)
 
 % No interaction.
 
 %% Without interaction, condition logged
 
-lme = fitlme(data, "refinCorr ~ logCondC + replayPartC + amountSleepC + (1|animal)");
+lme = fitlme(data, "refinCorr ~ logCondC + replayPartC + amountSleepC + (1|animal) + (1|sessionID:animal)");
 disp(lme)
+
+grpstats(data, "condition", "mean", "DataVars", ["refinCorr"])
+
+grpstats(data, "condition", "std", "DataVars", ["refinCorr"])
+
 
 % Significant intercept and effect of condition. No effect of replay /
 % sleep
@@ -45,7 +50,7 @@ disp(lme)
 
 %% Without interaction, without logged condition
 
-lme = fitlme(data, "refinCorr ~ condition + replayPartC + amountSleepC + (1|animal)");
+lme = fitlme(data, "refinCorr ~ condition + replayPartC + (1|animal) + (1|sessionID:animal)");
 disp(lme)
 
 % Significant intercept and effect of condition. No effect of amount of
@@ -55,14 +60,14 @@ disp(lme)
 
 %% Interaction, condition logged
 
-lme = fitlme(data, "refinCorr ~ logCondC * numberSWRC * numberSWRC + (1|animal)");
+lme = fitlme(data, "refinCorr ~ logCondC * numberSWRC + (1|animal) + (1|sessionID:animal)");
 disp(lme)
 
 % No interaction.
 
 %% Without interaction, condition logged
 
-lme = fitlme(data, "refinCorr ~ logCondC + numberSWRC + numberSWRC + (1|animal)");
+lme = fitlme(data, "refinCorr ~ logCondC + numberSWRC + (1|animal) + (1|sessionID:animal)");
 disp(lme)
 
 % Significant intercept and effect of condition. No effect of sleep.
@@ -70,7 +75,7 @@ disp(lme)
 
 %% Without interaction, without logged condition
 
-lme = fitlme(data, "refinCorr ~ condition + numberSWRC + (1|animal)");
+lme = fitlme(data, "refinCorr ~ condition + numberSWRC + (1|animal) + (1|sessionID:animal)");
 disp(lme)
 
 % Significant intercept and effect of condition. Small effect of SWR. No
@@ -79,13 +84,14 @@ disp(lme)
 
 %% Proportion of re-exposure replay vs. exposure replay
 
-lme = fitlme(data, "expReexpBiasC ~ logCondC + (1|animal)");
+lme = fitlme(data, "expReexpBiasC ~ logCondC + (1|animal) + (1|sessionID:animal)");
 disp(lme)
+
 
 % Significant negative effect of the condition on the expression / re-expression
 % bias (p = .005).
 
-lme = fitlme(data, "refinCorr ~ expReexpBiasC + (1|animal)");
+lme = fitlme(data, "refinCorr ~ expReexpBiasC + (1|animal) + (1|sessionID:animal)");
 disp(lme)
 
 % Tendencial effect of the exp / re-exp bias on the refinement.

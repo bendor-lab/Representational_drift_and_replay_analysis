@@ -159,8 +159,9 @@ axis square;
 
 % 1. PV - Correlation with the final place field
 
-dataLapCorr = load("../../Population Level/Statistics/timeSeries.mat");
+dataLapCorr = load("../../Population Level/Statistics/timeSeriesStable.mat");
 dataLapCorr = dataLapCorr.data;
+% dataLapCorr.condition(dataLapCorr.condition <= 8) = 8;
 summaryLapDataCorr = groupsummary(dataLapCorr, ["condition", "exposure", "lap"], ["median", "std"], ["pvCorr"]);
 summaryLapDataCorr.se_pvCorr = summaryLapDataCorr.std_pvCorr./sqrt(summaryLapDataCorr.GroupCount);
 
@@ -171,7 +172,7 @@ timeSeriesOverLapPop(summaryLapDataCorr, "median_pvCorr", "se_pvCorr", "PV corre
 
 % 2. PV- Correlation between one direction and the other (directionality)
 
-dataLapCorr = load("../../Population Level/Statistics/timeSeriesDirectionnality.mat");
+dataLapCorr = load("../../Population Level/Statistics/timeSeriesDirectionalityStable.mat");
 dataLapCorr = dataLapCorr.data;
 summaryLapDataCorr = groupsummary(dataLapCorr, ["condition", "exposure", "lap"], ["median", "std"], ["pvCorr"]);
 summaryLapDataCorr.se_pvCorr = summaryLapDataCorr.std_pvCorr./sqrt(summaryLapDataCorr.GroupCount);
@@ -184,24 +185,29 @@ timeSeriesOverLapPop(summaryLapDataCorr, "median_pvCorr", "se_pvCorr", "PV corre
 
 dataLap = load("timeSeries.mat");
 dataLap = dataLap.data;
-summaryLapData = groupsummary(dataLap, ["condition", "exposure", "lap"], ["median", "std"], ["CMdiff", "FRdiff", "PeakDiff"]);
+
+% We keep only stable cells !
+dataLap(dataLap.label ~= "Stable", :) = [];
+
+summaryLapData = groupsummary(dataLap, ["condition", "exposure", "lap"], ["median", "std"], ...
+                                       ["CMdiff", "FRdiff", "PeakDiff"]);
+
 summaryLapData.se_CMdiff = summaryLapData.std_CMdiff./sqrt(summaryLapData.GroupCount);
 summaryLapData.se_FRdiff = summaryLapData.std_FRdiff./sqrt(summaryLapData.GroupCount);
 summaryLapData.se_PeakDiff = summaryLapData.std_PeakDiff./sqrt(summaryLapData.GroupCount);
-
 
 % 1. Center of mass
 f5 = figure; 
 f5.Position = [0,0,964,542];
 timeSeriesOverLap(summaryLapData, "median_CMdiff", "se_CMdiff", "Center of Mass");
 
-% 2. Peak Location
+% 2. Max FR
 
 f6 = figure; 
 f6.Position = [0, 0, 964, 542];
 timeSeriesOverLap(summaryLapData, "median_FRdiff", "se_FRdiff", "Max Firing Rate");
 
-% 3. Max firing rate
+% 3. Peak location
 
 f7 = figure; 
 f7.Position = [0, 0, 964, 542];
@@ -427,4 +433,17 @@ summaryLapData.se_meanFR = summaryLapData.std_meanFR./sqrt(summaryLapData.GroupC
 summaryLapData.se_CMdiff = summaryLapData.std_CMdiff./sqrt(summaryLapData.GroupCount);
 summaryLapData.se_FRdiff = summaryLapData.std_FRdiff./sqrt(summaryLapData.GroupCount);
 
+<<<<<<< HEAD
 timeSeriesOverLap(summaryLapData(summaryLapData.label == "Appear", :), "median_FRdiff", "se_FRdiff", "Max FR");
+=======
+timeSeriesOverLap(summaryLapData(summaryLapData.label == "Stable", :), "median_meanFR", "se_meanFR", "Firing rate");
+ylim([0 9]);
+
+figure;
+timeSeriesOverLap(summaryLapData(summaryLapData.label == "Appear", :), "median_meanFR", "se_meanFR", "Firing rate");
+ylim([0 9]);
+
+figure;
+timeSeriesOverLap(summaryLapData(summaryLapData.label == "Disappear", :), "median_meanFR", "se_meanFR", "Firing rate");
+ylim([0 9]);
+>>>>>>> 210444b64d8a3611c479a3f4d94708138f7123ae
