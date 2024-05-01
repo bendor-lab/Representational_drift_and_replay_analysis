@@ -104,13 +104,15 @@ for fileID = 1:length(sessions)
         % IF USING DIRECTIONAL
 
         % We check if the number of complete laps is correct
-        nbLapsRUN1 = numel(lap_directional_place_fields(trackOI).dir1.half_Lap) - ...
-                     mod(numel(lap_directional_place_fields(trackOI).dir1.half_Lap), 2);
-        nbLapsRUN1 = nbLapsRUN1/2;
+        nbLapsRUN1 = lap_directional_place_fields(trackOI).dir1.half_Lap - ...
+                     mod(numel(lap_directional_place_fields(trackOI).dir1.half_Lap));
+        
+        nbLapsRUN2 = lap_directional_place_fields(trackOI).dir1.half_Lap - ...
+                     mod(numel(lap_directional_place_fields(trackOI).dir1.half_Lap));
 
 
-        pfDir1RUN1 = lap_directional_place_fields(trackOI).dir1.Complete_Lap{nbLapsRUN1};
-        pfDir2RUN1 = lap_directional_place_fields(trackOI).dir2.Complete_Lap{nbLapsRUN1};
+        pfDir1RUN1 = lap_directional_place_fields(trackOI).dir1.Complete_Lap{end};
+        pfDir2RUN1 = lap_directional_place_fields(trackOI).dir2.Complete_Lap{end};
 
         pfDir1RUN2 = lap_directional_place_fields(trackOI + 2).dir1.Complete_Lap{1};
         pfDir2RUN2 = lap_directional_place_fields(trackOI + 2).dir2.Complete_Lap{1};

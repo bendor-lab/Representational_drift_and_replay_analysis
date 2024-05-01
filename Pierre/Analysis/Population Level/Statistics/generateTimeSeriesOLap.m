@@ -44,8 +44,8 @@ for fileID = 1:length(sessions)
     temp = load(file + "\extracted_lap_place_fields.mat");
     lap_place_fields = temp.lap_place_fields;
     % 
-    % temp = load(file + "\extracted_directional_lap_place_fields");
-    % lap_directional_place_fields = temp.lap_directional_place_fields;
+    temp = load(file + "\extracted_directional_lap_place_fields");
+    lap_directional_place_fields = temp.lap_directional_place_fields;
 
     % Track loop
 
