@@ -48,7 +48,6 @@ for folderID = 1:length(folders)
     globalPath = folder + "\" + folderSave + "\" + targetFolder + "\";
     
     %% Load data
-
     load(folder + "\" + folderSave + "\extracted_place_fields_BAYESIAN");
     
     %% Extract replay events and Bayesian decoding
