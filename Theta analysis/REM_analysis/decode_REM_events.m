@@ -10,7 +10,7 @@ cd(PATH.SCRIPT)
 
 sessions = data_folders_excl;
 
-for sID = 1:1 %numel(sessions)
+for sID = 1:numel(sessions)
     file = sessions{sID};
 
     % Load the data
@@ -58,4 +58,3 @@ for sID = 1:1 %numel(sessions)
 
     end
 end
-
