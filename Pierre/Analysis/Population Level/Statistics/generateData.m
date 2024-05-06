@@ -21,6 +21,10 @@ partP1Rep = [];
 amountSleep = [];
 numberSWR = [];
 expReexpBias = [];
+REM_replay_prop = [];
+
+heatmap_refinement_T1 = [];
+heatmap_refinement_T2 = [];
 
 for fileID = 1:length(sessions)
 
@@ -39,8 +43,11 @@ for fileID = 1:length(sessions)
     temp = load(file + "\extracted_lap_place_fields.mat");
     lap_place_fields = temp.lap_place_fields;
 
-    temp = load(file + "\extracted_directional_lap_place_fields");
-    lap_directional_place_fields = temp.lap_directional_place_fields;
+    temp = load(file + "\extracted_laps.mat");
+    lap_times = temp.lap_times;
+
+    % temp = load(file + "\extracted_directional_lap_place_fields");
+    % lap_directional_place_fields = temp.lap_directional_place_fields;
 
     % Track loop
 
@@ -76,9 +83,12 @@ for fileID = 1:length(sessions)
         nbReplayEvents = numel(goodIDCurrent);
 
         % We get the amount of time slept
+        % RN, the proportion of REM sleep
+
         current_amountSleep = sum(sleep_state.state_binned == 1 & ...
                                   sleep_state.time <= endTime & ...
                                   sleep_state.time >= startTime);
+        
 
         % We get the final place field : mean of the 6 laps following the
         % 16th lap of RUN2
@@ -101,36 +111,41 @@ for fileID = 1:length(sessions)
             finalPlaceField(end + 1) = {mean(temp, 'omitnan')};
         end
 
-        % IF USING DIRECTIONAL
-
-        % We check if the number of complete laps is correct
-        nbLapsRUN1 = numel(lap_directional_place_fields(trackOI).dir1.half_Lap) - ...
-                     mod(numel(lap_directional_place_fields(trackOI).dir1.half_Lap), 2);
-        nbLapsRUN1 = nbLapsRUN1/2;
-
-
-        pfDir1RUN1 = lap_directional_place_fields(trackOI).dir1.Complete_Lap{nbLapsRUN1};
-        pfDir2RUN1 = lap_directional_place_fields(trackOI).dir2.Complete_Lap{nbLapsRUN1};
-
-        pfDir1RUN2 = lap_directional_place_fields(trackOI + 2).dir1.Complete_Lap{1};
-        pfDir2RUN2 = lap_directional_place_fields(trackOI + 2).dir2.Complete_Lap{1};
-
-        directionalityRUN1 = getPVCor(goodCells, pfDir1RUN1.smooth, pfDir2RUN1.smooth, "pvCorrelation");
-        directionalityRUN2 = getPVCor(goodCells, pfDir1RUN2.smooth, pfDir2RUN2.smooth, "pvCorrelation");
-        
-        current_refinement = median(directionalityRUN2, "omitnan") - ...
-                             median(directionalityRUN1, "omitnan");
-
-        % We can now find the PV correlation of the last lap RUN1 and first
-        % lap RUN2 with the FPF
+        % % IF USING DIRECTIONAL
+        % 
+        % % Check 1 - We check if the number of complete laps is correct --
+        % nbLapsRUN1 = numel(lap_directional_place_fields(trackOI).dir1.half_Lap) - ...
+        %              mod(numel(lap_directional_place_fields(trackOI).dir1.half_Lap), 2);
+        % nbLapsRUN1 = nbLapsRUN1/2;
+        % 
+        % pfDir1RUN1 = lap_directional_place_fields(trackOI).dir1.Complete_Lap{nbLapsRUN1};
+        % pfDir2RUN1 = lap_directional_place_fields(trackOI).dir2.Complete_Lap{nbLapsRUN1};
+        % 
+        % 
+        % pfDir1RUN2 = lap_directional_place_fields(trackOI + 2).dir1.Complete_Lap{1};
+        % pfDir2RUN2 = lap_directional_place_fields(trackOI + 2).dir2.Complete_Lap{1};
+        % 
+        % directionalityRUN1 = getPVCor(goodCells, pfDir1RUN1.smooth, pfDir2RUN1.smooth, "pvCorrelation");
+        % directionalityRUN2 = getPVCor(goodCells, pfDir1RUN2.smooth, pfDir2RUN2.smooth, "pvCorrelation");
+        % 
+        % current_refinement = median(directionalityRUN2, "omitnan") - ...
+        %                      median(directionalityRUN1, "omitnan");
+        % 
+        % % We can now find the PV correlation of the last lap RUN1 and first
+        % % lap RUN2 with the FPF
+        % 
 
         pvCorRUN1 = getPVCor(goodCells, RUN1LapPFData{end}.smooth, finalPlaceField, "pvCorrelation");
-        pvCorRUN1 = median(pvCorRUN1, 'omitnan');
-        % 
-        % pvCorRUN2 = getPVCor(goodCells, RUN2LapPFData{1}.smooth, finalPlaceField, "pvCorrelation");
-        % pvCorRUN2 = median(pvCorRUN2, 'omitnan');
-        % 
-        % current_refinement = pvCorRUN2 - pvCorRUN1;
+
+        pvCorRUN2 = getPVCor(goodCells, RUN2LapPFData{1}.smooth, finalPlaceField, "pvCorrelation");
+
+        current_refinement = median(pvCorRUN2, 'omitnan') - median(pvCorRUN1, 'omitnan');
+        
+        if trackOI == 1
+            heatmap_refinement_T1{end + 1} = pvCorRUN2 - pvCorRUN1;
+        else
+            heatmap_refinement_T2{end + 1} = pvCorRUN2 - pvCorRUN1;
+        end
 
         % Get all the sleep replay Exposure vs. Re-exposure
 
@@ -156,6 +171,30 @@ for fileID = 1:length(sessions)
         ratioReexp = (nbfiltReexpRepSpikes - nbfiltExpRepSpikes)/...
                      (nbfiltReexpRepSpikes + nbfiltExpRepSpikes);
 
+        % Get the number of replay events during REM
+        temp = load(file + "\Replay\RUN1_Decoding\significant_replay_events_wcorr");
+        RE_T1vsT2 = temp.significant_replay_events;
+
+        allTimesCurrent = RE_T1vsT2.track(trackOI).event_times;
+
+        bigTimes = sleep_state.time;
+        histReplay = histcounts(allTimesCurrent, [bigTimes bigTimes(end) + 60]);
+        
+        isSleeping = sleep_state.state_binned;
+        isSleeping(isSleeping == -1) = 0;
+        isSleeping = logical(isSleeping);
+
+        number_sleep_replay = sum(histReplay(isSleeping & sleep_state.time <= endTime & ...
+                                             sleep_state.time >= startTime));
+        
+        isRem = sleep_state.REM_idx;
+        % isRem = circshift(isRem, -1);
+        histReplay(~isRem) = 0;
+        histReplay = histReplay(sleep_state.time <= endTime & ...
+                                sleep_state.time >= startTime);
+
+        current_RE_REM = sum(histReplay)/number_sleep_replay;
+
         % Save the data
         
         sessionID = [sessionID; fileID];
@@ -163,11 +202,12 @@ for fileID = 1:length(sessions)
         condition = [condition; conditionOI];
         track = [track; trackOI];
         refinCorr = [refinCorr; current_refinement];
-        corrEndRUN1 = [corrEndRUN1; pvCorRUN1];
+        corrEndRUN1 = [corrEndRUN1; median(pvCorRUN1, 'omitnan')];
         partP1Rep = [partP1Rep; nbReplayEvents];
         amountSleep = [amountSleep; current_amountSleep];
         numberSWR = [numberSWR; current_nbSWR];
         expReexpBias = [expReexpBias; ratioReexp];
+        REM_replay_prop = [REM_replay_prop; current_RE_REM];
 
     end
 end
@@ -182,6 +222,30 @@ condition(track ~= 1) = newConditions(:, 2);
 condition = str2double(condition);
 
 data = table(sessionID, animal, condition, refinCorr, corrEndRUN1, ...
-             partP1Rep, amountSleep, numberSWR, expReexpBias);
+             partP1Rep, amountSleep, numberSWR, expReexpBias, REM_replay_prop);
 
-save("dataRegressionPopDirectionalityIntersect.mat", "data")
+save("dataRegressionPop.mat", "data")
+
+%%
+
+% allT1 = cat(1, heatmap_refinement_T1{:});
+% meanAllT1 = mean(allT1, 'omitnan');
+% 
+% allT2 = cat(1, heatmap_refinement_T2{:});
+% meanAllT2 = mean(allT2, 'omitnan');
+% 
+% plot(1:2:200, meanAllT1, 'b');
+% hold on;
+% plot(1:2:200, meanAllT2, 'r');
+
+%%
+
+data.logConditionC = log2(data.condition) - mean(log2(data.condition), 'omitnan');
+data.REM_replay_propC = data.REM_replay_prop - mean(data.REM_replay_prop);
+
+datac = data(data.REM_replay_prop > 0, :);
+
+lme = fitlme(datac, 'refinCorr ~ logConditionC + REM_replay_propC + (1|animal) + (1|sessionID:animal)');
+disp(lme)
+
+scatter(refinCorr, REM_replay_prop)

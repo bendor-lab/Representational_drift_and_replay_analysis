@@ -30,15 +30,18 @@ clear
 data = load("dataRegression.mat");
 data = data.data;
 
-% We filter toget only STABLE CELLS
-data(data.label ~= "Stable", :) = [];
-
 data.logConditionC = log2(data.condition) - mean(log2(data.condition));
 data.conditionC = data.condition - mean(data.condition);
 data.replayPartC = data.partP1Rep - mean(data.partP1Rep, "omitnan");
 data.propPartRepC = data.propPartRep - mean(data.propPartRep);
 data.partSWRC = data.partSWR - mean(data.partSWR);
 data.expReexpBiasC = data.expReexpBias - mean(data.expReexpBias, 'omitnan');
+data.propSpikesREMC = data.propSpikesREM - mean(data.propSpikesREM, 'omitnan');
+
+data(data.refinCM < 0, :) = [];
+
+lme = fitlme(data, "refinPeak ~ logConditionC + propSpikesREMC + (1|animal) + (1|cell:animal)");
+disp(lme);
 
 %% Do we see remapping over laps ?  ---------------------------------------
 
@@ -253,3 +256,12 @@ lme = fitlme(data, "refinPeak ~ expReexpBiasC + (1|animal) + (1|cell:animal)");
 disp(lme)
 
 % Significant effect on peak (p = .02) - not when common events are removed
+
+%%
+
+meanFR = median(data.firingRateRUN1, 'omitnan');
+data.isHighFiring = (data.firingRateRUN1 > meanFR)*1;
+boxchart(data.isHighFiring, data.refinCM)
+
+lme = fitlme(data(data.isHighFiring == 0, :), "refinCM ~ logConditionC + replayPartC + (1|animal) + (1|cell:animal)");
+disp(lme)

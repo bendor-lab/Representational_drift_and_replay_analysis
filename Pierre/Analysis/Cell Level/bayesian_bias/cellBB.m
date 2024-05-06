@@ -44,10 +44,10 @@ for fID = 1:length(sessions)
 
     % We load all the put. rep. ev EXP vs. REEXP
 
-    temp = load(file + "\balanced_analysis\Replay_T1_vs_T3\decoded_replay_events");
+    temp = load(file + "\balanced_analysis\one_lap_all\Replay_T1_vs_T3\decoded_replay_events");
     decoded_replay_eventsT1 = temp.decoded_replay_events;
 
-    temp = load(file + "\balanced_analysis\Replay_T2_vs_T4\decoded_replay_events");
+    temp = load(file + "\balanced_analysis\one_lap_all\Replay_T2_vs_T4\decoded_replay_events");
     decoded_replay_eventsT2 = temp.decoded_replay_events;
 
     temp = load(file + "\extracted_lap_place_fields");
@@ -234,7 +234,3 @@ end
 linkaxes(h)
 
 boxchart(bb_data.condition, bb_data.bayesian_slope_sig)
-
-%% 
-hist(categorical(bb_data.label))
-boxchart(categorical(bb_data.label), bb_data.total_replay)
