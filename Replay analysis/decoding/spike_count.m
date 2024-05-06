@@ -28,7 +28,8 @@ elseif size(start_time,2)>1 && size(end_time,2)>1 %if there's a vector for start
     bin_width = parameters.replay_bin_width;
     for i = 1: length(start_time)
         event_duration = end_time(i) - start_time(i);
-        num_bins = ceil(event_duration / bin_width);
+        % num_bins = ceil(event_duration / bin_width);
+        num_bins = floor(event_duration / bin_width); % If the events are close from each other
         timebins_edges = linspace(start_time(i), start_time(i) + num_bins *  bin_width, num_bins+1);
         replay_time_edges{i} = timebins_edges;
     end
@@ -64,6 +65,7 @@ if exist('replay_time_edges','var')  % When running replay events separately
     for i = 1 : length(replay_time_edges)
         
         t.replay_edges = cell2mat(replay_time_edges(i)); % takes each replay time vector separately
+        
         % Takes time vectors and centres each bin
         bayesian_spike_count.replay_events(i).replay_time_edges = t.replay_edges;
         bayesian_spike_count.replay_events(i).replay_time_centered = t.replay_edges(1:end-1)+ bin_width/2; %centres of bins

@@ -13,7 +13,8 @@ sessions = data_folders_excl_legacy; % Use the function to get all the file path
 goodPathsServer = data_folders_excl; % Path for the new server location
 
 % We iterate through sessions
-for sID = 1:1 %numel(sessions)
+for sID = 1:numel(sessions)
+    disp(sID);
     currentFile = sessions{sID};
 
     % We load the data
@@ -27,9 +28,6 @@ for sID = 1:1 %numel(sessions)
     lfp   = CSC(best_theta_lower_ripple_CSC).CSCraw;
     theta = CSC(best_theta_lower_ripple_CSC).theta;
     t     = CSC(best_theta_lower_ripple_CSC).CSCtime;
-
-    clear temp
-    clear CSC
 
     % using local extrema detection over sliding window
     [pks,trs,minChange] = findMinMax(theta, 0.25);

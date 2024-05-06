@@ -10,7 +10,7 @@ cd(PATH.SCRIPT)
 
 sessions = data_folders_excl;
 
-for sID = 1:numel(sessions)
+for sID = 1:1 %numel(sessions)
     file = sessions{sID};
 
     % Load the data
@@ -34,7 +34,7 @@ for sID = 1:numel(sessions)
         mkdir(file + "\REM\past_vs_futur");
     end
 
-    save(file + "/REM/past_vs_futur/extracted_replay_events.mat", "replay");
+    parsave(file + "/REM/past_vs_futur/extracted_replay_events.mat", "replay");
 
     % We also copy some files into this new folder
     copyfile(file + "\extracted_clusters.mat", file + "/REM/past_vs_futur/");
@@ -53,8 +53,13 @@ for sID = 1:numel(sessions)
 
         [decoded_replay_events, replayEvents_bayesian_spike_count] = replay_decoding([trackOI, trackOI + 2], path2save, "N");
 
-        save(path2save + "decoded_replay_events.mat", "decoded_replay_events");
-        save(path2save + "replayEvents_bayesian_spike_count.mat", "replayEvents_bayesian_spike_count");
+        parsave(path2save + "decoded_replay_events.mat", "decoded_replay_events");
+        parsave(path2save + "replayEvents_bayesian_spike_count.mat", "replayEvents_bayesian_spike_count");
 
     end
 end
+
+function parsave(fname, x)
+  save(fname, x)
+end
+
