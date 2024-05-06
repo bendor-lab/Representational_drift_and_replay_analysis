@@ -2,8 +2,8 @@
 clear
 
 folders = data_folders_excl;
-tracks_compared = [1, 3];
+tracks_compared = [2, 4];
 
 folders = folders(1:end);
 
-replay_sequence_analysis(folders, tracks_compared, "balanced_analysis")
+replay_sequence_analysis(folders, tracks_compared, "balanced_analysis/one_lap_all")

@@ -73,6 +73,6 @@ parfor direcInd = 1:19
     end
 
     % We can run the function
-    calculate_place_fields(10, [], "balanced_analysis/one_lap_all", timingMat)
+    calculate_place_fields(10, [], "balanced_analysis/one_lap_all/", timingMat);
 
 end
