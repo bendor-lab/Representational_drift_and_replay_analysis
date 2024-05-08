@@ -178,7 +178,7 @@ for fileID = 1:length(sessions)
         allTimesCurrent = RE_T1vsT2.track(trackOI).event_times;
 
         bigTimes = sleep_state.time;
-        histReplay = histcounts(allTimesCurrent, [bigTimes bigTimes(end) + 60]);
+        histReplay = histcounts(allTimesCurrent, [bigTimes - 30 bigTimes(end) + 30]);
         
         isSleeping = sleep_state.state_binned;
         isSleeping(isSleeping == -1) = 0;
@@ -188,7 +188,7 @@ for fileID = 1:length(sessions)
                                              sleep_state.time >= startTime));
         
         isRem = sleep_state.REM_idx;
-        % isRem = circshift(isRem, -1);
+        isRem = circshift(isRem, 0);
         histReplay(~isRem) = 0;
         histReplay = histReplay(sleep_state.time <= endTime & ...
                                 sleep_state.time >= startTime);
