@@ -18,9 +18,9 @@ sessionID = [];
 animal = [];
 condition = [];
 track = [];
-mean_bayesian_bias = [];
-quantity_rem = [];
-std_bayesian_bias = [];
+cycleID = [];
+cycleTime = [];
+bayesian_bias = [];
 
 % For each session
 
@@ -70,8 +70,12 @@ parfor fID = 1:length(sessions)
         isSleeping(isSleeping == -1) = 0;
         isSleeping = logical(isSleeping);
 
+        if sum(sleep_state.REM_idx & isSleeping) == 0
+            continue; % If no POST1 REM, we pass
+        end
+
         allReplayTimes = cellfun(@(a) a(1),...
-                             {decoded_replay_events(1).replay_events.timebins_edges});
+            {decoded_replay_events(1).replay_events.timebins_edges});
 
         allReplayTimes = allReplayTimes(sleepID);
 
@@ -79,53 +83,63 @@ parfor fID = 1:length(sessions)
             (sleep_state.time >= startTime) & (sleep_state.time <= endTime));
 
         goodREMIDs = [];
+        goodTimes = []; % cumulative REM time
+
+        isRem = sleep_state.REM_idx & isSleeping;
+        timeVector = sleep_state.time(1):0.020:sleep_state.time(end)+59.980;
+        fulRemVector = [];
+
+        for i = 1:numel(isRem)
+            if isRem(i) == 0
+                fulRemVector = [fulRemVector repelem(0, 3000)];
+            else
+                fulRemVector = [fulRemVector repelem(1/3000, 3000)];
+            end
+        end
+
+        fulRemVectorCum = cumsum(fulRemVector);
 
         for reID = 1:numel(allReplayTimes)
             histReplay = histcounts(allReplayTimes(reID), [bigTimes bigTimes(end) + 60]);
-            isRem = sleep_state.REM_idx;
-            % isRem = circshift(isRem, 1);
 
             histReplay(~isRem) = 0;
-            histReplay(~isSleeping) = 0;
+
             % histReplaySleep = histReplay(sleep_state.time <= endTime & sleep_state.time >= startTime);
             % Useless bc for now, only POST1 cycles are analyzed
 
             if any(histReplay) % If during REM
                 goodREMIDs(end + 1) = sleepID(reID);
+
+                % We get the cumulative rem time
+                eventTime = allReplayTimes(reID);
+                curr_cumRemTime = fulRemVectorCum(timeVector >= eventTime & timeVector <= eventTime + 0.020);
+                goodTimes(end + 1) = curr_cumRemTime;
             end
         end
-        
+
         current_nbCycles = numel(goodREMIDs);
 
         % We iterate through each REM cycle
 
-        all_bb = [];
-
         for rID = 1:current_nbCycles
 
             replayID = goodREMIDs(rID);
+            current_time = goodTimes(rID);
 
             decodedPosExp = decoded_replay_events(1).replay_events(replayID).decoded_position;
             decodedPosReexp = decoded_replay_events(2).replay_events(replayID).decoded_position;
 
             bb = log10(sum(sum(decodedPosReexp))/sum(sum(decodedPosExp)));
-            all_bb(end + 1) = bb;
+
+            sessionID = [sessionID; fID];
+            animal = [animal; animalOI];
+            condition = [condition; conditionOI];
+            track = [track; trackOI];
+            cycleID = [cycleID; replayID];
+            cycleTime = [cycleTime; current_time];
+            bayesian_bias = [bayesian_bias; bb];
 
         end
-
-        figure;
-        plot(all_bb)
-
-        current_mean_bb = mean(all_bb, 'omitnan');
-        current_std_bb = std(all_bb, 'omitnan');
-
-        sessionID = [sessionID; fID];
-        animal = [animal; animalOI];
-        condition = [condition; conditionOI];
-        track = [track; trackOI];
-        mean_bayesian_bias = [mean_bayesian_bias; current_mean_bb];
-        std_bayesian_bias = [std_bayesian_bias; current_std_bb];
-        quantity_rem = [quantity_rem; current_quantity_rem];
 
     end
 end
@@ -135,14 +149,11 @@ newConditions = split(condition(track ~= 1), 'x');
 condition(track ~= 1) = newConditions(:, 2);
 condition = str2double(condition);
 
-data = table(sessionID, animal, condition, mean_bayesian_bias, std_bayesian_bias, quantity_rem);
+data = table(sessionID, animal, condition, cycleID, cycleTime, bayesian_bias);
 
 %%
 
-all_bb_z = (all_bb - mean(all_bb, 'omitnan'))/std(all_bb, 'omitnan');
-all_good = find(all_bb_z > 3);
-
-for g = 1:numel(all_good)
-    figure;
-    imagesc(decoded_replay_events(2).replay_events(all_good(g)).decoded_position)
-end
+dataFilt = data;
+dataFilt.bbz = (dataFilt.bayesian_bias - mean(dataFilt.bayesian_bias, 'omitnan'))/std(dataFilt.bayesian_bias, 'omitnan');
+dataFilt(abs(dataFilt.bbz) <= 1, :) = [];
+dataFilt(isnan(dataFilt.bbz), :) = [];
