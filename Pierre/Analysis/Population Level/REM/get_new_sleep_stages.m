@@ -1,4 +1,5 @@
 % Generate new sleep stages for each animals
+clear
 
 sessions = data_folders_excl;
 sessions_leg = data_folders_excl_legacy;
