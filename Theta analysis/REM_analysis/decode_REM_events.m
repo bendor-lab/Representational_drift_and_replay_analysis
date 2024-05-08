@@ -44,14 +44,14 @@ for sID = 1:numel(sessions)
     cd(file + "/REM/past_vs_futur/");
 
     % Now we can decode for each track the past vs. futur
-    for trackOI = 1:2
-        path2save = file + "/REM/past_vs_futur/" + "T" + trackOI + "_vs_T" + (trackOI + 2) + "/";
+    for trackOI = 1:2:4
+        path2save = file + "/REM/past_vs_futur/" + "T" + trackOI + "_vs_T" + (trackOI + 1) + "/";
 
         if ~exist(path2save, 'dir')
             mkdir(path2save);
         end
 
-        [decoded_replay_events, replayEvents_bayesian_spike_count] = replay_decoding([trackOI, trackOI + 2], path2save, "N");
+        [decoded_replay_events, replayEvents_bayesian_spike_count] = replay_decoding([trackOI, trackOI + 1], path2save, "N");
 
         save(path2save + "decoded_replay_events.mat", "decoded_replay_events");
         save(path2save + "replayEvents_bayesian_spike_count.mat", "replayEvents_bayesian_spike_count");
