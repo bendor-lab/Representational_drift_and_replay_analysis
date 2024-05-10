@@ -18,10 +18,17 @@ refinCorr = [];
 corrEndRUN1 = [];
 
 partP1Rep = [];
-amountSleep = [];
 numberSWR = [];
 expReexpBias = [];
-REM_replay_prop = [];
+SWS_replay_prop = [];
+
+amountSleep = [];
+amountRem = [];
+amountSWS = [];
+amountQuiet = [];
+
+nbSpikesBefREM = [];
+nbSpikesAfREM = [];
 
 heatmap_refinement_T1 = [];
 heatmap_refinement_T2 = [];
@@ -69,7 +76,7 @@ for fileID = 1:length(sessions)
         RE_current_track = significant_replay_events.track(trackOI);
 
         % Fetch the sleep times to filter POST1 replay events
-        temp = load(file +  "/extracted_sleep_state");
+        temp = load(file +  "/extracted_sleep_stages");
         sleep_state = temp.sleep_state;
         startTime = sleep_state.state_time.INTER_post_start;
         endTime = sleep_state.state_time.INTER_post_end;
@@ -85,9 +92,21 @@ for fileID = 1:length(sessions)
         % We get the amount of time slept
         % RN, the proportion of REM sleep
 
-        current_amountSleep = sum(sleep_state.state_binned == 1 & ...
+        current_amount_sleep = sum(sleep_state.state_binned == 1 & ...
                                   sleep_state.time <= endTime & ...
                                   sleep_state.time >= startTime);
+
+        current_amount_rem = sum(sleep_state.sleep_stages.rem == 1 & ...
+                                  sleep_state.sleep_stages.t_sec <= endTime & ...
+                                  sleep_state.sleep_stages.t_sec >= startTime)/60;
+
+        current_amount_sws = sum(sleep_state.sleep_stages.sws == 1 & ...
+                                  sleep_state.sleep_stages.t_sec <= endTime & ...
+                                  sleep_state.sleep_stages.t_sec >= startTime)/60;
+
+        current_amount_quiet = sum(sleep_state.sleep_stages.quiet_wake == 1 & ...
+                                  sleep_state.sleep_stages.t_sec <= endTime & ...
+                                  sleep_state.sleep_stages.t_sec >= startTime)/60;
         
 
         % We get the final place field : mean of the 6 laps following the
@@ -176,24 +195,48 @@ for fileID = 1:length(sessions)
         RE_T1vsT2 = temp.significant_replay_events;
 
         allTimesCurrent = RE_T1vsT2.track(trackOI).event_times;
-
-        bigTimes = sleep_state.time;
-        histReplay = histcounts(allTimesCurrent, [bigTimes - 30 bigTimes(end) + 30]);
         
+        timesSleeping = sleep_state.time;
+        histReplaySleep = histcounts(allTimesCurrent, [timesSleeping - 30 timesSleeping(end) + 30]);
+
         isSleeping = sleep_state.state_binned;
         isSleeping(isSleeping == -1) = 0;
         isSleeping = logical(isSleeping);
 
-        number_sleep_replay = sum(histReplay(isSleeping & sleep_state.time <= endTime & ...
-                                             sleep_state.time >= startTime));
+        number_sleep_replay = sum(histReplaySleep(isSleeping & sleep_state.time <= endTime & ...
+                                                  sleep_state.time >= startTime));
         
-        isRem = sleep_state.REM_idx;
-        isRem = circshift(isRem, 0);
-        histReplay(~isRem) = 0;
+        bigTimes = sleep_state.sleep_stages.t_sec;
+        histReplay = histcounts(allTimesCurrent, [bigTimes bigTimes(end) + 1]);
+        isSWS = sleep_state.sleep_stages.sws;
+        histReplay(~isSWS) = 0;
         histReplay = histReplay(sleep_state.time <= endTime & ...
                                 sleep_state.time >= startTime);
 
-        current_RE_REM = sum(histReplay)/number_sleep_replay;
+        current_RE_SWS = sum(histReplay)/number_sleep_replay;
+
+        % Get the quantity of replay one minut before REM and one minut
+        % after
+
+        current_before_rem = [];
+        current_after_rem = [];
+
+        for re = 1:numel(allTimesCurrent(goodIDCurrent))
+            current_time = allTimesCurrent(re);
+            current_second = find(bigTimes <= current_time & bigTimes + 1 >= current_time);
+
+            if current_second - 120 < 1 | current_second + 120 > numel(bigTimes)
+                continue;
+            end
+            
+            if any(sleep_state.sleep_stages.sws(current_second-60:current_second))
+                current_before_rem(end + 1) = re;
+            end
+
+            if any(sleep_state.sleep_stages.sws(current_second:current_second+60))
+                current_after_rem(end + 1) = re;
+            end
+        end
 
         % Save the data
         
@@ -202,12 +245,21 @@ for fileID = 1:length(sessions)
         condition = [condition; conditionOI];
         track = [track; trackOI];
         refinCorr = [refinCorr; current_refinement];
+
         corrEndRUN1 = [corrEndRUN1; median(pvCorRUN1, 'omitnan')];
         partP1Rep = [partP1Rep; nbReplayEvents];
-        amountSleep = [amountSleep; current_amountSleep];
         numberSWR = [numberSWR; current_nbSWR];
         expReexpBias = [expReexpBias; ratioReexp];
-        REM_replay_prop = [REM_replay_prop; current_RE_REM];
+        SWS_replay_prop = [SWS_replay_prop; current_RE_SWS];
+
+        amountSleep = [amountSleep; current_amount_sleep];
+        amountRem = [amountRem; current_amount_rem];
+        amountSWS = [amountSWS; current_amount_sws];
+        amountQuiet = [amountQuiet; current_amount_quiet];
+
+        nbSpikesBefREM = [nbSpikesBefREM; numel(current_before_rem)];
+        nbSpikesAfREM = [nbSpikesAfREM; numel(current_after_rem)];
+
 
     end
 end
@@ -222,7 +274,9 @@ condition(track ~= 1) = newConditions(:, 2);
 condition = str2double(condition);
 
 data = table(sessionID, animal, condition, refinCorr, corrEndRUN1, ...
-             partP1Rep, amountSleep, numberSWR, expReexpBias, REM_replay_prop);
+             partP1Rep, numberSWR, expReexpBias, SWS_replay_prop, ...
+             amountSleep, amountRem, amountSWS, amountQuiet, ...
+             nbSpikesBefREM, nbSpikesAfREM);
 
 save("dataRegressionPop.mat", "data")
 
@@ -240,12 +294,15 @@ save("dataRegressionPop.mat", "data")
 
 %%
 
+load("dataRegressionPop.mat")
+
 data.logConditionC = log2(data.condition) - mean(log2(data.condition), 'omitnan');
-data.REM_replay_propC = data.REM_replay_prop - mean(data.REM_replay_prop);
+data.propBefore = data.nbSpikesBefREM ./ data.partP1Rep;
+data.propAfter = data.nbSpikesAfREM ./ data.partP1Rep;
 
-datac = data(data.REM_replay_prop > 0, :);
 
-lme = fitlme(datac, 'refinCorr ~ logConditionC + REM_replay_propC + (1|animal) + (1|sessionID:animal)');
+lme = fitlme(data(data.condition ~= 16, :), 'refinCorr ~ logConditionC + propBefore + propAfter + (1|animal) + (1|sessionID:animal)');
 disp(lme)
 
-scatter(refinCorr, REM_replay_prop)
+scatter(data.condition, data.propAfter)
+

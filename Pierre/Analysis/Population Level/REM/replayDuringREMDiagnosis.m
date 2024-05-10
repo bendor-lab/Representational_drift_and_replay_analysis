@@ -15,7 +15,7 @@ trackOI = 1;
 %% Loading data
 load(file_leg + "/extracted_CSC");
 load(file + "/Replay/RUN1_Decoding/significant_replay_events_wcorr");
-load(file + "/extracted_sleep_state");
+load(file + "/extracted_sleep_stages");
 load(file + "/Replay/RUN1_Decoding/decoded_replay_events");
 
 LFP_theta = CSC(1).CSCraw;
@@ -31,24 +31,24 @@ LFP_time = CSC(1).CSCtime;
 %% Finding all the significant REM replay times
 
 allReplayTimes = significant_replay_events.track(trackOI).event_times;
-allRem = sleep_state.REM_idx;
-allNRem = sleep_state.NREM_idx;
-allRem_time = sleep_state.time;
+allRem = sleep_state.sleep_stages.rem;
+allNRem = sleep_state.sleep_stages.sws;
+allRem_time = sleep_state.sleep_stages.t_sec;
 
 % Getting a vector with every REM - 1000 Hz
 allRem_fast = repelem(0, numel(LFP_time));
 allNRem_fast = repelem(0, numel(LFP_time));
 
-for minut = 1:numel(allRem)
+for second = 1:numel(allRem)
     if allRem(minut) == 1
-        REM_times_big = LFP_time >= allRem_time(minut) - 30 & ...
-            LFP_time <= allRem_time(minut) + 30;
+        REM_times_big = LFP_time >= allRem_time(second) & ...
+            LFP_time <= allRem_time(second) + 1;
 
         allRem_fast(REM_times_big) = 1;
 
     elseif allNRem(minut) == 1
-        REM_times_big = LFP_time >= allRem_time(minut) - 30 & ...
-            LFP_time <= allRem_time(minut) + 30;
+        REM_times_big = LFP_time >= allRem_time(second) & ...
+            LFP_time <= allRem_time(second) + 1;
 
         allNRem_fast(REM_times_big) = 1;
     end
@@ -62,7 +62,7 @@ validRemReplay = [];
 
 for rID = 1:numel(allReplayTimes)
     current_time = allReplayTimes(rID);
-    current_minut = allRem_time - 30 <= current_time & allRem_time + 30 >= current_time;
+    current_minut = allRem_time <= current_time & allRem_time + 1 >= current_time;
     isRem = allRem(current_minut);
 
     if isRem & isPOST1(rID)
@@ -71,9 +71,9 @@ for rID = 1:numel(allReplayTimes)
 end
 
 %% Looking at the LFP shape during REM replay
-current_replay_time = validRemReplay(27);
+current_replay_time = validRemReplay(1);
 
-% Get the section of LFP we're intrested in
+% Get the section of LFP we're interested in
 slice_LFP = LFP_time >= (current_replay_time - 60) & ...
     LFP_time <= (current_replay_time + 60);
 

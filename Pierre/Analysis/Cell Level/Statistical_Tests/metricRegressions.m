@@ -36,12 +36,8 @@ data.replayPartC = data.partP1Rep - mean(data.partP1Rep, "omitnan");
 data.propPartRepC = data.propPartRep - mean(data.propPartRep);
 data.partSWRC = data.partSWR - mean(data.partSWR);
 data.expReexpBiasC = data.expReexpBias - mean(data.expReexpBias, 'omitnan');
-data.propSpikesREMC = data.propSpikesREM - mean(data.propSpikesREM, 'omitnan');
 
-data(data.refinCM < 0, :) = [];
-
-lme = fitlme(data, "refinPeak ~ logConditionC + propSpikesREMC + (1|animal) + (1|cell:animal)");
-disp(lme);
+data(abs(data.refinCM) > 50, :) = [];
 
 %% Do we see remapping over laps ?  ---------------------------------------
 

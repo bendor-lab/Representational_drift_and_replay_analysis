@@ -29,7 +29,8 @@ partP1Rep = [];
 propPartRep = []; % % of replay participated in
 partSWR = [];
 expReexpBias = [];
-propSpikesREM = [];
+propSpikesSWS = [];
+rateCloseToREM = [];
 
 % We take the absolute value of the difference over sum to get the relative
 % distance with the FPF, independently of the direction
@@ -37,7 +38,7 @@ diffSum = @(x1, x2) abs(x1 - x2)/(x1 + x2);
 
 %% Extraction & computation
 
-parfor fileID = 1:length(sessions)
+for fileID = 1:length(sessions)
 
     disp(fileID);
     file = sessions{fileID}; % We get the current session
@@ -102,7 +103,7 @@ parfor fileID = 1:length(sessions)
         RE_current_track = significant_replay_events.track(trackOI);
 
         % Fetch the sleep times to filter POST1 replay events
-        temp = load(file +  "/extracted_sleep_state");
+        temp = load(file +  "/extracted_sleep_stages");
         sleep_state = temp.sleep_state;
         startTime = sleep_state.state_time.INTER_post_start;
         endTime = sleep_state.state_time.INTER_post_end;
@@ -113,9 +114,10 @@ parfor fileID = 1:length(sessions)
         %% We get all the sig replay events during REM
         % allTimesCurrent = cellfun(@(a) a(1), {decoded_replay_events(trackOI).replay_events.timebins_edges});
         allTimesCurrent = RE_current_track.event_times;
-        bigTimes = sleep_state.time;
-        allIDREM = [];
-        allIDNREM = [];
+        bigTimes = sleep_state.sleep_stages.t_sec;
+        allIDSWS = [];
+        allIDRest = [];
+        isCloseToRem = []; % + or - 60 s
 
         for evID = 1:numel(allTimesCurrent)
 
@@ -123,13 +125,18 @@ parfor fileID = 1:length(sessions)
                 continue;
             end
 
-            findReplay = histcounts(allTimesCurrent(evID), [bigTimes bigTimes(end) + 60]);
-            findReplay(~sleep_state.REM_idx) = 0;
+            findReplay = histcounts(allTimesCurrent(evID), [bigTimes bigTimes(end) + 1]);
+            findReplay = find(findReplay);
 
-            if any(findReplay)
-                allIDREM(end + 1) = evID;
-            else
-                allIDNREM(end + 1) = evID;
+            if sleep_state.sleep_stages.sws(findReplay)
+                allIDSWS(end + 1) = evID;
+
+            elseif sleep_state.sleep_stages.quiet_wake(findReplay)
+                allIDRest(end + 1) = evID;
+            end
+
+            if sum(sleep_state.sleep_stages.rem(findReplay-60:findReplay+60)) ~= 0
+                isCloseToRem(end + 1) = evID;
             end
         end
 
@@ -163,8 +170,9 @@ parfor fileID = 1:length(sessions)
         filteredReplayEventsSpikesCurrent = RE_current_track.spikes(goodIDCurrent);
         filteredSWR = {decoded_replay_events(trackOI).replay_events(sleepSWRID).spikes};
 
-        filteredREMEvents = RE_current_track.spikes(allIDREM);
-        filteredNREMEvents = RE_current_track.spikes(allIDNREM);
+        filteredSWSEvents = RE_current_track.spikes(allIDSWS);
+        filteredRestEvents = RE_current_track.spikes(allIDRest);
+        filteredCloseToREMEvents = RE_current_track.spikes(isCloseToRem);
         % filteredREMEvents = {decoded_replay_events(trackOI).replay_events(allIDREM).spikes};
         % filteredNREMEvents = {decoded_replay_events(trackOI).replay_events(allIDNREM).spikes};
 
@@ -257,10 +265,13 @@ parfor fileID = 1:length(sessions)
             current_expReexpBias = (partReexpReplay - partExpReplay) / (partExpReplay + partReexpReplay);
 
             % Look at the number of spikes during REM events and NREM
-            nbSpikesREM = sum(cellfun(@(ev) any(ev(:, 1) == cellOI), filteredREMEvents));
-            nbSpikesNREM = sum(cellfun(@(ev) any(ev(:, 1) == cellOI), filteredNREMEvents));
+            nbSpikesSWS = sum(cellfun(@(ev) any(ev(:, 1) == cellOI), filteredSWSEvents));
+            % nbSpikesRest = sum(cellfun(@(ev) any(ev(:, 1) == cellOI), filteredRestEvents));
 
-            current_prop_REM = nbSpikesREM / (nbSpikesREM + nbSpikesNREM);
+            current_prop_SWS = nbSpikesSWS / (current_partP1Rep);
+
+            % Look at the number of close to REM events
+            nbSpikesCloseToRem = sum(cellfun(@(ev) any(ev(:, 1) == cellOI), filteredCloseToREMEvents));
             
             % Save the data
 
@@ -279,7 +290,8 @@ parfor fileID = 1:length(sessions)
             propPartRep = [propPartRep; current_propPart];
             partSWR = [partSWR; current_partSWR];
             expReexpBias = [expReexpBias; current_expReexpBias];
-            propSpikesREM = [propSpikesREM; current_prop_REM];
+            propSpikesSWS = [propSpikesSWS; current_prop_SWS];
+            rateCloseToREM = [rateCloseToREM; nbSpikesCloseToRem/current_partP1Rep];
 
         end
     end
@@ -298,22 +310,41 @@ condition = str2double(condition);
 
 data = table(sessionID, animal, condition, cell, label, ...
     firingRateRUN1, refinCM, refinFR, refinPeak, ...
-    partP1Rep, propPartRep, partSWR, expReexpBias, propSpikesREM);
+    partP1Rep, propPartRep, partSWR, expReexpBias, propSpikesSWS, rateCloseToREM);
 
 save("dataRegression.mat", "data")
 % save("dataRegressionXor.mat", "data")
 % save("dataRegressionIntersection.mat", "data")
 
 %%
+load("dataRegression.mat");
 
 datac = data;
-datac(datac.refinCM < 0, :) = [];
+datac.absRefin = abs(datac.refinCM);
+
+datac.logCondC = log2(datac.condition) - mean(log2(datac.condition));
+datac.propPartRepC = datac.propPartRep - mean(datac.propPartRep);
+
+lme = fitlme(datac, 'absRefin ~ logCondC + propPartRepC + (1|animal) + (1|sessionID:animal)');
+disp(lme);
+
+scatter(datac.absRefin, datac.propPartRep)
 
 figure;
-boxchart(datac.condition, datac.propSpikesREM)
-grid on;
+subplot(2, 1, 1)
+histogram(log(datac.propPartRep));
+subplot(2, 1, 2)
+histogram(log(datac.absRefin));
 
-scatter(datac.refinCM, datac.propSpikesREM)
+scatter(log(datac.propPartRep(datac.absRefin > 0.5)), log(datac.absRefin(datac.absRefin > 0.5)))
 
-fitlme(datac, 'refinPeak ~ condition + propSpikesREM')
+%%
 
+datac = data;
+[GC, GR] = groupcounts(datac.cell);
+datac(ismember(datac.cell, GR(GC == 1)), :) = [];
+
+stabT1 = datac.refinCM(datac.condition == 16);
+stabT2 = datac.refinCM(datac.condition ~= 16);
+
+scatter(stabT1, stabT2)
