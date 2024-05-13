@@ -1,6 +1,9 @@
 % Look at the evolution of confusion between T1 / T2 across laps
 clear
 
+PATH.SCRIPT = fileparts(mfilename('fullpath'));
+cd(PATH.SCRIPT)
+
 parameters = list_of_parameters;
 sessions = data_folders_excl;
 
@@ -184,6 +187,10 @@ for fID = 1:1 %numel(sessions)
     % end
 
 end
+
+% We save confusion
+
+save(PATH.SCRIPT + "\confusion_file", "confusion");
 
 %% FUNCTIONS
 
