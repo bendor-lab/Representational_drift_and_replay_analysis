@@ -9,7 +9,9 @@ sessions = data_folders_excl;
 
 confusion = struct("fID", {}, "animal", {}, "condition", {}, "exposure", {}, "reexposure", {});
 
-for fID = 1:1 %numel(sessions)
+parfor fID = 1:numel(sessions)
+
+    current_conf = struct;
 
     file = sessions{fID};
     disp("session : " + fID);
@@ -29,7 +31,7 @@ for fID = 1:1 %numel(sessions)
     position = temp.position;
     temp = load(file + "\extracted_place_fields_BAYESIAN");
     place_fields_BAYESIAN = temp.place_fields_BAYESIAN;
-    clear temp;
+    % clear temp;
 
     cd(file);
 
