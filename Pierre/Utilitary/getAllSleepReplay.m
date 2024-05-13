@@ -44,7 +44,8 @@ for re = 1:numel(allTimesReplay)
     % Now, if the replay event is still here, it's saved
     if stateVec(findTB) == 1
         allMatchingReplay = [allMatchingReplay; re];
-        timeVector = [timeVector; cumsumSleep(findTB)/max(cumsumSleep)];
+        timeVector = [timeVector; cumsumSleep(findTB)/60];
+        % timeVector = [timeVector; (allTimesReplay(re) - startTime)/60];
     end
 end
 

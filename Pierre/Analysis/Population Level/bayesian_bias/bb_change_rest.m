@@ -9,7 +9,7 @@ cd(PATH.SCRIPT)
 
 sessions = data_folders_excl; % Use the function to get all the file paths
 
-mode = 2; % 1 - All events ; 2 - Significant RE ; 3 - NS RE
+mode = 1; % 1 - All events ; 2 - Significant RE ; 3 - NS RE
 % Replay events are poled from exp vs. re-exp
 
 % Initiate the final files
@@ -18,10 +18,10 @@ sessionID = [];
 animal = [];
 condition = [];
 track = [];
-state = []; % 0 : awake, 1 : NREM sleep, 2 : REM
+state = []; % 0 : awake, 1 : SWS, 2 : Quiet rest
 replay_time = [];
 bayesian_bias = [];
-t_dur_rem = [];
+t_dur_sws = [];
 
 % For each session
 
@@ -45,15 +45,14 @@ for fID = 1:length(sessions)
     decoded_replay_eventsT2 = temp.decoded_replay_events;
 
     % Load sleep data
-    temp = load(file + "\extracted_sleep_state");
+    temp = load(file + "\extracted_sleep_stages");
     sleep_state = temp.sleep_state;
-
     % We get the start / end of POST1
     startTime = sleep_state.state_time.INTER_post_start;
     endTime = sleep_state.state_time.INTER_post_end;
 
     % We get all the sleep replay events during POST1
-    [sleepSWRID, timeSWR] = getAllSleepReplay(1, startTime, endTime, decoded_replay_eventsT1, sleep_state);
+    [sleepSWRID, timeSWR] = getAllSleepReplay(1, startTime, endTime, decoded_replay_eventsT1, sleep_state, 120);
     sleepID = sleepSWRID;
     timeRep = timeSWR;
 
@@ -70,8 +69,12 @@ for fID = 1:length(sessions)
             decoded_replay_events = decoded_replay_eventsT2;
         end
 
+        if mode == 1
+            sleep_type = repelem(1, 1, numel(timeRep));
+            time_during_sws = NaN(1, numel(timeRep));
+
         % If mode ~= 1, we filter this ID list
-        if mode == 2
+        elseif mode == 2
 
             % We find all the significant replay events
             path2get = [file, '\Replay\RUN1_Decoding'];
@@ -86,63 +89,69 @@ for fID = 1:length(sessions)
             good_ids = union(significant_replay_eventsExp.track(trackOI).ref_index, ...
                              significant_replay_eventsReexp.track(trackOI).ref_index);
 
+            % good_ids = significant_replay_eventsExp.track(trackOI).ref_index;
+
             sleepID = intersect(sleepSWRID, good_ids);
             timeRep = timeSWR(ismember(sleepSWRID, sleepID));
 
             % We get the REM / NREM label of the replay
             allReplayTimes = cellfun(@(a) a(1),...
-                             {decoded_replay_events(1).replay_events.timebins_edges});
+                             {decoded_replay_events(1).replay_events(sleepID).timebins_edges});
 
-            allReplayTimes = allReplayTimes(sleepID);
+            bigTimes = sleep_state.sleep_stages.t_sec;
+            minutTime = sleep_state.time;
+            isSleepingSec = zeros(numel(bigTimes), 1);
 
-            bigTimes = sleep_state.time;
-            sleep_type = [];
-            time_during_rem = [];
+            % we get the sleping state for each second
+            for m = 1:numel(minutTime)
+                isSleepingSec(bigTimes >= minutTime(m)-30 & bigTimes <= minutTime(m)+30) = sleep_state.state_binned(m);
+            end
             
-            isSleeping = sleep_state.state_binned;
-            isSleeping(isSleeping == -1) = 0;
-            isSleeping = logical(isSleeping);
+            isSleepingSec(isSleepingSec == -1) = 0;
+            isSleepingSec = logical(isSleepingSec);
+
+            sleep_type = [];
+            time_during_sws = [];
     
             for reID = 1:numel(allReplayTimes)
-                histReplay = histcounts(allReplayTimes(reID), [bigTimes bigTimes(end) + 60]);
-                isRem = sleep_state.REM_idx;
-                % isRem = circshift(isRem, 1);
+                current_second = bigTimes <= allReplayTimes(reID) & bigTimes + 1 >= allReplayTimes(reID);
+                isSWS = any(current_second & sleep_state.sleep_stages.sws);
+                isDuringSleep = any(current_second & isSleepingSec');
+                isDuringPOST1 = any(current_second((bigTimes <= endTime & ...
+                                                    bigTimes >= startTime)));
 
-                histReplay(~isRem) = 0;
-                histReplay(~isSleeping) = 0;
-                histReplaySleep = histReplay(sleep_state.time <= endTime & ...
-                                        sleep_state.time >= startTime);
+                if isSWS & isDuringSleep & isDuringPOST1
 
-                if any(histReplaySleep)
                     % We're looking at the position of the spike during the
-                    % REM
-                    current_minut = find(histReplay);
-                    [left, right] = getZoneAround(isRem, current_minut);
-                    time_start_REM = bigTimes(left);
-                    time_stop_REM = bigTimes(right) + 60;
-                    curr_time_during_REM = (allReplayTimes(reID) - time_start_REM)/...
-                                      (time_stop_REM - time_start_REM);
+                    % SWS
+                    second_id = find(current_second);
+                    [left, right] = getZoneAround(sleep_state.sleep_stages.sws, second_id);
+                    time_start_SWS = bigTimes(left);
+                    time_stop_SWS = bigTimes(right) + 1;
+                    curr_time_during_SWS = (allReplayTimes(reID) - time_start_SWS)/...
+                                           (time_stop_SWS - time_start_SWS);
                     
-                    time_during_rem(end + 1) = curr_time_during_REM;
+                    time_during_sws(end + 1) = curr_time_during_SWS;
 
                     sleep_type(end + 1) = 2;
+                    
                 else
+
                     sleep_type(end + 1) = 1;
-                    time_during_rem(end + 1) = NaN;
+                    time_during_sws(end + 1) = NaN;
+
                 end
             end
-    
 
             awakeSleepID = intersect(awakeSWRID, good_ids);
             awakeTimeRep = timeAwakeSWR(ismember(awakeSWRID, awakeSleepID));
-
         end
 
         % Now we merge the sleep and awake replay events
         globalID = [sleepID; awakeSleepID];
         globalTimeRep = [timeRep; awakeTimeRep];
         sleep_states = [sleep_type'; zeros(numel(awakeSleepID), 1)];
-        time_during_rem = [time_during_rem'; NaN(numel(awakeSleepID), 1)];
+        time_during_sws = [time_during_sws'; NaN(numel(awakeSleepID), 1)];
 
         current_nbReplay = numel(globalID);
 
@@ -152,7 +161,7 @@ for fID = 1:length(sessions)
             replayID = globalID(rID);
             current_time = globalTimeRep(rID);
             current_state = sleep_states(rID);
-            current_time_d_rem = time_during_rem(rID);
+            current_time_d_sws = time_during_sws(rID);
 
             decodedPosExp = decoded_replay_events(1).replay_events(replayID).decoded_position;
             decodedPosReexp = decoded_replay_events(2).replay_events(replayID).decoded_position;
@@ -166,7 +175,7 @@ for fID = 1:length(sessions)
             state = [state; current_state];
             replay_time = [replay_time; current_time];
             bayesian_bias = [bayesian_bias; bb];
-            t_dur_rem = [t_dur_rem; current_time_d_rem];
+            t_dur_sws = [t_dur_sws; current_time_d_sws];
         end
 
     end
@@ -177,7 +186,8 @@ newConditions = split(condition(track ~= 1), 'x');
 condition(track ~= 1) = newConditions(:, 2);
 condition = str2double(condition);
 
-data = table(sessionID, animal, condition, state, replay_time, t_dur_rem, bayesian_bias);
+data = table(sessionID, animal, condition, state, replay_time, t_dur_sws, bayesian_bias);
+data.logCondC = log2(data.condition) - mean(log2(data.condition));
 
 %% Analysis 1. Difference in bayesian bias between sleep and awake events ?
 % figure;
@@ -249,41 +259,49 @@ data = table(sessionID, animal, condition, state, replay_time, t_dur_rem, bayesi
 % 
 % linkaxes([n3 n4])
 
+%% Do we see an increase in bayesian bias over sleep ? is it related to the condition
+% and to sleep / awake replay during POST1
+
+% We mutualize SWS and non-SWS
+data.stateC = data.state;
+data.stateC(data.stateC ~= 0) = 1;
+data.stateC = data.stateC - 0.5;
+
+% We center replay time
+data.replay_timeC = data.replay_time - mean(data.replay_time, 'omitnan');
+
+fitlme(data(data.stateC == -0.5, :), "bayesian_bias ~ logCondC * replay_timeC + (1|animal) + (1|sessionID:animal)")
+% Small of condition on bayesian bias. Increase of bb over
+% sleep (0.1 %). No interaction.
+% For awake SWR in general, VERY small effect of time (0.1 % per minut).
+
+fitlme(data(data.stateC == 0.5, :), "bayesian_bias ~ logCondC * replay_timeC + (1|animal) + (1|sessionID:animal)")
+% Small effect of condition on bb. Increase in bb over sleep (0.1 %),
+% not dependent on the condition.
+% For sleep SWR in general, small effect of time (0.1 % per minut).
+
 %%
+% sort the data based on spike time
+sdata = sortrows(data, "replay_time");
 
-g = groupsummary(data, ["sessionID", "animal", "condition", "state"], "mean", "bayesian_bias");
+c_session = 15;
+c_data = sdata(sdata.sessionID == c_session & sdata.condition == 16, :);
 
-g(g.state == 0, :) = [];
-g.state(g.state == 1) = -0.5;
-g.state(g.state == 2) = 0.5;
+rgb_values = [1, 0.6, 0.6; 0.6, 0.6, 1; 0.1, 0.6, 0.3];
 
-beeswarm(g.state(g.condition ~= 16), g.mean_bayesian_bias(g.condition ~= 16))
-
-datac = data;
-datac.stateC = datac.state - 1.5;
-datac(datac.stateC == -1.5, :) = [];
-datac.logCondC = log2(datac.condition) - mean(log2(datac.condition));
-
-lme = fitlme(datac, "bayesian_bias ~ stateC * logCondC + (1|animal) + (1|sessionID:animal)");
-disp(lme)
-
-lme = fitlme(g, "mean_bayesian_bias ~ state*condition + (1|animal) + (1|sessionID:animal)");
-disp(lme)
-
-%%
 figure;
-histogram(t_dur_rem, 20);
-xlabel("Relative spiking time during REM")
-ylabel("Count")
-
-%%
-
-allIDREM = globalID(sleep_states == 2);
-allIDNREM = globalID(sleep_states == 1);
-
-
-for i = 1:numel(allIDNREM)
-    current_replay = decoded_replay_events(1).replay_events(allIDNREM(i)).decoded_position;
-    figure;
-    imagesc(current_replay);
+hold on;
+for i = 1:numel(c_data.bayesian_bias) - 1
+    plot(c_data.replay_time(i:i+1), c_data.bayesian_bias(i:i+1), 'Color', rgb_values(c_data.state(i) + 1, :));
 end
+
+% Legend
+h1 = plot(NaN, NaN, 'Color', rgb_values(1, :));
+h2 = plot(NaN, NaN, 'Color', rgb_values(2, :));
+h3 = plot(NaN, NaN, 'Color', rgb_values(3, :));
+
+legend([h1 h2 h3], {"Awake", "Quiet rest", "SWS"});
+hold off;
+
+
+

@@ -489,10 +489,7 @@ common_cells = unique_cells(counts == 2);
 specific_cells = unique_cells(counts == 1); 
 data.isCommon = ismember(data.cell, common_cells) - 0.5;
 
-fitlme(data(data.isCommon == 0.5, :), "refinCM ~ logCondC + (1|animal) + (1|cell:animal)")
-fitlme(data(data.isCommon == -0.5, :), "refinCM ~ logCondC + (1|animal) + (1|cell:animal)")
-% Effect significant for common cells but not specific cells !
-
+fitlme(data, "refinCM ~ logCondC + isCommon + (1|animal) + (1|cell:animal)")
 
 
 %% II - Why are the cells remapping ? 
@@ -694,6 +691,8 @@ lme = fitlme(crossTrack_data, "T2_refin ~ logCondC + distanceToOtherTrackR1 + (1
 % It is for track 2 ! The furthest from the other track you are, the more
 % you refine - works also for Peak !
 
+scatter(crossTrack_data.T2_refin, crossTrack_data.distanceToOtherTrackR1)
+
 lme = fitlme(crossTrack_data, "T2_refin ~ logCondC + distanceToOtherTrackR2 + (1|animal) + (1|cell:animal)")
 % Opposite relationship after sleep : if you refined more, you're CLOSER to
 % the other track - not true for Peak
@@ -702,6 +701,9 @@ lme = fitlme(crossTrack_data, "reducDist ~ logCondC + (1|animal) + (1|cell:anima
 
 % -> Really surprising. Why are the two tracks becoming similar ???
 % Can you predict the CM on the other track based on CM of the other ?
+% not for peak.
+
+
 
 figure;
 tiledlayout(2, 4);
