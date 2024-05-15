@@ -149,30 +149,6 @@ data = table(animal, condition, track, cell, label, degreeAll, degreeApp, degree
 X = groupsummary(data, ["animal", "condition", "track", "label"], ...
     "median", ["degreeAll"]);
 
-%% Boxplot mean replay degree depending on the type of cell
-
-figure;
-
-allNewCond = unique(data.condition);
-t = tiledlayout(numel(allNewCond), 2);
-
-for conditionID = 1:numel(allNewCond)
-    disp(conditionID);
-
-    for trackOI = 1:2
-        matchingData = data(data.condition ==  allNewCond(conditionID) & ...
-            data.track == trackOI, :);
-
-        nexttile;
-        boxplot(matchingData.degreeAll, matchingData.label, "GroupOrder", ...
-                             ["Appear", "Disapear", "Stable", "Unstable"]);
-        title(allNewCond(conditionID) + " laps - Track " + trackOI);
-
-    end
-end
-
-title(t, "Number of cells that co-replayed");
-
 %%
 
 figure;

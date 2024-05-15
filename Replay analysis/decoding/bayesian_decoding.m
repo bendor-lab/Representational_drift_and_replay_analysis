@@ -47,8 +47,10 @@ for trackIndex = 1:length(tracks_compared)
     % Creates new positions based on centre of bins
     estimated_position(trackIndex).discrete_position(index) = estimated_position(trackIndex).position_bin_centres(discrete_position(index));
     
-    % We save all the potential replay events in estimated_position
-    estimated_position(trackIndex).replay_events = bayesian_spike_count.replay_events;
+    % We save all the potential replay events in estimated_position (if not RUN)
+    if isfield(bayesian_spike_count, 'replay_events')
+        estimated_position(trackIndex).replay_events = bayesian_spike_count.replay_events;
+    end
     
     % For each potential replay event, we create a position probability
     % matrix full of zeros

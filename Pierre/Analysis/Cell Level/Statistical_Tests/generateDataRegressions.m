@@ -19,8 +19,6 @@ condition = [];
 track = [];
 cell = [];
 label = [];
-peakEndRUN1 = [];
-peakStartRUN2 = [];
 firingRateRUN1 = [];
 
 refinCM = [];
@@ -31,6 +29,8 @@ partP1Rep = [];
 propPartRep = []; % % of replay participated in
 partSWR = [];
 expReexpBias = [];
+propSpikesSWS = [];
+rateCloseToREM = [];
 
 % We take the absolute value of the difference over sum to get the relative
 % distance with the FPF, independently of the direction
@@ -38,7 +38,7 @@ diffSum = @(x1, x2) abs(x1 - x2)/(x1 + x2);
 
 %% Extraction & computation
 
-parfor fileID = 1:length(sessions)
+for fileID = 1:length(sessions)
 
     disp(fileID);
     file = sessions{fileID}; % We get the current session
@@ -69,15 +69,15 @@ parfor fileID = 1:length(sessions)
         goodPCRUN2Other = lap_place_fields(other_track + 2).Complete_Lap{1}.good_cells;
 
         % Good cells : Cells that where good place cells during RUN1 or RUN2
-        goodCells = union(goodPCRUN1, goodPCRUN2);
+        % goodCells = union(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
 
         % Control : Cells that where good place cells during RUN1 and RUN2
         % (no appearing / disappearing cells).
-        % goodCells = intersect(goodPCRUN1, goodPCRUN2);
+        goodCells = intersect(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
 
         % Control : Cells that were good place cells during RUN1 xor RUN2
         % (only appearing / disappearing cells).
-        % goodCells = setxor(goodPCRUN1, goodPCRUN2);
+        % goodCells = setxor(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
 
         % We get the labels
 
@@ -91,7 +91,7 @@ parfor fileID = 1:length(sessions)
         current_label(isGoodPCRUN1 & ~isGoodPCRUN2 & isGoodPCRUN2Other)= "Disappear";
         current_label(~isGoodPCRUN1 & isGoodPCRUN2 & isGoodPCRUN1Other)= "Appear";
 
-        % We get the replay participation
+        %% We get the replay participation
 
         % Fetch the significant replay events
         temp = load(file + "\Replay\RUN1_Decoding\significant_replay_events_wcorr");
@@ -103,13 +103,42 @@ parfor fileID = 1:length(sessions)
         RE_current_track = significant_replay_events.track(trackOI);
 
         % Fetch the sleep times to filter POST1 replay events
-        temp = load(file +  "/extracted_sleep_state");
+        temp = load(file +  "/extracted_sleep_stages");
         sleep_state = temp.sleep_state;
         startTime = sleep_state.state_time.INTER_post_start;
         endTime = sleep_state.state_time.INTER_post_end;
 
         % We get the IDs of all the sleep replay events
         goodIDCurrent = getAllSleepReplay(trackOI, startTime, endTime, significant_replay_events, sleep_state);
+
+        %% We get all the sig replay events during REM
+        % allTimesCurrent = cellfun(@(a) a(1), {decoded_replay_events(trackOI).replay_events.timebins_edges});
+        allTimesCurrent = RE_current_track.event_times;
+        bigTimes = sleep_state.sleep_stages.t_sec;
+        allIDSWS = [];
+        allIDRest = [];
+        isCloseToRem = []; % + or - 60 s
+
+        for evID = 1:numel(allTimesCurrent)
+
+            if allTimesCurrent(evID) < startTime || allTimesCurrent(evID) > endTime
+                continue;
+            end
+
+            findReplay = histcounts(allTimesCurrent(evID), [bigTimes bigTimes(end) + 1]);
+            findReplay = find(findReplay);
+
+            if sleep_state.sleep_stages.sws(findReplay)
+                allIDSWS(end + 1) = evID;
+
+            elseif sleep_state.sleep_stages.quiet_wake(findReplay)
+                allIDRest(end + 1) = evID;
+            end
+
+            if sum(sleep_state.sleep_stages.rem(findReplay-60:findReplay+60)) ~= 0
+                isCloseToRem(end + 1) = evID;
+            end
+        end
 
         % We get the ID of all the sleep SWR
         sleepSWRID = getAllSleepReplay(trackOI, startTime, endTime, decoded_replay_events, sleep_state);
@@ -141,7 +170,13 @@ parfor fileID = 1:length(sessions)
         filteredReplayEventsSpikesCurrent = RE_current_track.spikes(goodIDCurrent);
         filteredSWR = {decoded_replay_events(trackOI).replay_events(sleepSWRID).spikes};
 
-        % We get the final place field : mean of the 6 laps following the
+        filteredSWSEvents = RE_current_track.spikes(allIDSWS);
+        filteredRestEvents = RE_current_track.spikes(allIDRest);
+        filteredCloseToREMEvents = RE_current_track.spikes(isCloseToRem);
+        % filteredREMEvents = {decoded_replay_events(trackOI).replay_events(allIDREM).spikes};
+        % filteredNREMEvents = {decoded_replay_events(trackOI).replay_events(allIDNREM).spikes};
+
+        %% We get the final place field : mean of the 6 laps following the
         % 16th lap of RUN2
 
         RUN1LapPFData = lap_place_fields(trackOI).Complete_Lap;
@@ -229,7 +264,15 @@ parfor fileID = 1:length(sessions)
 
             current_expReexpBias = (partReexpReplay - partExpReplay) / (partExpReplay + partReexpReplay);
 
+            % Look at the number of spikes during REM events and NREM
+            nbSpikesSWS = sum(cellfun(@(ev) any(ev(:, 1) == cellOI), filteredSWSEvents));
+            % nbSpikesRest = sum(cellfun(@(ev) any(ev(:, 1) == cellOI), filteredRestEvents));
 
+            current_prop_SWS = nbSpikesSWS / (current_partP1Rep);
+
+            % Look at the number of close to REM events
+            nbSpikesCloseToRem = sum(cellfun(@(ev) any(ev(:, 1) == cellOI), filteredCloseToREMEvents));
+            
             % Save the data
 
             sessionID = [sessionID; fileID];
@@ -238,8 +281,6 @@ parfor fileID = 1:length(sessions)
             track = [track; trackOI];
             cell = [cell; ident + cellOI];
             label = [label; current_label(cellID)];
-            peakEndRUN1 = [peakEndRUN1; abs(peakFPF(cellOI) - endRUN1PeakLoc)];
-            peakStartRUN2 = [peakStartRUN2; abs(peakFPF(cellOI) - startRUN2PeakLoc)];
             firingRateRUN1 = [firingRateRUN1; endRUN1MaxFR];
 
             refinCM = [refinCM; current_refinCM];
@@ -249,6 +290,8 @@ parfor fileID = 1:length(sessions)
             propPartRep = [propPartRep; current_propPart];
             partSWR = [partSWR; current_partSWR];
             expReexpBias = [expReexpBias; current_expReexpBias];
+            propSpikesSWS = [propSpikesSWS; current_prop_SWS];
+            rateCloseToREM = [rateCloseToREM; nbSpikesCloseToRem/current_partP1Rep];
 
         end
     end
@@ -266,85 +309,42 @@ condition(track ~= 1) = newConditions(:, 2);
 condition = str2double(condition);
 
 data = table(sessionID, animal, condition, cell, label, ...
-    refinCM, refinFR, refinPeak, ...
-    partP1Rep, propPartRep, partSWR, expReexpBias);
+    firingRateRUN1, refinCM, refinFR, refinPeak, ...
+    partP1Rep, propPartRep, partSWR, expReexpBias, propSpikesSWS, rateCloseToREM);
 
 save("dataRegression.mat", "data")
 % save("dataRegressionXor.mat", "data")
 % save("dataRegressionIntersection.mat", "data")
 
 %%
+load("dataRegression.mat");
 
-% boxchart(categorical(data.label), data.firingRateRUN1);
-% ylabel("Max FR during last lap RUN1");
-% 
-% allCond = [1, 2, 3, 4, 8, 16];
-% for c = 1:16
-%     figure;
-%     cc = allCond(c);
-%     boxchart(categorical(data.label(data.condition == cc)), data.firingRateRUN1(data.condition == cc));
-%     ylabel("Distance with FPF");
-% end
+datac = data;
+datac.absRefin = abs(datac.refinCM);
 
-% boxchart(data.condition(data.label == "Appear"), data.peakStartRUN2(data.label == "Appear"))
-% grid on;
-% xlabel("Number of laps");
-% ylabel("Distance with FPF");
-% title("Distance of appearing cells with FPF during 1st lap - RUN2")
-% 
-% allCond = [1, 2, 3, 4, 8, 16];
-% for c = 1:16
-%     figure;
-%     cc = allCond(c);
-%     boxchart(categorical(data.label(data.condition == cc)), data.peakEndRUN1(data.condition == cc));
-%     ylabel("Distance with FPF");
-% end
+datac.logCondC = log2(datac.condition) - mean(log2(datac.condition));
+datac.propPartRepC = datac.propPartRep - mean(datac.propPartRep);
 
-% subdata = data(data.condition ~=1111, :);
-% 
-% figure;
-% subplot(1, 2, 1);
-% hist(subdata.peakEndRUN1, 30);
-% subplot(1, 2, 2);
-% hist(subdata.peakStartRUN2, 30);
-% 
-% figure;
-% subplot(1, 3, 1);
-% hist(subdata.peakEndRUN1(subdata.label == "Disappear"), 30);
-% subplot(1, 3, 2);
-% hist(subdata.peakStartRUN2(subdata.label == "Appear"), 30);
-% subplot(1, 3, 3);
-% hist(subdata.peakStartRUN2(subdata.label == "Stable"), 30);
-% 
-% %% Calculate the redundancy of place fields
-% allSessionID = unique(subdata.sessionID);
-% run1Red = [];
-% run2Red = [];
-% 
-% for id = 1:numel(allSessionID)
-%     matchingData = subdata(subdata.sessionID == allSessionID(id), :);
-%     allRun1Peak = matchingData.peakEndRUN1;
-%     allRun2Peak = matchingData.peakStartRUN2;
-% 
-%     for c = 1:numel(matchingData(:, "cell"))
-%         run1Peak = allRun1Peak(c);
-%         run2Peak = allRun2Peak(c);
-% 
-%         % Redudancy is defined as the proportion of cells within 20 cm of
-%         % the peak
-% 
-%         current_red_run1 = sum(allRun1Peak >= run1Peak - 10 & allRun1Peak <= run1Peak + 10)/numel(allRun1Peak);
-%         current_red_run2 = sum(allRun2Peak >= run2Peak - 10 & allRun2Peak <= run2Peak + 10)/numel(allRun2Peak);
-% 
-%         if isnan(run1Peak)
-%             current_red_run1 = NaN;
-%         end
-% 
-%         if isnan(run2Peak)
-%             current_red_run2 = NaN;
-%         end
-% 
-%         run1Red(end + 1) = current_red_run1;
-%         run2Red(end + 1) = current_red_run2;
-%     end
-% end
+lme = fitlme(datac, 'absRefin ~ logCondC + propPartRepC + (1|animal) + (1|sessionID:animal)');
+disp(lme);
+
+scatter(datac.absRefin, datac.propPartRep)
+
+figure;
+subplot(2, 1, 1)
+histogram(log(datac.propPartRep));
+subplot(2, 1, 2)
+histogram(log(datac.absRefin));
+
+scatter(log(datac.propPartRep(datac.absRefin > 0.5)), log(datac.absRefin(datac.absRefin > 0.5)))
+
+%%
+
+datac = data;
+[GC, GR] = groupcounts(datac.cell);
+datac(ismember(datac.cell, GR(GC == 1)), :) = [];
+
+stabT1 = datac.refinCM(datac.condition == 16);
+stabT2 = datac.refinCM(datac.condition ~= 16);
+
+scatter(stabT1, stabT2)

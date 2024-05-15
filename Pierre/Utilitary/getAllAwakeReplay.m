@@ -1,5 +1,4 @@
-% Function to get the sleep replay between certain timestamps
-% Only consider the cumulative first 30 minutes of sleeping times !
+% Function to get the awake replay between certain timestamps
 
 function [allMatchingReplay, timeVector] = getAllAwakeReplay(track, startTime,stopTime, replay_events, sleep_state)
 
@@ -9,15 +8,12 @@ timeVec = linspace(sleep_state.time(1), sleep_state.time(end), numel(stateVec));
 freq = timeVec(end) - timeVec(end - 1); % number of second per bin
 
 stateVec = stateVec(timeVec <= stopTime & timeVec >= startTime);
-stateVec(stateVec == 1) = 0; % We convert to a logical
-stateVec(stateVec == -1) = 1; % We convert to a logical
+stateVec(stateVec == 1) = 0; % Sleep is 0
+stateVec(stateVec == -1) = 1; % Awake is 1
 stateVec = logical(stateVec);
 timeVec = timeVec(timeVec <= stopTime & timeVec >= startTime);
 
-% We find when the cumulative duration of awakeness is bigger than 30 minutes, 
-% and we switch everything after to 0 (sleep)
-
-cumsumSleep = cumsum(stateVec)*freq;
+cumsumAwake = cumsum(stateVec)*freq;
 % id30Minutes = find(cumsumSleep >= 1800, 1);
 % stateVec(id30Minutes:end) = 0;
 
@@ -35,12 +31,14 @@ timeVector = [];
 
 for re = 1:numel(allTimesReplay)
     % Find the timebin where the replay happend
-    findTB = find(timeVec >= allTimesReplay(re) & timeVec <= allTimesReplay(re) + freq, 1);
+    findTB = find(timeVec <= allTimesReplay(re) & timeVec + freq >= allTimesReplay(re), 1);
 
     % Now, if the replay event is still here, it's saved
     if stateVec(findTB) == 1
         allMatchingReplay = [allMatchingReplay; re];
-        timeVector = [timeVector; cumsumSleep(findTB)];
+        timeVector = [timeVector; cumsumAwake(findTB)/60]; % cumulative
+        
+        % timeVector = [timeVector; (allTimesReplay(re) - startTime)/60];
     end
 end
 
