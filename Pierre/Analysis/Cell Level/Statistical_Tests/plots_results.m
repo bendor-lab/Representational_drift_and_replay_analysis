@@ -427,23 +427,29 @@ end
 
 dataLap = load("timeSeries.mat");
 dataLap = dataLap.data;
-dataLap.condition(dataLap.condition <= 8) = 8;
-summaryLapData = groupsummary(dataLap, ["condition", "exposure", "lap", "label"], ["median", "std"], ["CMdiff", "FRdiff", "PeakDiff", "meanFR"]);
+dataLap(dataLap.label ~= "Stable", :) = [];
+% dataLap.condition(dataLap.condition <= 8) = 8;
+summaryLapData = groupsummary(dataLap, ["condition", "exposure", "lap"], ["mean", "std"], ["CMdiff", "FRdiff", "PeakDiff", "meanFR"]);
 summaryLapData.se_meanFR = summaryLapData.std_meanFR./sqrt(summaryLapData.GroupCount);
 summaryLapData.se_CMdiff = summaryLapData.std_CMdiff./sqrt(summaryLapData.GroupCount);
 summaryLapData.se_FRdiff = summaryLapData.std_FRdiff./sqrt(summaryLapData.GroupCount);
 
-<<<<<<< HEAD
-timeSeriesOverLap(summaryLapData(summaryLapData.label == "Appear", :), "median_FRdiff", "se_FRdiff", "Max FR");
-=======
-timeSeriesOverLap(summaryLapData(summaryLapData.label == "Stable", :), "median_meanFR", "se_meanFR", "Firing rate");
-ylim([0 9]);
+timeSeriesOverLap(summaryLapData, "mean_meanFR", "se_meanFR", "Max FR");
 
-figure;
-timeSeriesOverLap(summaryLapData(summaryLapData.label == "Appear", :), "median_meanFR", "se_meanFR", "Firing rate");
-ylim([0 9]);
+% Why is the FR of laps < 8 inferior to 16 laps ? 
 
+%% Plot evolution of firing rate distribution 
 figure;
-timeSeriesOverLap(summaryLapData(summaryLapData.label == "Disappear", :), "median_meanFR", "se_meanFR", "Firing rate");
-ylim([0 9]);
->>>>>>> 210444b64d8a3611c479a3f4d94708138f7123ae
+tiledlayout(8, 1);
+h = [];
+
+for lap = 1:8
+    h(end + 1) = nexttile;
+    current_data = dataLap.meanFR(dataLap.sessionID == 14 & ...
+                   dataLap.condition ~= 16 & dataLap.lap == lap ...
+                   & dataLap.exposure == 2);
+
+    histogram(current_data, 20);
+end
+
+linkaxes(h);
