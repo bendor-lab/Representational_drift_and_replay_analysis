@@ -129,9 +129,15 @@ save("timeSeries_cross_track_distance.mat", "data")
 
 %% 
 
+clear
+
 load("timeSeries_cross_track_distance.mat");
 
-summary = groupsummary(data, ["condition", "exposure", "lap"], ["mean", "std"], ["trackDiffCM"]);
+summary = groupsummary(data, ["condition", "exposure", "lap"], ["mean", "std"], ["trackDiffPeak", "trackDiffFR", "trackDiffCM"]);
+
+var = "mean_trackDiffFR";
+var_std = "std_trackDiffFR";
+
 
 allConditions = unique(summary.condition);
 colors = lines(length(allConditions));
@@ -149,18 +155,18 @@ for i = 1:length(allConditions) % We iterate through conditions
     % Number of NaNs to fill
     nbNan = 17 - condition;
 
-    Y = [dataByLapExp1.mean_trackDiffCM' repelem(NaN, nbNan) dataByLapExp2.mean_trackDiffCM'];
+    Y = [dataByLapExp1.(var)' repelem(NaN, nbNan) dataByLapExp2.(var)'];
 
-    Y1_shade = dataByLapExp1.mean_trackDiffCM';
-    std1_data = dataByLapExp1.std_trackDiffCM';
+    Y1_shade = dataByLapExp1.(var)';
+    std1_data = dataByLapExp1.(var_std)';
 
-    Y2_shade = dataByLapExp2.mean_trackDiffCM';
-    std2_data = dataByLapExp2.std_trackDiffCM';
+    Y2_shade = dataByLapExp2.(var)';
+    std2_data = dataByLapExp2.(var_std)';
 
     X = 1:numel(Y);
 
     X1_shade = 1:numel(Y1_shade);
-    X2_shade = (numel([dataByLapExp1.mean_trackDiffCM' repelem(NaN, nbNan)])+1):numel(Y);
+    X2_shade = (numel([dataByLapExp1.(var)' repelem(NaN, nbNan)])+1):numel(Y);
 
     % If we're in condition 1 lap 1st exposure, we can't plot so we scatter
 
@@ -190,7 +196,7 @@ xline(17, '-', 'Sleep', 'LineWidth', 2, 'LabelOrientation', 'horizontal', 'FontS
 
 hold off;
 
-limitUp = max(summary.mean_trackDiffCM) + 0.125 * max(summary.std_trackDiffCM);
+limitUp = max(summary.(var)) + 0.125 * max(summary.(var));
 
 % Set the legend
 ylim([0, limitUp])
@@ -202,7 +208,7 @@ legend({'', '', ' 1 lap', '', ...
 
 legend('show');
 xlabel("Lap")
-ylabel("Median CM distance from middle between tracks", 'FontSize', 12)
+ylabel("Median peak distance from middle between tracks", 'FontSize', 12)
 title("1^{st} exposure" + repelem(' ', 80) + "2^{nd} exposure")
 
 grid on;
