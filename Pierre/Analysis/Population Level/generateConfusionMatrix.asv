@@ -7,15 +7,14 @@ cd(PATH.SCRIPT)
 parameters = list_of_parameters;
 sessions = data_folders_excl;
 
-confusion.fID = {};
-confusion.animal = {};
-confusion.condition = {};
-confusion.exposure = {};
-confusion.reexposure = {};
+confusion.fID ={}
+
+confusion = struct("fID", {}, "animal", {}, "condition", {}, "exposure", {}, "reexposure", {});
 
 parfor fID = 1:numel(sessions)
 
     current_conf = struct;
+
     file = sessions{fID};
     disp("session : " + fID);
 
