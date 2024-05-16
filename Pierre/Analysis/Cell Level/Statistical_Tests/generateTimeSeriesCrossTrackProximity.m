@@ -220,4 +220,26 @@ grid on;
 xticks([1 4 7 10 13 16 18 21 24 27 30 33]);
 xticklabels({"1", "3", "7", "10", "13", "16", "1", "3", "7", "10", "13", "16"})
 
+%% 
 
+datac = data(data.sessionID == 3, :);
+
+all_cells = unique(datac.cell);
+
+figure;
+
+for cID = 1:numel(all_cells)
+    dataExp = datac(datac.exposure == 0 & datac.cell == all_cells(cID), :);
+    dataReexp = datac(datac.exposure == 2 & datac.cell == all_cells(cID), :);
+
+    subplot(1, 2, 1);
+    plot(dataExp.lap, dataExp.trackDiffPeak);
+    ylim([0 100]);
+    hold on;
+    grid on;
+    subplot(1, 2, 2);
+    plot(dataReexp.lap, dataReexp.trackDiffPeak);
+    ylim([0 100]);
+    hold on;
+    grid on;
+end

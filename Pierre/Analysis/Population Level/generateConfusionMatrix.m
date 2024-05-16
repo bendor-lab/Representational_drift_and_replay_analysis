@@ -60,7 +60,8 @@ parfor fID = 1:numel(sessions)
             trackOI = t + exposure;
             otherTrackv = mod(trackOI, 2)*2 + mod(trackOI + 1, 2) + exposure;
 
-            tracks_compared = [trackOI otherTrackv];
+            % tracks_compared = [trackOI otherTrackv];
+            tracks_compared = [t + 2 otherTrack + 2]; % We use the final templates
 
             sampling_f = parameters.run_bin_width;
             currentNumberLaps = (lap_times(trackOI).number_halfLaps - mod(lap_times(trackOI).number_halfLaps, 2)) ...
@@ -192,7 +193,7 @@ end
 
 % We save confusion
 
-save(PATH.SCRIPT + "\confusion_file", "confusion");
+save(PATH.SCRIPT + "\confusion_file_reexp", "confusion");
 
 %% FUNCTIONS
 

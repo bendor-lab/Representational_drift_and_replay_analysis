@@ -101,23 +101,22 @@ var_std = "std_T1_error_ratio";
 
 
 allConditions = unique(summary.condition);
-allConditionsNum = [1 2 3 4 8];
 colors = lines(length(allConditions));
 
 for i = 1:length(allConditions) % We iterate through conditions
     condition = allConditions(i);
-    condition_num = split(condition, 'x');
-    condition_num = double(condition_num(2));
-    color = colors(allConditionsNum == condition_num, :);
+    condition = split(condition, 'x');
+    condition = double(condition(2));
+    color = colors(allConditions == condition, :);
 
     % We get the lap data of the exposure
-    dataByLapExp1 = summary(summary.condition == condition & summary.exposure == 1, :);
+    dataByLapExp1 = summary(summary.condition == condition & summary.exposure == 0, :);
 
     % We get the lap data of the reexposure
     dataByLapExp2 = summary(summary.condition == condition & summary.exposure == 2, :);
 
     % Number of NaNs to fill
-    nbNan = 17 - condition_num;
+    nbNan = 17 - condition;
 
     Y = [dataByLapExp1.(var)' repelem(NaN, nbNan) dataByLapExp2.(var)'];
 
@@ -146,7 +145,7 @@ for i = 1:length(allConditions) % We iterate through conditions
 
     plot(X, Y, 'Color', color, 'LineWidth', 2);
 
-    if condition_num == 1
+    if condition == 1
         hold on;
         errorbar(1, Y(1), std1_data(1), "-s", "MarkerSize", 5, "Color", color, "CapSize", 6, ...
             "LineWidth", 1.5, "MarkerFaceColor", color);
