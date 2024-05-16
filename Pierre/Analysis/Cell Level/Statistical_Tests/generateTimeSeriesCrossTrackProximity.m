@@ -107,7 +107,7 @@ for fileID = 1:length(sessions)
             cell = [cell; (goodCells + ident)'];
             trackDiffCM = [trackDiffCM; currentTrackCMDiff];
             trackDiffFR = [trackDiffFR; currentTrackFRDiff];
-            trackDiffPeak = [trackDiffPeak; currentTrackFRDiff];
+            trackDiffPeak = [trackDiffPeak; currentTrackPeakDiff];
             
         end
     end
