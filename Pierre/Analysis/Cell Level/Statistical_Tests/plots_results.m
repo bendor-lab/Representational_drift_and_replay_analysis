@@ -438,10 +438,9 @@ timeSeriesOverLap(summaryLapData(summaryLapData.label == "Appear", :), "median_F
 timeSeriesOverLap(summaryLapData(summaryLapData.label == "Stable", :), "median_meanFR", "se_meanFR", "Firing rate");
 ylim([0 9]);
 
-figure;
-timeSeriesOverLap(summaryLapData(summaryLapData.label == "Appear", :), "median_meanFR", "se_meanFR", "Firing rate");
-ylim([0 9]);
+% Why is the FR of laps < 8 inferior to 16 laps ? 
 
+%% Plot evolution of firing rate distribution 
 figure;
 timeSeriesOverLap(summaryLapData(summaryLapData.label == "Disappear", :), "median_meanFR", "se_meanFR", "Firing rate");
 ylim([0 9]);
