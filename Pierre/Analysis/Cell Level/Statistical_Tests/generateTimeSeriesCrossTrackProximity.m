@@ -67,12 +67,16 @@ for fileID = 1:length(sessions)
         if current_nb_laps > 16
             current_nb_laps = 16;
         end
+
+        % Good cells : cells that were at one point good place cells on
+        % both tracks
+
+        goodCells = intersect(place_fields.track(t1).good_cells, place_fields.track(t1).good_cells);
         
         for lapOI = 1:current_nb_laps
             
             lapDataT1 = lap_place_fields(t1).Complete_Lap{lapOI};
             lapDataT2 = lap_place_fields(t2).Complete_Lap{lapOI};
-            goodCells = intersect(lapDataT1.good_cells, lapDataT2.good_cells);
             
             current_place_fields_T1 = lapDataT1.smooth;
             current_place_fields_T2 = lapDataT2.smooth;
@@ -135,8 +139,8 @@ load("timeSeries_cross_track_distance.mat");
 
 summary = groupsummary(data, ["condition", "exposure", "lap"], ["mean", "std"], ["trackDiffPeak", "trackDiffFR", "trackDiffCM"]);
 
-var = "mean_trackDiffFR";
-var_std = "std_trackDiffFR";
+var = "mean_trackDiffPeak";
+var_std = "std_trackDiffPeak";
 
 
 allConditions = unique(summary.condition);
