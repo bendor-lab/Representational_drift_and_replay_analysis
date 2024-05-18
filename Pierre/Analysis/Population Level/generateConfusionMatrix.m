@@ -108,10 +108,10 @@ parfor fID = 1:numel(sessions)
                 run_bayesian_spike_count.n.run(setdiff(1:nbCells, goodCells), :) = [];
 
                 % We get all the place fields for current track and other track
-                all_place_fields_T = vertcat(place_fields_BAYESIAN.track(trackOI).raw{goodCells});
+                all_place_fields_T = vertcat(place_fields_BAYESIAN.track(t + 2).raw{goodCells});
                 all_place_fields_T(isnan(all_place_fields_T)) = 0;
 
-                all_place_fields_O = vertcat(place_fields_BAYESIAN.track(otherTrackv).raw{goodCells});
+                all_place_fields_O = vertcat(place_fields_BAYESIAN.track(otherTrack + 2).raw{goodCells});
                 all_place_fields_O(isnan(all_place_fields_O)) = 0;
 
                 % Now we can decode the position during each time
