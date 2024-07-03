@@ -37,7 +37,37 @@ data.propPartRepC = data.propPartRep - mean(data.propPartRep);
 data.partSWRC = data.partSWR - mean(data.partSWR);
 data.expReexpBiasC = data.expReexpBias - mean(data.expReexpBias, 'omitnan');
 
-data(abs(data.refinCM) > 50, :) = [];
+data(data.label ~= "Stable", :) = [];
+
+%%
+
+summa = groupsummary(data, ["sessionID", "condition"], "mean", ["refinCM", "refinFR"]);
+
+fig = figure;
+ax = gca;
+
+old_values = [1, 2, 3, 4, 8, 16];
+new_values = [1, 3, 5, 7, 9, 11];
+
+x = changem(summa.condition, new_values, old_values);
+x = x + randn(numel(x), 1)/10;
+
+y = summa.mean_refinCM;
+
+for v = 1:numel(old_values)
+    scatter(x(summa.condition == old_values(v)), ...
+             y(summa.condition == old_values(v)), ...
+             "filled")
+    hold on;
+end
+
+grid on;
+xticks(new_values)
+xticklabels(old_values)
+
+xlabel('Laps ran during the exposure', 'FontSize', 12);
+ylabel('Reduction in CM distance with FPF over sleep', 'FontSize', 12);
+
 
 %% Do we see remapping over laps ?  ---------------------------------------
 
@@ -87,11 +117,9 @@ disp(lme)
 % Center of mass refinement
 lme = fitlme(data, "refinCM ~ logConditionC + replayPartC + (1|animal) + (1|cell:animal)");
 disp(lme)
-disp("Eta2 = " + getEta2(lme, data.refinCM))
 
-grpstats(data, "condition", "mean", "DataVars", ["refinCM"])
-
-grpstats(data, "condition", "std", "DataVars", ["refinCM"])
+lmeR = fitlme(data, "refinCM ~ logConditionC + (1|animal) + (1|cell:animal)");
+disp("R2 : " + (lme.SSR - lmeR.SSR)/lme.SST)
 
 
 % RESULTS : Significant effect of condition, no effect of replay.
@@ -99,7 +127,13 @@ grpstats(data, "condition", "std", "DataVars", ["refinCM"])
 % Max firing rate refinement
 lme = fitlme(data, "refinFR ~ logConditionC + replayPartC + (1|animal) + (1|cell:animal)");
 disp(lme)
-disp("Eta2 = " + getEta2(lme, data.refinFR))
+
+grpstats(data, "condition", "mean", "DataVars", ["refinFR"])
+
+grpstats(data, "condition", "std", "DataVars", ["refinFR"])
+
+lmeR = fitlme(data, "refinFR ~ logConditionC + (1|animal) + (1|cell:animal)");
+disp("R2 : " + (lme.SSR - lmeR.SSR)/lme.SST)
 
 
 % RESULTS : Significant effect of condition (.03), no effect of replay.

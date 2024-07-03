@@ -40,8 +40,10 @@ lme = fitlme(data, "refinCorr ~ logCondC + replayPartC + amountSleepC + (1|anima
 disp(lme)
 
 grpstats(data, "condition", "mean", "DataVars", ["refinCorr"])
-
 grpstats(data, "condition", "std", "DataVars", ["refinCorr"])
+
+lmeR = fitlme(data, "refinCorr ~ logCondC + replayPartC + (1|animal) + (1|sessionID:animal)");
+disp("R2 : " + (lme.SSR - lmeR.SSR)/lme.SST)
 
 
 % Significant intercept and effect of condition. No effect of replay /

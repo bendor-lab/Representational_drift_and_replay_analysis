@@ -165,7 +165,7 @@ dataLapCorr = dataLapCorr.data;
 summaryLapDataCorr = groupsummary(dataLapCorr, ["condition", "exposure", "lap"], ["median", "std"], ["pvCorr"]);
 summaryLapDataCorr.se_pvCorr = summaryLapDataCorr.std_pvCorr./sqrt(summaryLapDataCorr.GroupCount);
 
-f4_5 = figure; 
+f4_5 = figure;
 f4_5.Position = [0,0,964,542];
 timeSeriesOverLapPop(summaryLapDataCorr, "median_pvCorr", "se_pvCorr", "PV correlation with the FPF");
 
@@ -177,7 +177,7 @@ dataLapCorr = dataLapCorr.data;
 summaryLapDataCorr = groupsummary(dataLapCorr, ["condition", "exposure", "lap"], ["median", "std"], ["pvCorr"]);
 summaryLapDataCorr.se_pvCorr = summaryLapDataCorr.std_pvCorr./sqrt(summaryLapDataCorr.GroupCount);
 
-f4_7 = figure; 
+f4_7 = figure;
 f4_7.Position = [0,0,964,542];
 timeSeriesOverLapPop(summaryLapDataCorr, "median_pvCorr", "se_pvCorr", "PV correlation between opposite direction PF");
 
@@ -190,26 +190,26 @@ dataLap = dataLap.data;
 dataLap(dataLap.label ~= "Stable", :) = [];
 
 summaryLapData = groupsummary(dataLap, ["condition", "exposure", "lap"], ["median", "std"], ...
-                                       ["CMdiff", "FRdiff", "PeakDiff"]);
+    ["CMdiff", "FRdiff", "PeakDiff"]);
 
 summaryLapData.se_CMdiff = summaryLapData.std_CMdiff./sqrt(summaryLapData.GroupCount);
 summaryLapData.se_FRdiff = summaryLapData.std_FRdiff./sqrt(summaryLapData.GroupCount);
 summaryLapData.se_PeakDiff = summaryLapData.std_PeakDiff./sqrt(summaryLapData.GroupCount);
 
 % 1. Center of mass
-f5 = figure; 
+f5 = figure;
 f5.Position = [0,0,964,542];
 timeSeriesOverLap(summaryLapData, "median_CMdiff", "se_CMdiff", "Center of Mass");
 
 % 2. Max FR
 
-f6 = figure; 
+f6 = figure;
 f6.Position = [0, 0, 964, 542];
 timeSeriesOverLap(summaryLapData, "median_FRdiff", "se_FRdiff", "Max Firing Rate");
 
 % 3. Peak location
 
-f7 = figure; 
+f7 = figure;
 f7.Position = [0, 0, 964, 542];
 timeSeriesOverLap(summaryLapData, "median_PeakDiff", "se_PeakDiff", "Peak Location");
 
@@ -229,11 +229,11 @@ conditionCat = categorical(dataExpLap1.condition);
 
 t8 = tiledlayout(1, 4);
 colors = [255, 215, 0;
-              255, 168, 0;
-              255, 98, 82;
-              205, 52, 181;
-              157, 2, 215;
-              0, 0, 255];
+    255, 168, 0;
+    255, 98, 82;
+    205, 52, 181;
+    157, 2, 215;
+    0, 0, 255];
 
 % Normalize the RGB values to be between 0 and 1
 colors = colors / 255;
@@ -335,7 +335,7 @@ for i = 1:6
     pf_trackLap = cell2mat(lap_place_fields(3).Complete_Lap{16 + i}.smooth');
     pf_trackLap = pf_trackLap(cellChosen, :);
     fpf = fpf + pf_trackLap;
-    
+
     subplot(8, 1, i)
     area(pf_trackLap, "EdgeColor", "none", "FaceColor", '#4789bb');
     hold on;
@@ -351,7 +351,7 @@ area(fpf, "EdgeColor", "none", "FaceColor", '#4789bb');
 hold on;
 area(xChosen, fpf(xChosen), "EdgeColor", "none", "FaceColor", '#e15e4e');
 
-h=gca; 
+h=gca;
 h.Box = "off";
 h.XAxis.TickLength = [0 0];
 h.YAxis.TickLength = [0 0];
@@ -438,31 +438,53 @@ timeSeriesOverLap(summaryLapData(summaryLapData.label == "Appear", :), "median_F
 timeSeriesOverLap(summaryLapData(summaryLapData.label == "Stable", :), "median_meanFR", "se_meanFR", "Firing rate");
 ylim([0 9]);
 
-% Why is the FR of laps < 8 inferior to 16 laps ? 
+% Why is the FR of laps < 8 inferior to 16 laps ?
 
-%% Plot evolution of firing rate distribution 
+%% Plot evolution of firing rate distribution
 figure;
 timeSeriesOverLap(summaryLapData(summaryLapData.label == "Disappear", :), "median_meanFR", "se_meanFR", "Firing rate");
 ylim([0 9]);
 
 %%
 
-dataLap = load("timeSeries.mat");
-dataLap = dataLap.data;
-dataLap(dataLap.label ~= "Stable", :) = [];
+sum = groupsummary(data, ["sessionID", "condition"], "median", ["refinCM", "refinFR"]);
 
-meanFR = median(dataLap.meanFR);
-dataLap.isHighFR = dataLap.meanFR > meanFR;
+fig = figure;
+ax = gca;
 
-summaryLapData = groupsummary(dataLap, ["condition", "exposure", "lap", "isHighFR"], ["median", "std"], ["CMdiff", "FRdiff", "PeakDiff", "meanFR"]);
-summaryLapData.se_meanFR = summaryLapData.std_meanFR./sqrt(summaryLapData.GroupCount);
-summaryLapData.se_CMdiff = summaryLapData.std_CMdiff./sqrt(summaryLapData.GroupCount);
-summaryLapData.se_FRdiff = summaryLapData.std_FRdiff./sqrt(summaryLapData.GroupCount);
+old_values = [1, 2, 3, 4, 8, 16];
+new_values = [1, 3, 5, 7, 9, 11];
 
-figure;
-subplot(2, 1, 1);
-timeSeriesOverLap(summaryLapData(summaryLapData.isHighFR == 0, :), "median_FRdiff", "se_FRdiff", "CM");
-subplot(2, 1, 2);
-timeSeriesOverLap(summaryLapData(summaryLapData.isHighFR == 1, :), "median_FRdiff", "se_FRdiff", "CM");
+x = changem(sum.condition, new_values, old_values);
+x = x + randn(numel(x), 1)/10;
 
+y = sum.median_refinCM;
 
+for c = 1:numel(old_values)
+    curr_cond = old_values(c);
+    scatter(x(sum.condition == curr_cond), ...
+        y(sum.condition == curr_cond), ...
+        "filled")
+    hold on;
+end
+
+grid on;
+xticks(new_values)
+xticklabels(old_values)
+
+xlabel('Laps ran during the 1st exposure', 'FontSize', 12);
+ylabel('Reduction in CM distance with the FPF over sleep', 'FontSize', 12);
+
+%%
+
+data2 = data;
+data2(isnan(data.partP1Rep) | isnan(data.refinCM), :) = [];
+
+scatter(data2.partP1Rep, data2.refinCM, "filled");
+
+xlabel('Number of POST1 sleep replay', 'FontSize', 12);
+ylabel('Reduction in CM distance with the FPF over sleep', 'FontSize', 12);
+grid on;
+p = polyfit(data2.partP1Rep, data2.refinCM, 1);
+hold on;
+plot(data2.partP1Rep, polyval(p, data2.partP1Rep), 'r')

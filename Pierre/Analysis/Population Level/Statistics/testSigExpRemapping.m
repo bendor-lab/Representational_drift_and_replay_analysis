@@ -23,23 +23,29 @@ dataDirRUN2 = dataDir(dataDir.exposure == 2, :);
 
 lme = fitlme(dataRUN1, "pvCorr ~ lapC * logConditionC + (1|animal) + (1|sessionID:animal)");
 disp(lme);
-disp(lme.Rsquared.Adjusted)
 
-plotResiduals(lme,'probability')
-plotResiduals(lme,'lagged')
+lmeR = fitlme(dataRUN1, "pvCorr ~ logConditionC + (1|animal) + (1|sessionID:animal)");
+disp("R2 : " + (lme.SSR - lmeR.SSR)/lme.SST)
 
 lme = fitlme(dataRUN2, "pvCorr ~ lap * logConditionC + (1|animal) + (1|sessionID:animal)");
 disp(lme)
+
+lmeR = fitlme(dataRUN2, "pvCorr ~ logConditionC + (1|animal) + (1|sessionID:animal)");
+disp("R2 : " + (lme.SSR - lmeR.SSR)/lme.SST)
 
 %% Directionnality
 
 
 lme = fitlme(dataDirRUN1, "pvCorr ~ lapC * logConditionC + (1|animal) + (1|sessionID:animal)");
 disp(lme);
-disp(lme.Rsquared.Adjusted)
 
-plotResiduals(lme,'probability')
-plotResiduals(lme,'lagged')
+lmeR = fitlme(dataDirRUN1, "pvCorr ~ logConditionC + (1|animal) + (1|sessionID:animal)");
+disp("R2 : " + (lme.SSR - lmeR.SSR)/lme.SST)
+
+
 
 lme = fitlme(dataDirRUN2, "pvCorr ~ lap * logConditionC + (1|animal) + (1|sessionID:animal)");
 disp(lme)
+
+lmeR = fitlme(dataDirRUN2, "pvCorr ~ logConditionC + (1|animal) + (1|sessionID:animal)");
+disp("R2 : " + (lme.SSR - lmeR.SSR)/lme.SST)

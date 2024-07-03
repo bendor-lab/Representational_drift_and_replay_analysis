@@ -1,8 +1,8 @@
 % Script to generate plots for the population-level results
 
-data = load("dataRegressionPopIntersect.mat");
+data = load("dataRegressionPop.mat");
 data = data.data;
-data.conditionC = categorical(data.condition);
+data.conditionC = data.condition;
 
 %% Define the colors used
 
@@ -32,3 +32,64 @@ ylabel('Correlation improvement over sleep', 'FontSize', 12);
 
 grid on
 ax.XGrid = "off";
+
+%% 
+
+fig = figure;
+ax = gca;
+
+old_values = [1, 2, 3, 4, 8, 16];
+new_values = [1, 3, 5, 7, 9, 11];
+
+x = changem(data.condition, new_values, old_values);
+x = x + randn(numel(x), 1)/10;
+
+y = data.refinCorr;
+
+meanY = [];
+
+for v = 1:numel(old_values)
+    scatter(x(data.condition == old_values(v)), ...
+             y(data.condition == old_values(v)), ...
+             "filled")
+    meanY(end + 1) = mean(y(data.condition == old_values(v)), 'omitnan');
+    hold on;
+end
+
+grid on;
+xticks(new_values)
+xticklabels(old_values)
+
+xlabel('Laps ran during the 1st exposure', 'FontSize', 12);
+ylabel('Correlation improvement over sleep', 'FontSize', 12);
+
+%%
+
+plot((1:16) - 1, log10(1:16), 'LineWidth', 2);
+xticks(0:2:15)
+xticklabels([])
+yticks([])
+grid on;
+
+%% 
+
+scatter(data.amountSleep, data.refinCorr, "filled");
+
+xlabel('Amount of sleep during POST1 (m)', 'FontSize', 12);
+ylabel('Correlation improvement over sleep', 'FontSize', 12);
+grid on;
+p = polyfit(data.amountSleep, data.refinCorr, 1);
+hold on;
+plot(data.amountSleep, polyval(p, data.amountSleep), 'r')
+
+%% 
+
+scatter(data.partP1Rep, data.refinCorr, "filled");
+
+xlabel('Number of POST1 sleep replay', 'FontSize', 12);
+ylabel('Correlation improvement over sleep', 'FontSize', 12);
+grid on;
+p = polyfit(data.partP1Rep, data.refinCorr, 1);
+hold on;
+plot(data.partP1Rep, polyval(p, data.partP1Rep), 'r')
+
