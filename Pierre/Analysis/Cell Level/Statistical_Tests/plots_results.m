@@ -10,6 +10,7 @@ session = session{6};
 
 load(session + "/extracted_place_fields.mat")
 load(session + "\extracted_lap_place_fields.mat")
+load(session + "\extracted_directional_lap_place_fields.mat")
 
 %% I. Stacked plot of sorted place field ----------------------------------
 
@@ -464,5 +465,54 @@ subplot(2, 1, 1);
 timeSeriesOverLap(summaryLapData(summaryLapData.isHighFR == 0, :), "median_FRdiff", "se_FRdiff", "CM");
 subplot(2, 1, 2);
 timeSeriesOverLap(summaryLapData(summaryLapData.isHighFR == 1, :), "median_FRdiff", "se_FRdiff", "CM");
+
+%% Directional stabilization of place fields
+
+load("X:\BendorLab\Drobo\Lab Members\Marta\Analysis\HIPP\M-BLU\M-BLU_Day3_16x1\extracted_directional_lap_place_fields.mat")
+load("X:\BendorLab\Drobo\Lab Members\Marta\Analysis\HIPP\M-BLU\M-BLU_Day3_16x1\extracted_place_fields.mat")
+%%
+
+laps_to_get = [1, 2, 3, 4, NaN, 13, 14, 15];
+cell = 1; % 12th good place cell
+trackOI = 1;
+cellID = place_fields.track(trackOI).good_cells(cell);
+
+pfDir1 = {};
+pfDir2 = {};
+
+for i = 1:numel(laps_to_get)
+    l2get = laps_to_get(i);
+    
+    if isnan(l2get)
+        pfDir1{end + 1} = zeros(1, 100);
+        pfDir2{end + 1} = zeros(1, 100);
+        continue;
+    end
+    
+    % Dir 1
+    current_PF_dir1 = lap_directional_place_fields(trackOI).dir1.Complete_Lap{l2get}.smooth{cellID};
+    % Dir 2
+    current_PF_dir2 = lap_directional_place_fields(trackOI).dir2.Complete_Lap{l2get}.smooth{cellID};
+    
+    pfDir1{end + 1} = current_PF_dir1;
+    pfDir2{end + 1} = current_PF_dir2;
+end
+
+f = figure;
+for i = 1:numel(laps_to_get)
+    if isnan(laps_to_get(i))
+        continue;
+    end
+    
+    subplot(2, 1, 1);
+    area((0:99) + 100*(i - 1), pfDir1{i}, 'FaceColor', 'b');
+    ylim([0 10])
+    hold on;
+    
+    subplot(2, 1, 2);
+    area((0:99) + 100*(i - 1), pfDir2{i}, 'FaceColor', 'r');
+    ylim([0 10])
+    hold on;
+end
 
 
