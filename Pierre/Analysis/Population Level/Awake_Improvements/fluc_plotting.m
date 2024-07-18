@@ -83,7 +83,7 @@ end
 % We only look at 16 laps
 
 % Idle TIME
-subdata = data(data.condition == 8, :);
+subdata = data(data.condition == 4, :);
 
 figure;
 subplot(1, 2, 1)
@@ -144,11 +144,8 @@ title("Re-exposure - 16 laps only")
 linkaxes()
 
 % Everything seems to go down
-
-figure;
-scatter(subdata.corrDelta(subdata.lap == 1 & subdata.exposure == 1), ...
-        subdata.idleReplay(subdata.lap == 1 & subdata.exposure == 1)./...
-        subdata.idlePeriod(subdata.lap == 1 & subdata.exposure == 1))
     
 %% 8 laps weird shape
+subsub = subdata(subdata.sessionID == 4, :);
 
+scatter(subdata.lap, subdata.corrDelta)

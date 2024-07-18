@@ -83,7 +83,7 @@ end
 % We only look at 16 laps
 
 % Idle TIME
-subdata = data(data.condition == 16, :);
+subdata = data(data.condition == 4, :);
 
 figure;
 subplot(1, 2, 1)
@@ -144,5 +144,8 @@ title("Re-exposure - 16 laps only")
 linkaxes()
 
 % Everything seems to go down
+    
+%% 8 laps weird shape
+subsub = subdata(subdata.sessionID == 4, :);
 
-fitlme(subdata, "corrDelt")
+scatter(subdata.lap, subdata.corrDelta)
