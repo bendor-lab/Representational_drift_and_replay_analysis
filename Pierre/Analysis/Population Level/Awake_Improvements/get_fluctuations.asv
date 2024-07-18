@@ -17,14 +17,10 @@ track = [];
 exposure = [];
 lap = []; % Always N+1 - N
 corrDelta = [];
-idlePeriod = [];
-idleSWR = [];
-idleReplay = [];
-
 
 % Extraction & computation
 
-parfor fileID = 1:length(sessions)
+for fileID = 1:length(sessions)
 
     disp(fileID);
     file = sessions{fileID}; % We get the current session
@@ -116,45 +112,20 @@ parfor fileID = 1:length(sessions)
                 
                 % We find the amount of awake replay / SWR / time between
                 % the two laps
-                                
+                
+                % Duration of the lap l + 1
+                lap_duration = lap_times(vTrack).duration(lapOI + 1);
+                
                 % We get the end zone for l and l+1
                 
-                endzone_lapL_x = lap_times(vTrack).end_zone(lapOI*2).x;
-                endzone_lapL_t = lap_times(vTrack).end_zone(lapOI*2).t;
+                endzone_lapL_x = lap_times(vTrack).end_zone(lapOI).x;
+                endzone_lapL_t = lap_times(vTrack).end_zone(lapOI).t;
                 
-                endzone_lapL1_x = lap_times(vTrack).end_zone(lapOI*2 + 1).x;
-                endzone_lapL1_t = lap_times(vTrack).end_zone(lapOI*2 + 1).t;
+                endzone_lapL1_x = lap_times(vTrack).end_zone(lapOI + 1).x;
+                endzone_lapL1_t = lap_times(vTrack).end_zone(lapOI + 1).t;
                 
-                % We're looking for the idle time BETWEEN L and L1
-                % We only keep endzone at the end of L and at the start of
-                % L1.
-                
-                isEndL = sign(endzone_lapL_x) == sign(endzone_lapL_x(end));
-                isStartL1 = sign(endzone_lapL1_x) == sign(endzone_lapL1_x(1));
-                
-                
-                % Now we only filter the timebins  during the end and the
-                % start
-                
-                all_Times = [endzone_lapL_t(isEndL) endzone_lapL1_t(isStartL1)];
-                
-                startIdle = all_Times(1);
-                endIdle = all_Times(end);
-                
-                idleDuration = numel(all_Times) * 0.040;
-                
-                % Now that we have the start and end of the idle, we can
-                % look for SWR and awake replay events in that window
-                
-                SWR_times = replay_file.all_event_times;
-                replay_times = replay_file.track(trackOI).event_times;
-                
-                number_idle_SWR = sum(SWR_times >= startIdle & ...
-                                        SWR_times <= endIdle);
-                                    
-                number_idle_replay = sum(replay_times >= startIdle & ...
-                                           replay_times <= endIdle);
-                
+                % We're looking for the 
+
                 % Save the data
                 
                 sessionID = [sessionID; fileID];
@@ -164,9 +135,6 @@ parfor fileID = 1:length(sessions)
                 exposure = [exposure; exposureOI];
                 lap = [lap; lapOI];
                 corrDelta = [corrDelta; corFluc];
-                idlePeriod = [idlePeriod; idleDuration];
-                idleSWR = [idleSWR; number_idle_SWR];
-                idleReplay = [idleReplay; number_idle_replay];
 
 
             end
@@ -185,7 +153,6 @@ condition(track ~= 1) = newConditions(:, 2);
 
 condition = str2double(condition);
 
-data = table(sessionID, animal, condition, exposure, lap, corrDelta, ...
-             idlePeriod, idleSWR, idleReplay);
+data = table(sessionID, animal, condition, exposure, lap, corrDelta);
 
 save("pv_correlation_fluc.mat", "data")
