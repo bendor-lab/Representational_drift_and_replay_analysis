@@ -4,11 +4,9 @@
 clear
 load("pv_correlation_fluc");
 
-time_ser = data([], :);
+%% We get the mean across each pair of half-lap
 
-curr_direction = -1;
-
-% Calculate the derivative of the pv-correlation across laps
+mean_data = data([], :);
 
 for cID = 1:19
     for track = 1:2
@@ -17,19 +15,61 @@ for cID = 1:19
         if track == 1
             current_data = data(data.sessionID == cID & ...
                             data.exposure == cur_exposure & ...
-                            data.condition == 16 & ...
-                            data.direction == curr_direction, :);
+                            data.condition == 16, :);
         else
             current_data = data(data.sessionID == cID & ...
                             data.exposure == cur_exposure & ...
-                            data.condition ~= 16 & ...
-                            data.direction == curr_direction, :);
+                            data.condition ~= 16, :);
+        end
+
+        data_even = current_data(2:2:end, :);
+        data_odd = current_data(1:2:end, :);
+
+        % crop to right size if odd number of laps
+        if numel(data_even.lap) ~= numel(data_odd.lap)
+            smaller = min([numel(data_even.lap), numel(data_odd.lap)]);
+            data_even = data_even(1:smaller, :);
+            data_odd = data_odd(1:smaller, :);
+        end
+
+        % Get all the metrics we need
+        snippet = data_odd;
+
+        snippet.pvCorr = mean([data_even.pvCorr'; data_odd.pvCorr'], 'omitnan')';
+        snippet.idlePeriod = sum([data_even.idlePeriod'; data_odd.idlePeriod'], 'omitnan')';
+        snippet.idleSWR = sum([data_even.idleSWR'; data_odd.idleSWR'], 'omitnan')';
+        snippet.idleReplay = sum([data_even.idleReplay'; data_odd.idleReplay'], 'omitnan')';
+        snippet.thetaCycles = sum([data_even.thetaCycles'; data_odd.thetaCycles'], 'omitnan')';
+        snippet.lap = (1:numel(snippet.lap))';
+        
+        mean_data = [mean_data; snippet];
+    
+        end
+    end
+end
+
+time_ser = mean_data([], :);
+
+% Calculate the derivative of the pv-correlation across laps
+
+for cID = 1:19
+    for track = 1:2
+        for cur_exposure = 1:2
+        
+        if track == 1
+            current_data = mean_data(mean_data.sessionID == cID & ...
+                            mean_data.exposure == cur_exposure & ...
+                            mean_data.condition == 16, :);
+        else
+            current_data = mean_data(mean_data.sessionID == cID & ...
+                            mean_data.exposure == cur_exposure & ...
+                            mean_data.condition ~= 16, :);
         end
 
         pv_cor = current_data.pvCorr;
         pv_evolution = diff(pv_cor);
 
-        snippet = current_data(2:end, :);
+        snippet = current_data(1:end-1, :);
         snippet.pvCorr = pv_evolution; %pvCorr now refer to delta pv
 
         time_ser = [time_ser; snippet];
