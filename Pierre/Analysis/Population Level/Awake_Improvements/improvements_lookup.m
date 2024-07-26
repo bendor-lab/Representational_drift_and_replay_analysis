@@ -4,6 +4,70 @@
 clear
 load("pv_correlation_fluc");
 
+time_ser = data([], :);
+
+curr_direction = -1;
+
 % Calculate the derivative of the pv-correlation across laps
 
-for cID = 1:
+for cID = 1:19
+    for track = 1:2
+        for cur_exposure = 1:2
+        
+        if track == 1
+            current_data = data(data.sessionID == cID & ...
+                            data.exposure == cur_exposure & ...
+                            data.condition == 16 & ...
+                            data.direction == curr_direction, :);
+        else
+            current_data = data(data.sessionID == cID & ...
+                            data.exposure == cur_exposure & ...
+                            data.condition ~= 16 & ...
+                            data.direction == curr_direction, :);
+        end
+
+        pv_cor = current_data.pvCorr;
+        pv_evolution = diff(pv_cor);
+
+        snippet = current_data(2:end, :);
+        snippet.pvCorr = pv_evolution; %pvCorr now refer to delta pv
+
+        time_ser = [time_ser; snippet];
+    
+        end
+    end
+end
+
+%%
+
+isFirstLap = (time_ser.lap == 5 | time_ser.lap == 6) & time_ser.exposure == 1 ...
+              & time_ser.condition == 16;
+
+all_pv = time_ser.pvCorr(isFirstLap);
+all_SWR = time_ser.idleSWR(isFirstLap);
+all_Idle = time_ser.idlePeriod(isFirstLap);
+all_rep = time_ser.idleReplay(isFirstLap);
+all_theta = time_ser.thetaCycles(isFirstLap);
+
+foo = table(all_pv, all_SWR, all_Idle, all_rep, all_theta);
+
+corrplot(foo)
+
+%%
+
+all_cor = [];
+
+for lap = 2:16
+    current_sub = (time_ser.lap == lap*2-1 | time_ser.lap == lap*2) & time_ser.exposure == 1 ...
+                   & time_ser.condition == 16;
+
+    all_pv = time_ser.pvCorr(current_sub);
+    all_theta = time_ser.thetaCycles(current_sub);
+
+    corr_coef = corrcoef(all_pv, all_theta);
+    all_cor(end + 1) = corr_coef(2, 1);
+
+end
+
+plot(all_cor)
+grid on;

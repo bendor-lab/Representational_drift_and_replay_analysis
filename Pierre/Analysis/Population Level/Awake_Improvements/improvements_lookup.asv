@@ -1,0 +1,33 @@
+% Looking at the lap to lap correlation improvement and correlate with
+% parameters
+
+clear
+load("pv_correlation_fluc");
+
+time_ser = struct;
+
+% Calculate the derivative of the pv-correlation across laps
+
+for cID = 1:19
+    for track = 1:2
+        for cur_exposure = 1:2
+        
+        if track == 1
+            current_data = data(data.sessionID == cID & ...
+                            data.exposure == cur_exposure & ...
+                            data.condition == 16, :);
+        else
+            current_data = data(data.sessionID == cID & ...
+                            data.exposure == cur_exposure & ...
+                            data.condition ~= 16, :);
+        end
+
+        pv_cor = current_data.pvCorr;
+        pv_evolution = diff(pv_cor);
+
+        snippet = current_data(2:end, :);
+        snippet.pv_delta = pv_evolution;
+
+        end
+    end
+end
