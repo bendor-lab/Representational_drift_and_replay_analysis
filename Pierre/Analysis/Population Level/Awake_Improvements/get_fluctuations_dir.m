@@ -26,7 +26,7 @@ direction = []; % Direction of current lap
 
 % Extraction & computation
 
-parfor fileID = 1:length(sessions)
+for fileID = 1:1 %length(sessions)
 
     disp(fileID);
     file = sessions{fileID}; % We get the current session
