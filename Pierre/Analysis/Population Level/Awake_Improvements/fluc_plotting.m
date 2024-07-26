@@ -2,6 +2,25 @@ clear
 
 load("pv_correlation_fluc.mat");
 
+%% Looking at the evolution of the metrics across time
+
+subplot(1, 2, 1)
+boxplot(data.thetaCycles(data.exposure == 1), ...
+        data.lap(data.exposure == 1))
+grid on;
+
+subplot(1, 2, 2)
+boxplot(data.thetaCycles(data.exposure == 2), ...
+        data.lap(data.exposure == 2))
+grid on;
+
+linkaxes()
+
+figure;
+
+scatter(data.thetaCycles, data.idleReplay)
+fitlm(data, "thetaCycles ~ idleSWR")
+
 %% Looking at the mean correlation increase depending on laps
 
 mean_data = groupsummary(data, ["exposure", "lap"], ["mean", "std"], "corrDelta");
@@ -83,7 +102,7 @@ end
 % We only look at 16 laps
 
 % Idle TIME
-subdata = data(data.condition == 4, :);
+subdata = data(data.condition == 16, :);
 
 figure;
 subplot(1, 2, 1)
@@ -145,7 +164,5 @@ linkaxes()
 
 % Everything seems to go down
     
-%% 8 laps weird shape
-subsub = subdata(subdata.sessionID == 4, :);
+%%
 
-scatter(subdata.lap, subdata.corrDelta)
