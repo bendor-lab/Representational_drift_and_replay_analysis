@@ -26,7 +26,7 @@ direction = []; % Direction of current lap
 
 % Extraction & computation
 
-for fileID = 1:1 %length(sessions)
+parfor fileID = 1:length(sessions)
 
     disp(fileID);
     file = sessions{fileID}; % We get the current session
@@ -146,9 +146,9 @@ for fileID = 1:1 %length(sessions)
                 % We only keep endzone at the end of L and at the start of
                 % L1.
                 
-                isEndL = sign(endzone_lapL_x) == sign(endzone_lapL_x(end));
+                isEndL = sign(endzone_lapL_x) == -current_directions(lapOI);
                 
-                % Now we only filter the timebins  during the end and the
+                % Now we only filter the timebins during the end and the
                 % start
                 
                 all_Times = endzone_lapL_t(isEndL);

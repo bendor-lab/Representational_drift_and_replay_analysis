@@ -20,7 +20,6 @@ track = [];
 exposure = [];
 lap = [];
 pvCorr = [];
-speed = [];
 
 % We take the absolute value of the difference over sum to get the relative
 % distance with the FPF, independently of the direction
@@ -28,7 +27,7 @@ diffSum = @(x1, x2) abs(x1 - x2)/(x1 + x2);
 
 %% Extraction & computation
 
-parfor fileID = 1:length(sessions)
+for fileID = 1:length(sessions)
 
     disp(fileID);
     file = sessions{fileID}; % We get the current session
@@ -52,7 +51,7 @@ parfor fileID = 1:length(sessions)
     position = temp.position;
     
     temp = load(file + "\extracted_laps");
-    lap_times = temp.lap_times;
+    lap_times = temp.position;
 
     % Track loop
 
@@ -119,14 +118,7 @@ parfor fileID = 1:length(sessions)
             end
 
             for lapOI = 1:current_numberLaps
-                
-                lap_start = lap_times(vTrack).completeLaps_start(lapOI);
-                lap_end = lap_times(vTrack).completeLaps_stop(lapOI);
-                
-                all_speed = position.v(position.t <= lap_end & position.t >= lap_start);
-                all_speed(all_speed < 5) = [];
-                mean_speed = mean(all_speed, 'omitnan');
-                
+
                 current_lap_data = lap_place_fields(vTrack).Complete_Lap{lapOI};
                 current_place_fields = current_lap_data.smooth;
 
@@ -150,7 +142,6 @@ parfor fileID = 1:length(sessions)
                 exposure = [exposure; exposureOI];
                 lap = [lap; lapOI];
                 pvCorr = [pvCorr; current_pvCorr];
-                speed = [speed; mean_speed];
 
 
             end
@@ -169,6 +160,6 @@ condition(track ~= 1) = newConditions(:, 2);
 
 condition = str2double(condition);
 
-data = table(sessionID, animal, condition, exposure, lap, speed, pvCorr);
+data = table(sessionID, animal, condition, exposure, lap, pvCorr);
 
 save("timeSeries.mat", "data")
