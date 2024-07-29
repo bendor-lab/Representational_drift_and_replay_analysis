@@ -28,7 +28,9 @@ refinCM = [];
 refinFR = [];
 refinPeak = [];
 
-isDoublePeak = [];
+isDoublePeakR1 = [];
+isDoublePeakR2 = [];
+
 pfWidthRUN1 = [];
 pfWidthRUN2 = [];
 
@@ -123,6 +125,7 @@ for fileID = 1:length(sessions)
             if isnan(endRUN1CM) | isnan(startRUN2CM)
                 endRUN1MaxFR = NaN;
                 startRUN2MaxFR = NaN;
+                endRUN1MeanFR = NaN;
                 endRUN1PeakLoc = NaN;
                 startRUN2PeakLoc = NaN;
                 isCurrentDoublePeak = NaN;
@@ -139,6 +142,20 @@ for fileID = 1:length(sessions)
                 isBig = fr_at_maxs/endRUN1MaxFR >= 0.7;
                 isFarFromOther = abs(loc_at_max - endRUN1PeakLoc) >= 20;
                 isCurrentDoublePeak = any(isBig & isFarFromOther);
+                
+                % Now RUN2
+                TF = islocalmax(startRUN2PF);
+                TF(startRUN2PeakLoc) = 0; % remove the main peak
+                fr_at_maxs = startRUN2PF(TF);
+                loc_at_max = find(TF);
+
+                % If at least 70% of the other max, 
+                % and separated by at least 40 cm, considered double peak
+
+                isBig = fr_at_maxs/startRUN2MaxFR >= 0.7;
+                isFarFromOther = abs(loc_at_max - startRUN2PeakLoc) >= 20;
+                isCurrentDoublePeakR2 = any(isBig & isFarFromOther);
+
             end
 
             % We compute the metrics we're interested in
@@ -166,10 +183,12 @@ for fileID = 1:length(sessions)
             
             cmRUN1 = [cmRUN1; endRUN1PeakLoc];
             cmRUN2 = [cmRUN2; startRUN2PeakLoc];
-            refinCM = [refinCM; current_refinPeak];
+            refinCM = [refinCM; current_refinCM];
             refinFR = [refinFR; current_refinFR];
             refinPeak = [refinPeak; current_refinPeak];
-            isDoublePeak = [isDoublePeak; isCurrentDoublePeak];
+            
+            isDoublePeakR1 = [isDoublePeakR1; isCurrentDoublePeak];
+            isDoublePeakR2 = [isDoublePeakR2; isCurrentDoublePeakR2];
             pfWidthRUN1 = [pfWidthRUN1; current_width_RUN1];
             pfWidthRUN2 = [pfWidthRUN2; current_width_RUN2];
 
@@ -188,7 +207,7 @@ condition = str2double(condition);
 
 data = table(sessionID, animal, condition, cell, ...
     maxFiringRateRUN1, meanFiringRateRUN1, refinCM, refinFR, refinPeak, ...
-    cmRUN1, cmRUN2, isDoublePeak, pfWidthRUN1, pfWidthRUN2);
+    cmRUN1, cmRUN2, isDoublePeakR1, isDoublePeakR2, pfWidthRUN1, pfWidthRUN2);
 
 %% Basic stats
 
@@ -457,13 +476,13 @@ linkaxes;
 
 % 10 % of all cells.
 
-% 1. CM Negative refinement for those cells, Peak positive refinement
+% 1. More refinement for double cells
 data.logCondC = log2(data.condition) - mean(log2(data.condition));
 data.isDoubleC = data.isDoublePeak - 0.5;
 lme = fitlme(data, "refinCM ~ logCondC + isDoubleC + (1|animal) + (1|cell:animal)");
 disp(lme)
 
-% 2. When only using those, no significant for CM but sig. for Peak
+% 2. When only using those, significant effect on CM no matter the condition
 lme = fitlme(data(data.isDoublePeak == 1, :), "refinCM ~ logCondC + (1|animal) + (1|cell:animal)");
 disp(lme)
 
@@ -731,5 +750,40 @@ plot(0:max(crossTrack_data.distanceToOtherTrackR1), 0:max(crossTrack_data.distan
 xlabel("Distance between T1 / T2 CM before sleep (cm)")
 ylabel("Distance between T1 / T2 CM after sleep (cm)")
 
+%%
 
+data(isnan(data.maxFiringRateRUN1), :) = [];
 
+% Define bin edges (e.g., bins of 5 units)
+FR_bin_edges = 0:0.1:2.1;
+size_bin_edges = 0:2:max(data.pfWidthRUN1)+2;
+
+% Assign each position to a bin
+FR_bin_indices = discretize(data.meanFiringRateRUN1, FR_bin_edges);
+size_bin_indices = discretize(data.pfWidthRUN1, size_bin_edges);
+
+% Calculate the mean of the variable vector for each bin
+
+FR_bins = length(FR_bin_edges) - 1;
+size_bins = length(size_bin_edges) - 1;
+mean_matrix = zeros(FR_bins, size_bins);
+count_matrix = zeros(FR_bins, size_bins);
+
+isGoodCondition = data.condition <= 4;
+
+% Calculate the mean of the variable vector for each bin
+for i = 1:FR_bins
+    for j = 1:size_bins
+        bin_mask = (FR_bin_indices == i) & (size_bin_indices == j) & isGoodCondition;
+        if any(bin_mask)
+            mean_matrix(j, i) = mean(data.refinCM(bin_mask));
+            count_matrix(j, i) = sum(bin_mask);
+        end
+    end
+end
+
+mean_matrix(count_matrix < 4) = 0;
+
+figure;
+imagesc(mean_matrix)
+colorbar;
