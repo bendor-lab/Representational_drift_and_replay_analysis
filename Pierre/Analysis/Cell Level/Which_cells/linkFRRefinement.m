@@ -730,6 +730,3 @@ hold on;
 plot(0:max(crossTrack_data.distanceToOtherTrackR1), 0:max(crossTrack_data.distanceToOtherTrackR1), 'r')
 xlabel("Distance between T1 / T2 CM before sleep (cm)")
 ylabel("Distance between T1 / T2 CM after sleep (cm)")
-
-
-

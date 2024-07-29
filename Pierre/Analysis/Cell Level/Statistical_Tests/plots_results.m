@@ -187,15 +187,23 @@ timeSeriesOverLapPop(summaryLapDataCorr, "median_pvCorr", "se_pvCorr", "PV corre
 dataLap = load("timeSeries.mat");
 dataLap = dataLap.data;
 
+popDataLap = load("../../Population Level/Statistics/timeSeries.mat");
+popDataLap = popDataLap.data;
+
 % We keep only stable cells !
 dataLap(dataLap.label ~= "Stable", :) = [];
 
 summaryLapData = groupsummary(dataLap, ["condition", "exposure", "lap"], ["median", "std"], ...
     ["CMdiff", "FRdiff", "PeakDiff"]);
 
+summaryLapDataPop = groupsummary(popDataLap, ["condition", "exposure", "lap"], ["median", "std"], ...
+    ["pvCorr", "speed"]);
+
 summaryLapData.se_CMdiff = summaryLapData.std_CMdiff./sqrt(summaryLapData.GroupCount);
 summaryLapData.se_FRdiff = summaryLapData.std_FRdiff./sqrt(summaryLapData.GroupCount);
 summaryLapData.se_PeakDiff = summaryLapData.std_PeakDiff./sqrt(summaryLapData.GroupCount);
+summaryLapDataPop.se_pvCorr = summaryLapDataPop.std_pvCorr./sqrt(summaryLapDataPop.GroupCount);
+summaryLapDataPop.se_speed = summaryLapDataPop.std_speed./sqrt(summaryLapDataPop.GroupCount);
 
 % 1. Center of mass
 f5 = figure;
@@ -214,6 +222,17 @@ f7 = figure;
 f7.Position = [0, 0, 964, 542];
 timeSeriesOverLap(summaryLapData, "median_PeakDiff", "se_PeakDiff", "Peak Location");
 
+% 4. PV correlation
+
+f20 = figure;
+f20.Position = [0, 0, 964, 542];
+timeSeriesOverLap(summaryLapDataPop, "median_pvCorr", "se_pvCorr", "PV correlation");
+
+% 5. Speed
+
+f21 = figure;
+f21.Position = [0, 0, 964, 542];
+timeSeriesOverLap(summaryLapDataPop, "median_speed", "se_speed", "Speed");
 
 %% c. Cell change - 1 vs 16 vs 1 vs 16 vs FPF
 
