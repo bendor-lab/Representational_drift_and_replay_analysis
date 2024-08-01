@@ -80,11 +80,5 @@ end
 
 
 % First half-lap
-subset = time_ser(time_ser.condition == 16 & ...
-                  time_ser.lap == 1 & ...
-                  time_ser.exposure == 1, :);
-
-corrplot(subset(:, 8:end))
-
-% No correlation with any of the metrics !
-
+subset = data(data.condition == 16 & data.exposure == 2, :);
+% corrplot(subset(:, 8:13))
