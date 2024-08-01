@@ -48,7 +48,7 @@ for cID = 1:19
     end
 end
 
-mean_data.pvCorrExp = 2.^mean_data.pvCorr;
+mean_data.pvCorrExp = 10.^mean_data.pvCorr;
 
 time_ser = mean_data([], :);
 
@@ -86,9 +86,9 @@ end
 
 %%
 
-isFirstLap = time_ser.lap == 1 & time_ser.exposure == 1;
+isFirstLap = time_ser.lap == 3 & time_ser.exposure == 1;
 
-all_pv = time_ser.pvCorrExp(isFirstLap);
+all_pv = time_ser.pvCorr(isFirstLap);
 all_SWR = time_ser.idleSWR(isFirstLap);
 all_Idle = time_ser.idlePeriod(isFirstLap);
 all_rep = time_ser.idleReplay(isFirstLap);
@@ -174,4 +174,21 @@ plot(sum_data.lap(sum_data.exposure == cExp), sum_data.median_thetaCycles(sum_da
 
 %%
 
-scatter(mean_data.lap(mean_data.exposure == 1), mean_data.pvCorrExp(mean_data.exposure == 1), 'r')
+subplot(2, 2, 1)
+boxchart(mean_data.lap(mean_data.exposure == 1), mean_data.pvCorr(mean_data.exposure == 1))
+title("Raw")
+xlabel("Laps")
+ylabel("PV correlation")
+
+subplot(2, 2, 2)
+boxchart(mean_data.lap(mean_data.exposure == 1), mean_data.pvCorr(mean_data.exposure == 1))
+title("Logged axis")
+xlabel("Log 10 Laps")
+ylabel("PV correlation")
+xscale log
+
+subplot(2, 2, 3)
+boxchart(mean_data.lap(mean_data.exposure == 1), 10.^mean_data.pvCorr(mean_data.exposure == 1))
+title("Exponentiated PV cor")
+xlabel("Laps")
+ylabel("10^(PV correlation)")
