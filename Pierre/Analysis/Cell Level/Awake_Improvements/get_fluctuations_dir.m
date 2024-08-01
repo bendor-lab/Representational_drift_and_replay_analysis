@@ -30,7 +30,7 @@ idleReplay = []; % Number of participation in replay after the lap
 
 % Extraction & computation
 
-parfor fileID = 1:length(sessions)
+for fileID = 1:length(sessions)
 
     disp(fileID);
     file = sessions{fileID}; % We get the current session
@@ -125,6 +125,9 @@ parfor fileID = 1:length(sessions)
         
         maxFRD1 = cellfun(@max, finalPlaceFieldD1);
         maxFRD2 = cellfun(@max, finalPlaceFieldD2);
+        
+        maxFRD1(isnan(CMD1)) = NaN;
+        maxFRD2(isnan(CMD2)) = NaN; % We NaN the FR if the cell is gonna go silent
         
         % Main loop across exposures
         for exposureOI = 1:2
