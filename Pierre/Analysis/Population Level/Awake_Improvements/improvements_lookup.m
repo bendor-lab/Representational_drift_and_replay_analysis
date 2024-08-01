@@ -40,7 +40,10 @@ for cID = 1:19
         snippet.idleSWR = sum([data_even.idleSWR'; data_odd.idleSWR'], 'omitnan')';
         snippet.idleReplay = sum([data_even.idleReplay'; data_odd.idleReplay'], 'omitnan')';
         snippet.thetaCycles = sum([data_even.thetaCycles'; data_odd.thetaCycles'], 'omitnan')';
+        snippet.totalTime = sum([data_even.totalTime'; data_odd.totalTime'], 'omitnan')';
+        snippet.runningTime = sum([data_even.runningTime'; data_odd.runningTime'], 'omitnan')';
         snippet.lap = (1:numel(snippet.lap))';
+        
         
         mean_data = [mean_data; snippet];
     
@@ -86,15 +89,9 @@ end
 
 %%
 
-isFirstLap = time_ser.lap == 3 & time_ser.exposure == 1;
+isFirstLap = time_ser.lap == 1 & time_ser.exposure == 1;
 
-all_pv = time_ser.pvCorr(isFirstLap);
-all_SWR = time_ser.idleSWR(isFirstLap);
-all_Idle = time_ser.idlePeriod(isFirstLap);
-all_rep = time_ser.idleReplay(isFirstLap);
-all_theta = time_ser.thetaCycles(isFirstLap);
-
-foo = table(all_pv, all_SWR, all_Idle, all_rep, all_theta);
+foo = time_ser(isFirstLap, 7:end);
 
 corrplot(foo)
 

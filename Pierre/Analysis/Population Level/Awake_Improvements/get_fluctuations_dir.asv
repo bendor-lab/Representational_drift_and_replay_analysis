@@ -28,7 +28,7 @@ runningTime = [];
 
 % Extraction & computation
 
-parfor fileID = 1:length(sessions)
+for fileID = 1:1 %length(sessions)
 
     disp(fileID);
     file = sessions{fileID}; % We get the current session
@@ -187,9 +187,7 @@ parfor fileID = 1:length(sessions)
                 % Total time since start 
                 
                 cur_total_time = endIdle - first_lap_time;
-                cur_running_time = sum(position.v_cm(position.t ...
-                                   <= stop_lap & position.t > start_lap) ...
-                                   >= 5)*0.04;
+                cur_running_time = sum(position)
                 
                 % Save the data
                 
@@ -205,8 +203,6 @@ parfor fileID = 1:length(sessions)
                 idleSWR = [idleSWR; number_idle_SWR];
                 idleReplay = [idleReplay; number_idle_replay];
                 thetaCycles = [thetaCycles; number_theta_peaks];
-                totalTime = [totalTime; cur_total_time];
-                runningTime = [runningTime; cur_running_time];
 
 
             end
@@ -226,6 +222,6 @@ condition(track ~= 1) = newConditions(:, 2);
 condition = str2double(condition);
 
 data = table(sessionID, animal, condition, exposure, lap, direction, pvCorr, ...
-             idlePeriod, idleSWR, idleReplay, thetaCycles, totalTime, runningTime);
+             idlePeriod, idleSWR, idleReplay, thetaCycles);
 
 save("pv_correlation_fluc.mat", "data")
