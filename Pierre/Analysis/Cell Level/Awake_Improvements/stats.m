@@ -88,3 +88,6 @@ corrplot(subset(:, 8:end))
 
 % No correlation with any of the metrics !
 
+fitlme(time_ser(time_ser.condition == 16 & time_ser.exposure == 1, :), ...
+       "deltaCM ~ lap*spikesRUN")
+

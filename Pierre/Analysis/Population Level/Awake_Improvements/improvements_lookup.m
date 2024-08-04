@@ -40,8 +40,8 @@ for cID = 1:19
         snippet.idleSWR = sum([data_even.idleSWR'; data_odd.idleSWR'], 'omitnan')';
         snippet.idleReplay = sum([data_even.idleReplay'; data_odd.idleReplay'], 'omitnan')';
         snippet.thetaCycles = sum([data_even.thetaCycles'; data_odd.thetaCycles'], 'omitnan')';
-        snippet.totalTime = sum([data_even.totalTime'; data_odd.totalTime'], 'omitnan')';
-        snippet.runningTime = sum([data_even.runningTime'; data_odd.runningTime'], 'omitnan')';
+        snippet.totalTime = max([data_even.totalTime'; data_odd.totalTime'])';
+        snippet.runningTime = sum([data_even.runningTime'; data_odd.runningTime'])';
         snippet.lap = (1:numel(snippet.lap))';
         
         
@@ -89,21 +89,28 @@ end
 
 %%
 
-isFirstLap = time_ser.lap == 1 & time_ser.exposure == 1;
+isFirstLap = time_ser.lap == 2 & time_ser.exposure == 1 & time_ser.condition == 16;
 
-foo = time_ser(isFirstLap, 7:end);
+foo = time_ser(isFirstLap, 7:end-1);
 
 corrplot(foo)
+
+sub = time_ser(time_ser.exposure == 1 & time_ser.condition == 16, :);
+scatter(sub.runningTime, sub.pvCorr)
+
+corrcoef(sub.runningTime, sub.pvCorr, "rows", "complete")
+
 
 %%
 
 all_cor = [];
 
 for lap = 1:15
-    current_sub = time_ser.lap == lap & time_ser.exposure == 1;
+    current_sub = time_ser.lap == lap & time_ser.exposure == 1 ...
+                  & time_ser.condition == 16;
 
-    all_pv = time_ser.pvCorrExp(current_sub);
-    all_theta = time_ser.idleSWR(current_sub);
+    all_pv = time_ser.pvCorr(current_sub);
+    all_theta = time_ser.runningTime(current_sub);
 
     corr_coef = corrcoef(all_pv, all_theta);
     all_cor(end + 1) = corr_coef(2, 1);
@@ -112,7 +119,12 @@ end
 
 plot(all_cor)
 grid on;
-fitlme(time_ser(time_ser.exposure == 1, :), 'pvCorrExp ~ idleSWR + idlePeriod + idleReplay + thetaCycles')
+
+scatter(mean_data.runningTime(mean_data.exposure == 1 & mean_data.condition == 16), ...
+        mean_data.pvCorr(mean_data.exposure == 1 & mean_data.condition == 16))
+
+fitlme(time_ser(time_ser.exposure == 1 & time_ser.condition == 16, :), ...
+       "pvCorr ~ lap")
 
 %%
 
