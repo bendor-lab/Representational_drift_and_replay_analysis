@@ -7,7 +7,7 @@ PATH.SCRIPT = fileparts(mfilename('fullpath'));
 cd(PATH.SCRIPT)
 
 sessions = data_folders_excl; % We fetch all the sessions folders paths
-
+sessions_legacy = data_folders_excl_legacy;
 % Arrays to hold all the data
 
 sessionID = [];
@@ -15,13 +15,16 @@ animal = [];
 condition = [];
 track = [];
 exposure = [];
-lap = []; 
+lap = [];
 direction = []; % Direction of current lap
 pvCorr = [];
 idlePeriod = []; % Time of idle after the lap
 idleSWR = []; % Number of SWR after the lap
 thetaCycles = []; % Number of theta cycles during lap
-idleReplay = []; % Number of replay after the lap
+
+idleReplayFor = []; % Number of replay after the lap
+idleReplayBack = []; % Number of replay after the lap
+
 totalTime = [];
 runningTime = [];
 
@@ -29,19 +32,21 @@ runningTime = [];
 % Extraction & computation
 
 parfor fileID = 1:length(sessions)
-
+    
     disp(fileID);
     file = sessions{fileID}; % We get the current session
+    file_legacy = sessions_legacy{fileID};
+    
     [animalOI, conditionOI] = parseNameFile(file); % We get the informations about the current data
-
+    
     animalOI = string(animalOI);
     conditionOI = string(conditionOI); % We convert everything to string
-
+    
     % Load the variables
-
+    
     temp = load(file + "\extracted_place_fields.mat");
     place_fields = temp.place_fields;
-
+    
     temp = load(file + "\extracted_lap_place_fields.mat");
     lap_place_fields = temp.lap_place_fields;
     
@@ -60,23 +65,30 @@ parfor fileID = 1:length(sessions)
     temp = load(file + "\extracted_position");
     position = temp.position;
     
+    temp = load(file_legacy + "/extracted_directional_place_fields_BAYESIAN");
+    directional_place_fields_BAYESIAN = temp.directional_place_fields_BAYESIAN;
     
+    temp = load(file + "/extracted_replay_events");
+    replay = temp.replay;
+        
+    temp = load(file + "/extracted_clusters");
+    clusters = temp.clusters;
+        
     % Track loop
-
     for trackOI = 1:2
-
+        
         other_track = mod(trackOI + 1, 2) + 2*mod(trackOI, 2);
-
+        
         % Control : Cells that where good place cells during RUN1 and RUN2
         % (no appearing / disappearing cells).
         goodCells = intersect(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
         
         % We get the final place field : mean of the 6 laps following the
         % 16th lap of RUN2
-
+        
         RUN1LapPFData = lap_place_fields(trackOI).half_Lap;
         RUN2LapPFData = lap_place_fields(trackOI + 2).half_Lap;
-
+        
         numberLapsRUN2 = length(RUN2LapPFData);
         
         % Find the direction during the different laps
@@ -85,10 +97,10 @@ parfor fileID = 1:length(sessions)
         
         startDirRUN2 = lap_times(trackOI + 2).initial_dir;
         directionRUN2 = (-1).^(1:numel(RUN2LapPFData)) * (-startDirRUN1);
-
+        
         finalPlaceFieldD1 = {};
         finalPlaceFieldD2 = {};
-
+        
         % For each cell, we create the final place field
         for cellID = 1:length(place_fields.track(trackOI + 2).smooth)
             tempD1 = [];
@@ -102,7 +114,7 @@ parfor fileID = 1:length(sessions)
                     tempD2 = [tempD2; RUN2LapPFData{index_to_get}.smooth{cellID}];
                 end
             end
-
+            
             finalPlaceFieldD1(end + 1) = {mean(tempD1, 'omitnan')};
             finalPlaceFieldD2(end + 1) = {mean(tempD2, 'omitnan')};
         end
@@ -117,12 +129,15 @@ parfor fileID = 1:length(sessions)
                 replay_file = significant_replay_events_R2;
                 current_directions = directionRUN2;
             end
-
+            
             vTrack = trackOI + mod(exposureOI + 1, 2)*2;
             current_numberLaps = numel(lap_place_fields(vTrack).half_Lap);
             
             first_lap_time = lap_times(vTrack).halfLaps_start(1);
-
+            
+            % We find all the end zones
+            end_zones = get_matching_endzones(lap_times, vTrack);
+            
             if current_numberLaps > 32
                 current_numberLaps = 32;
             end
@@ -135,35 +150,21 @@ parfor fileID = 1:length(sessions)
                 else
                     fpfN = finalPlaceFieldD2;
                 end
-
+                
                 place_fields_N = lap_place_fields(vTrack).half_Lap{lapOI}.smooth;
                 
                 pvCorr_N = getPVCor(goodCells, place_fields_N, fpfN, "pvCorrelation");
                 pvCorr_N = median(pvCorr_N, 'omitnan');
-                                                
+                
                 % We find the amount of awake replay / SWR / time between
                 % the two laps
-                                
+                
                 % We get the end zone for l and l+1
                 
-                endzone_lapL_x = lap_times(vTrack).end_zone(lapOI + 1).x;
-                endzone_lapL_t = lap_times(vTrack).end_zone(lapOI + 1).t;
+                startIdle = end_zones.startIdle(lapOI);
+                endIdle = end_zones.stopIdle(lapOI);
                 
-                % We're looking for the idle time BETWEEN L and L1
-                % We only keep endzone at the end of L and at the start of
-                % L1.
-                
-                isEndL = sign(endzone_lapL_x) == -current_directions(lapOI);
-                
-                % Now we only filter the timebins during the end and the
-                % start
-                
-                all_Times = endzone_lapL_t(isEndL);
-                
-                startIdle = all_Times(1);
-                endIdle = all_Times(end);
-                
-                idleDuration = numel(all_Times) * 0.040;
+                idleDuration = endIdle - startIdle;
                 
                 % Now that we have the start and end of the idle, we can
                 % look for SWR and awake replay events in that window
@@ -172,24 +173,29 @@ parfor fileID = 1:length(sessions)
                 replay_times = replay_file.track(trackOI).event_times;
                 
                 number_idle_SWR = sum(SWR_times >= startIdle & ...
-                                        SWR_times <= endIdle);
-                                    
-                number_idle_replay = sum(replay_times >= startIdle & ...
-                                           replay_times <= endIdle);
-                                       
+                    SWR_times <= endIdle);
+                
+                [all_replay_idle, ~] = get_replay_lap(file, vTrack, ...
+                                trackOI, exposureOI, lapOI, end_zones, ...
+                                directional_place_fields_BAYESIAN, ...
+                                replay, lap_times, clusters, replay_file);
+                            
+                nb_for_replay = sum(all_replay_idle == 1);
+                nb_back_replay = sum(all_replay_idle == -1);
+                
                 % Number of theta cycles during RUN
                 start_lap = lap_times(vTrack).halfLaps_start(lapOI);
                 stop_lap = lap_times(vTrack).halfLaps_stop(lapOI);
                 
                 number_theta_peaks = sum(theta_peaks(:, 4) >= start_lap & ...
-                                           theta_peaks(:, 4) <= startIdle);
-                                       
-                % Total time since start 
+                    theta_peaks(:, 4) <= startIdle);
+                
+                % Total time since start
                 
                 cur_total_time = endIdle - first_lap_time;
                 cur_running_time = sum(position.v_cm(position.t ...
-                                   <= stop_lap & position.t > start_lap) ...
-                                   >= 5)*0.04;
+                    <= stop_lap & position.t > start_lap) ...
+                    >= 5)*0.04;
                 
                 % Save the data
                 
@@ -203,12 +209,13 @@ parfor fileID = 1:length(sessions)
                 pvCorr = [pvCorr; pvCorr_N];
                 idlePeriod = [idlePeriod; idleDuration];
                 idleSWR = [idleSWR; number_idle_SWR];
-                idleReplay = [idleReplay; number_idle_replay];
+                idleReplayFor = [idleReplayFor; nb_for_replay];
+                idleReplayBack = [idleReplayBack; nb_back_replay];
                 thetaCycles = [thetaCycles; number_theta_peaks];
                 totalTime = [totalTime; cur_total_time];
                 runningTime = [runningTime; cur_running_time];
-
-
+                
+                
             end
         end
     end
@@ -226,6 +233,6 @@ condition(track ~= 1) = newConditions(:, 2);
 condition = str2double(condition);
 
 data = table(sessionID, animal, condition, exposure, lap, direction, pvCorr, ...
-             idlePeriod, idleSWR, idleReplay, thetaCycles, totalTime, runningTime);
+    idlePeriod, idleSWR, idleReplayFor, idleReplayBack, thetaCycles, totalTime, runningTime);
 
 save("pv_correlation_fluc.mat", "data")
