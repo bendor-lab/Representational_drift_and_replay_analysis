@@ -89,33 +89,57 @@ end
 
 %%
 
-isFirstLap = time_ser.lap == 2 & time_ser.exposure == 1 & time_ser.condition == 16;
+isFirstLap = time_ser.lap == 1 & time_ser.exposure == 1 & time_ser.condition == 16;
 
 foo = time_ser(isFirstLap, 7:end-1);
 
 corrplot(foo)
 
-sub = time_ser(time_ser.exposure == 1 & time_ser.condition == 16, :);
-scatter(sub.runningTime, sub.pvCorr)
+fitlme(mean_data(mean_data.exposure == 1 & mean_data.condition == 16, :), ...
+       "pvCorr ~ lap*thetaCycles + (1|animal)")
 
-corrcoef(sub.runningTime, sub.pvCorr, "rows", "complete")
 
 
 %%
 
-all_cor = [];
+cor_dur = [];
+cor_idleDur = [];
+cor_swr = [];
+cor_replay = [];
+cor_theta = [];
+cor_time = [];
+
 
 for lap = 1:15
     current_sub = time_ser.lap == lap & time_ser.exposure == 1 ...
                   & time_ser.condition == 16;
 
-    all_pv = time_ser.pvCorr(current_sub);
-    all_theta = time_ser.runningTime(current_sub);
+    subset = time_ser(current_sub, :);
 
-    corr_coef = corrcoef(all_pv, all_theta);
-    all_cor(end + 1) = corr_coef(2, 1);
+    c_cor_dur = corrcoef(subset.pvCorr, subset.runningTime);
+    c_cor_idleDur = corrcoef(subset.pvCorr, subset.idlePeriod);
+    c_cor_swr = corrcoef(subset.pvCorr, subset.idleSWR);
+    c_cor_replay = corrcoef(subset.pvCorr, subset.idleReplay);
+    c_cor_theta = corrcoef(subset.pvCorr, subset.thetaCycles);
+    c_cor_time = corrcoef(subset.pvCorr, subset.totalTime);
 
+    cor_dur(end + 1) = c_cor_dur(1, 2);
+    cor_idleDur(end + 1) = c_cor_idleDur(1, 2);
+    cor_swr(end + 1) = c_cor_swr(1, 2);
+    cor_replay(end + 1) = c_cor_replay(1, 2);
+    cor_theta(end + 1) = c_cor_theta(1, 2);
+    cor_time(end + 1) = c_cor_time(1, 2);
 end
+
+plot(1:15, cor_dur)
+hold on;
+plot(1:15, cor_idleDur)
+plot(1:15, cor_swr)
+plot(1:15, cor_replay)
+plot(1:15, cor_theta)
+plot(1:15, cor_time)
+
+%%
 
 plot(all_cor)
 grid on;
