@@ -93,7 +93,7 @@ replayEvents_bayesian_spike_count = spike_count(place_fields_BAYESIAN,replay_sta
 
 % Run bayesian decoding
 disp('Decoding position...');
-estimated_position = bayesian_decoding(place_fields_BAYESIAN,replayEvents_bayesian_spike_count, tracks_compared);
+estimated_position = bayesian_decoding(place_fields_BAYESIAN, replayEvents_bayesian_spike_count, tracks_compared);
 
 % Save in structure
 for j = 1:length(tracks_compared)

@@ -32,7 +32,7 @@ idleReplayBack = []; % Number of participation in replay after the lap
 
 % Extraction & computation
 
-parfor fileID = 1:length(sessions)
+for fileID = 1:1 %length(sessions)
 
     disp(fileID);
     file = sessions{fileID}; % We get the current session
@@ -270,7 +270,7 @@ parfor fileID = 1:length(sessions)
                 for cID = 1:numel(goodCells)
                     subset_times = clusters.spike_times(clusters.spike_id == goodCells(cID));
                     binned_spikes = histcounts(subset_times, [allTimesIdle allTimesIdle(end) + 0.04]);
-                    binned_spikes(allSpeedIdle > 5) = 0; % Need to be idle
+                    binned_spikes(allSpeedIdle > 5) = 0; % Need to b
                     idle_count(cID) = sum(binned_spikes);
                 end
                                   
