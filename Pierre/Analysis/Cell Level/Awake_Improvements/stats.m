@@ -86,7 +86,7 @@ boxchart(time_ser.lap(time_ser.exposure == 1 & time_ser.condition == 16), ...
 
 % First half-lap
 subset = time_ser(time_ser.condition == 16 & ...
-    time_ser.lap == 1 & ...
+    time_ser.lap == 12 & ...
     time_ser.exposure == 1, :);
 
 corrplot(subset(:, 8:end))
@@ -277,4 +277,14 @@ end
 mean_data.is_less_med = is_less_med - 0.5;
 
 fitlme(mean_data(mean_data.exposure == 1 & mean_data.condition == 16, :), "idleSWR ~ is_less_med*lap + (1|animal)")
+
+% Same thing for back / forward replay
+
+fitlme(mean_data(mean_data.exposure == 1 & mean_data.condition == 16, :), ...
+       "idleReplayFor ~ is_less_med*lap + (1|animal)")
+
+fitlme(mean_data(mean_data.exposure == 1 & mean_data.condition == 16, :), ...
+       "idleReplayBack ~ is_less_med*lap + (1|animal)")
+
+
 
