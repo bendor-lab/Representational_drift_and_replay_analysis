@@ -158,7 +158,7 @@ if num_replay ~= 0
     % plot(position.y(position.t <= endLap & ...
     %                 position.t >= startLap));
     
-    %% Now that we have our decoded positions, we can calculate the bias between the positions
+%% Now that we have our decoded positions, we can calculate the bias between the positions
 end
 
 typesOfReplay = zeros(1, numel(valid_index));
@@ -171,20 +171,35 @@ for current_r = 1:numel(valid_index)
     sum_D1 = sum(sum(decoded_D1));
     sum_D2 = sum(sum(decoded_D2));
     
-    % If D1 > D2, D1 is the head direction
-    % Otherwise, D2
+    % Now, taking into account that D1 = startDirection, 
+    % we find the probability of direction -1 / 1
     
-    decoded_head_dir = (sum_D1 > sum_D2)* startDirection + ...
-        (sum_D1 < sum_D2)* -startDirection;
+    if startDirection == -1
+        probabilityHeadNeg = sum_D1/(sum_D1 + sum_D2);
+        probabilityHeadPos = sum_D2/(sum_D2 + sum_D1);
+    else
+        probabilityHeadNeg = sum_D2/(sum_D2 + sum_D1);
+        probabilityHeadPos = sum_D1/(sum_D1 + sum_D2);
+    end
     
     % We get the decoded replay direction (-1 -> 1 or 1 -> -1)
-    % Negative correlation : 1 -> -1
+    % Negative correlation : 1 -> -1 
+    % (inverse of coding in data so we take the opp)
+    
     direction = weighted_correlation(decoded, false);
-    if -sign(direction) == decoded_head_dir
-        typesOfReplay(current_r) = 1;
+    direction = -direction;
+    
+    % If the direction of replay is -1 (from -1 to 1), 
+    % A forward replay will be a replay when the head direction
+    % is also -1. Inverse if direction is 1.
+    
+    if sign(direction)== -1
+        probabilityForward = probabilityHeadNeg;
     else
-        typesOfReplay(current_r) = -1;
+        probabilityForward = probabilityHeadPos;
     end
+    
+    typesOfReplay(current_r) = probabilityForward;
 end
 
 replayIndex = valid_index;

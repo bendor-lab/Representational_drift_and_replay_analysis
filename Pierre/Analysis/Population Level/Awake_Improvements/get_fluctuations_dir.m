@@ -22,8 +22,8 @@ idlePeriod = []; % Time of idle after the lap
 idleSWR = []; % Number of SWR after the lap
 thetaCycles = []; % Number of theta cycles during lap
 
-idleReplayFor = []; % Number of replay after the lap
-idleReplayBack = []; % Number of replay after the lap
+idleReplay = []; % Number of replay after the lap
+ReplayDir = []; % Mean direction of the replays
 
 totalTime = [];
 runningTime = [];
@@ -180,8 +180,12 @@ parfor fileID = 1:length(sessions)
                                 directional_place_fields_BAYESIAN, ...
                                 replay, lap_times, clusters, replay_file);
                             
-                nb_for_replay = sum(all_replay_idle == 1);
-                nb_back_replay = sum(all_replay_idle == -1);
+                replay_direction_bias = mean(all_replay_idle, "omitnan");
+                if isnan(replay_direction_bias) 
+                    replay_direction_bias = 0.5; % No bias in any direction
+                end
+                
+                curr_numb_replay = numel(all_replay_idle);
                 
                 % Number of theta cycles during RUN
                 start_lap = lap_times(vTrack).halfLaps_start(lapOI);
@@ -209,8 +213,8 @@ parfor fileID = 1:length(sessions)
                 pvCorr = [pvCorr; pvCorr_N];
                 idlePeriod = [idlePeriod; idleDuration];
                 idleSWR = [idleSWR; number_idle_SWR];
-                idleReplayFor = [idleReplayFor; nb_for_replay];
-                idleReplayBack = [idleReplayBack; nb_back_replay];
+                idleReplay = [idleReplay; curr_numb_replay];
+                ReplayDir = [ReplayDir; replay_direction_bias];
                 thetaCycles = [thetaCycles; number_theta_peaks];
                 totalTime = [totalTime; cur_total_time];
                 runningTime = [runningTime; cur_running_time];
@@ -233,6 +237,6 @@ condition(track ~= 1) = newConditions(:, 2);
 condition = str2double(condition);
 
 data = table(sessionID, animal, condition, exposure, lap, direction, pvCorr, ...
-    idlePeriod, idleSWR, idleReplayFor, idleReplayBack, thetaCycles, totalTime, runningTime);
+    idlePeriod, idleSWR, idleReplay, ReplayDir, thetaCycles, totalTime, runningTime);
 
 save("pv_correlation_fluc.mat", "data")
