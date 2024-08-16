@@ -38,7 +38,8 @@ for cID = 1:19
         snippet.pvCorr = mean([data_even.pvCorr'; data_odd.pvCorr'], 'omitnan')';
         snippet.idlePeriod = sum([data_even.idlePeriod'; data_odd.idlePeriod'], 'omitnan')';
         snippet.idleSWR = sum([data_even.idleSWR'; data_odd.idleSWR'], 'omitnan')';
-        snippet.idleReplay = sum([data_even.idleReplay'; data_odd.idleReplay'], 'omitnan')';
+        snippet.idleReplayFor = sum([data_even.idleReplayFor'; data_odd.idleReplayFor'], 'omitnan')';
+        snippet.idleReplayBack = sum([data_even.idleReplayBack'; data_odd.idleReplayBack'], 'omitnan')';
         snippet.thetaCycles = sum([data_even.thetaCycles'; data_odd.thetaCycles'], 'omitnan')';
         snippet.totalTime = max([data_even.totalTime'; data_odd.totalTime'])';
         snippet.runningTime = sum([data_even.runningTime'; data_odd.runningTime'])';
@@ -89,33 +90,61 @@ end
 
 %%
 
-isFirstLap = time_ser.lap == 2 & time_ser.exposure == 1 & time_ser.condition == 16;
+isFirstLap = time_ser.lap == 1 & time_ser.exposure == 1 & time_ser.condition == 16;
 
 foo = time_ser(isFirstLap, 7:end-1);
 
 corrplot(foo)
 
-sub = time_ser(time_ser.exposure == 1 & time_ser.condition == 16, :);
-scatter(sub.runningTime, sub.pvCorr)
+fitlme(mean_data(mean_data.exposure == 1 & mean_data.condition == 16, :), ...
+       "pvCorr ~ lap*thetaCycles + (1|animal)")
 
-corrcoef(sub.runningTime, sub.pvCorr, "rows", "complete")
 
 
 %%
 
-all_cor = [];
+cor_dur = [];
+cor_idleDur = [];
+cor_swr = [];
+cor_replay_for = [];
+cor_replay_back = [];
+cor_theta = [];
+cor_time = [];
+
 
 for lap = 1:15
     current_sub = time_ser.lap == lap & time_ser.exposure == 1 ...
                   & time_ser.condition == 16;
 
-    all_pv = time_ser.pvCorr(current_sub);
-    all_theta = time_ser.runningTime(current_sub);
+    subset = time_ser(current_sub, :);
 
-    corr_coef = corrcoef(all_pv, all_theta);
-    all_cor(end + 1) = corr_coef(2, 1);
+    c_cor_dur = corrcoef(subset.pvCorr, subset.runningTime);
+    c_cor_idleDur = corrcoef(subset.pvCorr, subset.idlePeriod);
+    c_cor_swr = corrcoef(subset.pvCorr, subset.idleSWR);
+    c_cor_replay_for = corrcoef(subset.pvCorr, subset.idleReplayFor);
+    c_cor_replay_back = corrcoef(subset.pvCorr, subset.idleReplayBack);
+    c_cor_theta = corrcoef(subset.pvCorr, subset.thetaCycles);
+    c_cor_time = corrcoef(subset.pvCorr, subset.totalTime);
 
+    cor_dur(end + 1) = c_cor_dur(1, 2);
+    cor_idleDur(end + 1) = c_cor_idleDur(1, 2);
+    cor_swr(end + 1) = c_cor_swr(1, 2);
+    cor_replay_for(end + 1) = c_cor_replay_for(1, 2);
+    cor_replay_back(end + 1) = c_cor_replay_back(1, 2);
+    cor_theta(end + 1) = c_cor_theta(1, 2);
+    cor_time(end + 1) = c_cor_time(1, 2);
 end
+
+plot(1:15, cor_dur)
+hold on;
+plot(1:15, cor_idleDur)
+plot(1:15, cor_swr)
+plot(1:15, cor_replay_for)
+plot(1:15, cor_replay_back)
+plot(1:15, cor_theta)
+plot(1:15, cor_time)
+
+%%
 
 plot(all_cor)
 grid on;
@@ -128,7 +157,8 @@ fitlme(time_ser(time_ser.exposure == 1 & time_ser.condition == 16, :), ...
 
 %%
 
-sum_data = groupsummary(mean_data, ["lap", "exposure"], "median", ["pvCorr", "idlePeriod", "idleReplay", "idleSWR", "thetaCycles"]);
+sum_data = groupsummary(mean_data, ["lap", "exposure"], "median", ...
+      ["pvCorr", "idlePeriod", "idleReplayFor", "idleReplayBack", "idleSWR", "thetaCycles"]);
 
 cExp = 2;
 
@@ -158,7 +188,7 @@ plot(sum_data.lap(sum_data.exposure == cExp), sum_data.median_idleSWR(sum_data.e
 
 subplot(2, 2, 3)
 boxchart(mean_data.lap(mean_data.exposure == cExp), ...
-         mean_data.idleReplay(mean_data.exposure == cExp))
+         mean_data.idleReplayBack(mean_data.exposure == cExp))
 grid on;
 
 title("Number of awake replay - RUN2")
@@ -166,7 +196,7 @@ ylabel("n° of replay")
 xlabel("Lap")
 
 hold on;
-plot(sum_data.lap(sum_data.exposure == cExp), sum_data.median_idleReplay(sum_data.exposure == cExp), 'r')
+plot(sum_data.lap(sum_data.exposure == cExp), sum_data.median_idleReplayFor(sum_data.exposure == cExp), 'r')
 
 
 subplot(2, 2, 4)
@@ -201,3 +231,7 @@ boxchart(mean_data.lap(mean_data.exposure == 1), 10.^mean_data.pvCorr(mean_data.
 title("Exponentiated PV cor")
 xlabel("Laps")
 ylabel("10^(PV correlation)")
+
+%%
+
+corrplot(time_ser(:, time_ser.Properties.VariableNames(7:end-1)))
