@@ -17,7 +17,7 @@ condition = [];
 cell = [];
 track = [];
 exposure = [];
-lap = []; 
+lap = [];
 direction = []; % Direction of current (half) lap
 
 deltaFR = []; % Difference in the max FR with the FPF
@@ -27,26 +27,26 @@ spikesIdle = []; % Number of spikes during the idle period
 spikesRUN = []; % Number of spikes during running
 idleSWR = []; % Number of participations in SWR after the lap
 thetaCycles = []; % Number of theta cycles during lap
-idleReplayFor = []; % Number of participation in replay after the lap
-idleReplayBack = []; % Number of participation in replay after the lap
+idleReplay = []; % Number of participation in replay after the lap
+ReplayDir = []; % Mean direction of replay
 
 % Extraction & computation
 
 parfor fileID = 1:length(sessions)
-
+    
     disp(fileID);
     file = sessions{fileID}; % We get the current session
     file_legacy = sessions_legacy{fileID};
     [animalOI, conditionOI] = parseNameFile(file); % We get the informations about the current data
-
+    
     animalOI = string(animalOI);
     conditionOI = string(conditionOI); % We convert everything to string
-
+    
     % Load the variables
-
+    
     temp = load(file + "\extracted_place_fields.mat");
     place_fields = temp.place_fields;
-
+    
     temp = load(file + "\extracted_lap_place_fields.mat");
     lap_place_fields = temp.lap_place_fields;
     
@@ -67,7 +67,7 @@ parfor fileID = 1:length(sessions)
     
     temp = load(file + "\Replay\RUN2_Decoding\significant_replay_events_wcorr");
     significant_replay_events_R2 = temp.significant_replay_events;
-        
+    
     temp = load(file + "\extracted_clusters");
     clusters = temp.clusters;
     
@@ -79,22 +79,22 @@ parfor fileID = 1:length(sessions)
     
     
     % Track loop
-
+    
     for trackOI = 1:2
-
+        
         other_track = mod(trackOI + 1, 2) + 2*mod(trackOI, 2);
-
+        
         % Control : Cells that where good place cells during RUN1 and RUN2
         % (no appearing / disappearing cells).
         goodCells = intersect(place_fields.track(trackOI).good_cells, ...
-                              place_fields.track(trackOI + 2).good_cells);
+            place_fields.track(trackOI + 2).good_cells);
         
         % We get the final place field : mean of the 6 laps following the
         % 16th lap of RUN2
-
+        
         RUN1LapPFData = lap_place_fields(trackOI).half_Lap;
         RUN2LapPFData = lap_place_fields(trackOI + 2).half_Lap;
-
+        
         numberLapsRUN2 = length(RUN2LapPFData);
         
         % Find the direction during the different laps
@@ -103,10 +103,10 @@ parfor fileID = 1:length(sessions)
         
         startDirRUN2 = lap_times(trackOI + 2).initial_dir;
         directionRUN2 = (-1).^(1:numel(RUN2LapPFData)) * (-startDirRUN1);
-
+        
         finalPlaceFieldD1 = {};
         finalPlaceFieldD2 = {};
-
+        
         % For each cell, we create the final place field
         for cellID = 1:length(place_fields.track(trackOI + 2).smooth)
             tempD1 = [];
@@ -120,7 +120,7 @@ parfor fileID = 1:length(sessions)
                     tempD2 = [tempD2; RUN2LapPFData{index_to_get}.smooth{cellID}];
                 end
             end
-
+            
             finalPlaceFieldD1(end + 1) = {mean(tempD1, 'omitnan')};
             finalPlaceFieldD2(end + 1) = {mean(tempD2, 'omitnan')};
         end
@@ -147,7 +147,7 @@ parfor fileID = 1:length(sessions)
                 decoded_replay = decoded_replay_events_R2(trackOI).replay_events;
                 current_directions = directionRUN2;
             end
-
+            
             vTrack = trackOI + mod(exposureOI + 1, 2)*2;
             current_numberLaps = numel(lap_place_fields(vTrack).half_Lap);
             
@@ -158,7 +158,7 @@ parfor fileID = 1:length(sessions)
             swr_spikes = {decoded_replay.spikes};
             replay_timebins = replay_file.track(trackOI).event_times;
             replay_spikes = replay_file.track(trackOI).spikes;
-
+            
             if current_numberLaps > 32
                 current_numberLaps = 32;
             end
@@ -177,7 +177,7 @@ parfor fileID = 1:length(sessions)
                 end
                 
                 % Stability metrics
-
+                
                 place_fields_N = lap_place_fields(vTrack).half_Lap{lapOI}.smooth;
                 
                 current_CM = cellfun(@(x) sum(x.*(1:2:200)/sum(x)), place_fields_N);
@@ -185,27 +185,27 @@ parfor fileID = 1:length(sessions)
                 
                 current_deltaCM = abs(current_CM - fpfCM);
                 current_deltaFR = abs(current_maxFR - fpfFR)./...
-                                  abs(current_maxFR + fpfFR);
-                              
+                    abs(current_maxFR + fpfFR);
+                
                 % We filter to get only the good cells
                 current_deltaCM = current_deltaCM(goodCells);
                 current_deltaFR = current_deltaFR(goodCells);
-                                                
+                
                 % We find the amount of awake replay / SWR / time between
                 % the two laps
-                                
+                
                 % We get the end zone for l and l+1
                 
                 startIdle = end_zones.startIdle(lapOI);
                 endIdle = end_zones.stopIdle(lapOI);
-                                
+                
                 % Now that we have the start and end of the idle, we can
                 % look for SWR and awake replay events in that window
                 
                 % SWR ---
                 SWR_count = zeros(1, numel(goodCells));
                 valid_events = (swr_timebins >= startIdle) & ...
-                               (swr_timebins <= endIdle);
+                    (swr_timebins <= endIdle);
                 SWR_good_spikes = swr_spikes(valid_events);
                 
                 for ev = 1:numel(SWR_good_spikes)
@@ -216,40 +216,40 @@ parfor fileID = 1:length(sessions)
                 
                 % Replay ---
                 
-                for_replay_count = zeros(1, numel(goodCells));
-                back_replay_count = zeros(1, numel(goodCells));
-                                           
+                replay_count = zeros(1, numel(goodCells));
+                mean_replay_direction = zeros(1, numel(goodCells));
+                
                 [all_replay_idle, valid_events] = get_replay_lap(file, vTrack, ...
-                                trackOI, exposureOI, lapOI, end_zones, ...
-                                directional_place_fields_BAYESIAN, ...
-                                replay, lap_times, clusters, replay_file);
-                           
+                    trackOI, exposureOI, lapOI, end_zones, ...
+                    directional_place_fields_BAYESIAN, ...
+                    replay, lap_times, clusters, replay_file);
+                
                 replay_good_spikes = replay_spikes(ismember(...
-                                     replay_file.track(trackOI).ref_index, ...
-                                     valid_events));
+                    replay_file.track(trackOI).ref_index, ...
+                    valid_events));
                 
                 for ev = 1:numel(replay_good_spikes)
                     all_participating_cells = unique(replay_good_spikes{ev}(:, 1));
                     matching_cells = ismember(goodCells, all_participating_cells);
                     
-                    if all_replay_idle(ev) == 1
-                        for_replay_count = for_replay_count + matching_cells;
-                    else
-                        back_replay_count = back_replay_count + matching_cells;
-                    end
+                    replay_count = replay_count + matching_cells;
+                    mean_replay_direction = mean_replay_direction + ...
+                                        matching_cells*all_replay_idle(ev);
                 end
-                                                       
+                
+                mean_replay_direction = mean_replay_direction./replay_count;
+                
                 % Number of spikes during running and during idle
                 
                 start_lap = lap_times(vTrack).halfLaps_start(lapOI);
                 stop_lap = lap_times(vTrack).halfLaps_stop(lapOI);
                 
                 allTimes = position.t((position.t >= start_lap) & ...
-                                      (position.t <= stop_lap));
+                    (position.t <= stop_lap));
                 
                 allSpeed = position.v_cm((position.t >= start_lap) & ...
-                                      (position.t <= stop_lap));
-                                  
+                    (position.t <= stop_lap));
+                
                 running_count = zeros(1, numel(goodCells));
                 
                 for cID = 1:numel(goodCells)
@@ -260,11 +260,11 @@ parfor fileID = 1:length(sessions)
                 end
                 
                 allTimesIdle = position.t((position.t >= startIdle) & ...
-                                      (position.t <= endIdle));
+                    (position.t <= endIdle));
                 
                 allSpeedIdle = position.v_cm((position.t >= startIdle) & ...
-                                      (position.t <= endIdle));
-                                  
+                    (position.t <= endIdle));
+                
                 idle_count = zeros(1, numel(goodCells));
                 
                 for cID = 1:numel(goodCells)
@@ -273,7 +273,7 @@ parfor fileID = 1:length(sessions)
                     binned_spikes(allSpeedIdle > 5) = 0; % Need to be idle
                     idle_count(cID) = sum(binned_spikes);
                 end
-                                  
+                
                 nbCells = numel(goodCells);
                 
                 % Save the data
@@ -289,13 +289,13 @@ parfor fileID = 1:length(sessions)
                 
                 deltaFR = [deltaFR; current_deltaFR'];
                 deltaCM = [deltaCM; current_deltaCM'];
-
-                spikesIdle = [spikesIdle; idle_count']; 
-                spikesRUN = [spikesRUN; running_count']; 
-                idleSWR = [idleSWR; SWR_count']; 
                 
-                idleReplayFor = [idleReplayFor; for_replay_count']; 
-                idleReplayBack = [idleReplayBack; back_replay_count']; 
+                spikesIdle = [spikesIdle; idle_count'];
+                spikesRUN = [spikesRUN; running_count'];
+                idleSWR = [idleSWR; SWR_count'];
+                
+                idleReplay = [idleReplay; replay_count'];
+                ReplayDir = [ReplayDir; mean_replay_direction'];
             end
         end
     end
@@ -313,7 +313,7 @@ condition(track ~= 1) = newConditions(:, 2);
 condition = str2double(condition);
 
 data = table(sessionID, animal, condition, cell, exposure, lap, direction, ...
-             deltaFR, deltaCM, spikesIdle, spikesRUN, idleSWR, idleReplayFor, ...
-             idleReplayBack);
+    deltaFR, deltaCM, spikesIdle, spikesRUN, idleSWR, idleReplay, ...
+    ReplayDir);
 
 save("stabilisation_fluc.mat", "data")
