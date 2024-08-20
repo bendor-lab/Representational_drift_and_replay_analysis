@@ -3,9 +3,10 @@ load("stabilisation_fluc.mat");
 
 current_variables = string(data.Properties.VariableNames(8:end));
 data.deltaFR(isnan(data.deltaCM)) = NaN;
-
 % We concatenate each half lap
 data.lap = floor((data.lap + 1)/2);
+
+%%
 
 sum1 = groupsummary(data, ["condition", "exposure", "lap"], ...
     ["mean", "std"], current_variables);
@@ -86,10 +87,10 @@ boxchart(time_ser.lap(time_ser.exposure == 1 & time_ser.condition == 16), ...
 
 % First half-lap
 subset = time_ser(time_ser.condition == 16 & ...
-    time_ser.lap == 12 & ...
+    time_ser.lap == 1 & ...
     time_ser.exposure == 1, :);
 
-corrplot(subset(:, 8:end))
+corrplot(subset(:, 7:end))
 
 % No correlation with any of the metrics !
 
@@ -276,15 +277,46 @@ end
 
 mean_data.is_less_med = is_less_med - 0.5;
 
-fitlme(mean_data(mean_data.exposure == 1 & mean_data.condition == 16, :), "idleSWR ~ is_less_med*lap + (1|animal)")
+fitlme(mean_data(mean_data.exposure == 1 & mean_data.condition == 16, :), "idleSWR ~ deltaCM*lap + (1|animal)")
 
 % Same thing for back / forward replay
 
 fitlme(mean_data(mean_data.exposure == 1 & mean_data.condition == 16, :), ...
-       "idleReplayFor ~ is_less_med*lap + (1|animal)")
-
-fitlme(mean_data(mean_data.exposure == 1 & mean_data.condition == 16, :), ...
-       "idleReplayBack ~ is_less_med*lap + (1|animal)")
+       "deltaCM ~ idleSWR*lap + spikesRUN + (1|animal)")
 
 
+%% -----------------
 
+f = figure;
+tl = tiledlayout(1, 2);
+
+subset = mean_data(mean_data.condition == 16 & ...
+         mean_data.lap == 1 & mean_data.exposure == 1, :);
+
+current_median = median(subset.deltaCM, "omitnan");
+
+nexttile;
+n1 = subset.deltaCM(subset.deltaCM <= current_median);
+n2 = subset.deltaCM(subset.deltaCM > current_median);
+h1 = histogram(n1, 0:2:max(n1));
+hold on;
+h2 = histogram(n2, n1:2:max(n2));
+xline(current_median - 2, ":r", string(current_median))
+legend({"< to median, n = " + string(numel(n1)), ...
+        "> to median, n = " + string(numel(n2))})
+
+xlabel("CM distance with FPF")
+ylabel("Count")
+
+nexttile;
+
+boxchart((subset.deltaCM <= current_median) + 1, subset.ReplayDir);
+grid on;
+xlabel("Stability of the cell")
+ylabel("Bias of Replay")
+xticks([1 2])
+xticklabels({"Far from FPF", "Close to FPF"})
+
+title(tl, "Condition 16, RUN1, lap N°1")
+
+fitlme(subset, "idleReplay ~ is_less_med*ReplayDir + (1|animal)")
