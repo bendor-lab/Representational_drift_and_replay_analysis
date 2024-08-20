@@ -118,8 +118,13 @@ save("inhibitory_inter_variations.mat", "data");
 
 %%
 
+load("inhibitory_inter_variations.mat")
+
 sum1 = groupsummary(data, ["condition", "exposure", "lap"], ...
                    ["mean", "std"], ["variance_FR", "mean_FR"]);
 
 figure;               
 timeSeriesOverLap(sum1, 'mean_variance_FR', 'std_variance_FR', 'var')
+
+figure;               
+timeSeriesOverLap(sum1, 'mean_mean_FR', 'std_mean_FR', 'var')
