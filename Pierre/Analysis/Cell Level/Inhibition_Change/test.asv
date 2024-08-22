@@ -12,83 +12,118 @@ cell = [];
 variance_FR = [];
 mean_FR = [];
 
-for sID = 1:numel(sessions)
-    
-    disp(sID);
-    
-    %% Loading relevant files
-    file = sessions{sID};
-    
-    [animalOI, conditionOI] = parseNameFile(file); % We get the informations about the current data
-    animalOI = string(animalOI);
-    conditionOI = string(conditionOI); % We convert everything to string
-    
-    temp = load(file + "\extracted_place_fields");
-    place_fields = temp.place_fields;
-    
-    temp = load(file + "\extracted_laps");
-    lap_times = temp.lap_times;
-    
-    temp = load(file + "\extracted_clusters");
-    clusters = temp.clusters;
-    
-    %% Identify the inhibitory interneurons
-    % Based on firing rate for the entire session : > 28 Hz
-    
-    inter = place_fields.interneurons;
-    fr_sess = place_fields.mean_rate(inter);
-    inhib_neurons = inter(fr_sess >= 28);
-    other_inter = inter(fr_sess < 28);
-    disp(numel(inhib_neurons));
-    
-    %% Find the variance of firing rate for each lap
-    
-    number_laps = numel(lap_times(trackOI).completeLaps_start);
-    
-    all_variance = zeros(numel(inhib_neurons), number_laps);
-    all_mean = zeros(numel(inhib_neurons), number_laps);
-    
-    for lapOI = 1:number_laps
-        
-        % Find the start and end of the lap
-        start_lap = lap_times(trackOI).completeLaps_start(lapOI);
-        end_lap = lap_times(trackOI).completeLaps_stop(lapOI);
-        
-        isDuringLap = (clusters.spike_times >= start_lap) & ...
-            (clusters.spike_times <= end_lap);
-        
-        spikes_lap = clusters.spike_id(isDuringLap);
-        times_lap = clusters.spike_times(isDuringLap);
-        times_lap = times_lap - times_lap(1); % We start from 0
-        
-        for cID = 1:numel(inhib_neurons)
-            cellOI = inhib_neurons(cID);
-            isSpiking = (spikes_lap == cellOI); % All spikes
-            binned_time = floor(times_lap); % We bin every second
-            mean_values = accumarray(binned_time+1, isSpiking', [], @sum);
-            
-            % We now take the variance of these spike counts
-            current_variance = std(mean_values, "omitnan");
-            current_mean = mean(mean_values, "omitnan");
-            all_variance(cID, lapOI) = current_variance;
-            all_mean(cID, lapOI) = current_mean;
-        end
-    end
-    
-    % We add the data
-    for cID = 1:numel(inhib_neurons)
-        
-        % Name of the cell is cell id + id before
-        cell_name = sID*1000 + inhib_neurons(cID);
-        session = [session; repelem(sID, number_laps, 1)];
-        animal = [animal; repelem(animalOI, number_laps, 1)];
-        condition = [condition; repelem(conditionOI, number_laps, 1)];
-        track = [track; repelem(trackOI, number_laps, 1)];
-        lap = [lap; (1:number_laps)'];
-        cell = [cell; repelem(cell_name, number_laps, 1)];
-        variance_FR = [variance_FR; all_variance(cID, :)'];
-        mean_FR = [mean_FR; all_mean(cID, :)'];
-    end
+sID = 12;
+trackOI = 4;
+lapOI = 1;
+incr = 3;
+
+disp(sID);
+
+%% Loading relevant files
+file = sessions{sID};
+
+[animalOI, conditionOI] = parseNameFile(file); % We get the informations about the current data
+animalOI = string(animalOI);
+conditionOI = string(conditionOI); % We convert everything to string
+
+temp = load(file + "\extracted_place_fields");
+place_fields = temp.place_fields;
+
+temp = load(file + "\extracted_laps");
+lap_times = temp.lap_times;
+
+temp = load(file + "\extracted_clusters");
+clusters = temp.clusters;
+
+temp = load(file + "\extracted_position");
+position = temp.position;
+
+%% Identify the inhibitory interneurons
+% Based on firing rate for the entire session : > 28 Hz
+
+inter = place_fields.interneurons;
+
+%% Find the variance of firing rate for each lap
+
+number_laps = numel(lap_times(trackOI).completeLaps_start);
+
+if number_laps > 16
+    number_laps = 16;
 end
 
+all_variance = zeros(numel(inter), number_laps);
+all_mean = zeros(numel(inter), number_laps);
+
+% Find the start and end of the lap
+start_lap = lap_times(trackOI).completeLaps_start(lapOI);
+end_lap = lap_times(trackOI).completeLaps_stop(lapOI+incr);
+
+half_laps = lap_times(trackOI).halfLaps_start(lapOI*2:(lapOI+incr)*2) - start_lap(1);
+current_pos = position.linear(trackOI).linear(position.t >= start_lap & ...
+                                              position.t <= end_lap);
+current_speed = position.v_cm(position.t >= start_lap & ...
+                         position.t <= end_lap);
+current_t_pos = position.t(position.t >= start_lap & ...
+                         position.t <= end_lap);
+current_t_pos = current_t_pos - current_t_pos(1);
+
+isDuringLap = (clusters.spike_times >= start_lap) & ...
+    (clusters.spike_times <= end_lap);
+
+spikes_lap = clusters.spike_id(isDuringLap);
+times_lap = clusters.spike_times(isDuringLap);
+times_lap = times_lap - times_lap(1); % We start from 0
+
+all_corr = [];
+
+for cID = 1:numel(inter)
+    cellOI = inter(cID);
+    isSpiking = (spikes_lap == cellOI); % All spikes
+    binned_time = floor(times_lap); % We bin every second
+    mean_values = accumarray(binned_time+1, isSpiking', [], @sum);
+    
+    % We do the same binning for speed
+    binned_speed_time = floor(current_t_pos);
+    mean_speeds = accumarray(binned_speed_time'+1, ...
+                             current_speed', [], @mean);
+                         
+    mean_speeds(end) = [];
+    mean_values(end) = []; % Remove last second cause not complete
+    
+    all_cor(end + 1) = corrcoef()
+    
+    figure;
+    ax(1) = subplot(3, 1, 1);
+    plot(1:numel(mean_values), movmean(mean_values, 3));
+    grid on;
+    xlabel("Time (s)");
+    ylabel("Spikes per second (3-window average)")
+    title(cellOI);
+    ylim([0 100]);
+    
+    hold on;
+    
+    for idx = 1:numel(half_laps)
+        plot([half_laps(idx) half_laps(idx)], [0 100]);
+    end
+    
+    ax(2) = subplot(3, 1, 2);
+    plot(current_t_pos, current_pos);
+    grid on;
+    title("Position");
+    
+    ax(3) = subplot(3, 1, 3);
+    plot(current_t_pos, current_speed);
+    grid on;
+    title("Speed");
+    
+    linkaxes(ax, "x");
+    
+    % xlim([0 200])
+    
+%     subplot(1, 2, 2)
+%     spectrogram(mean_values, 'yaxis');
+end
+
+%%
 

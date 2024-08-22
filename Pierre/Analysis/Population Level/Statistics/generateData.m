@@ -62,8 +62,9 @@ for fileID = 1:length(sessions)
 
         % Good cells : cells that become good place cells on RUN2
         % goodCells = union(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
-        goodCells = intersect(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
-
+        % goodCells = intersect(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
+          goodCells = place_fields.interneurons;
+          
         % We get the replay participation
 
         % Fetch the significant replay events
@@ -278,7 +279,7 @@ data = table(sessionID, animal, condition, refinCorr, corrEndRUN1, ...
              amountSleep, amountRem, amountSWS, amountQuiet, ...
              nbSpikesBefREM, nbSpikesAfREM);
 
-save("dataRegressionPop.mat", "data")
+save("interneuronsPV.mat", "data")
 
 %%
 
