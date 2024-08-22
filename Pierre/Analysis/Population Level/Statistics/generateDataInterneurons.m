@@ -14,26 +14,16 @@ animal = [];
 condition = [];
 track = [];
 
+nbInter = []; % Nb of interneurons
 refinCorr = [];
 corrEndRUN1 = [];
 
 partP1Rep = [];
 numberSWR = [];
 expReexpBias = [];
-SWS_replay_prop = [];
 
-amountSleep = [];
-amountRem = [];
-amountSWS = [];
-amountQuiet = [];
 
-nbSpikesBefREM = [];
-nbSpikesAfREM = [];
-
-heatmap_refinement_T1 = [];
-heatmap_refinement_T2 = [];
-
-for fileID = 1:length(sessions)
+for fileID = 1:1 %length(sessions)
 
     disp(fileID);
     file = sessions{fileID}; % We get the current session
@@ -62,8 +52,11 @@ for fileID = 1:length(sessions)
 
         % Good cells : cells that become good place cells on RUN2
         % goodCells = union(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
-        goodCells = intersect(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
-
+        % goodCells = intersect(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
+          goodCells = place_fields.interneurons;
+          
+          current_nb_inter = numel(goodCells);
+          
         % We get the replay participation
 
         % Fetch the significant replay events
@@ -89,26 +82,6 @@ for fileID = 1:length(sessions)
 
         nbReplayEvents = numel(goodIDCurrent);
 
-        % We get the amount of time slept
-        % RN, the proportion of REM sleep
-
-        current_amount_sleep = sum(sleep_state.state_binned == 1 & ...
-                                  sleep_state.time <= endTime & ...
-                                  sleep_state.time >= startTime);
-
-        current_amount_rem = sum(sleep_state.sleep_stages.rem == 1 & ...
-                                  sleep_state.sleep_stages.t_sec <= endTime & ...
-                                  sleep_state.sleep_stages.t_sec >= startTime)/60;
-
-        current_amount_sws = sum(sleep_state.sleep_stages.sws == 1 & ...
-                                  sleep_state.sleep_stages.t_sec <= endTime & ...
-                                  sleep_state.sleep_stages.t_sec >= startTime)/60;
-
-        current_amount_quiet = sum(sleep_state.sleep_stages.quiet_wake == 1 & ...
-                                  sleep_state.sleep_stages.t_sec <= endTime & ...
-                                  sleep_state.sleep_stages.t_sec >= startTime)/60;
-        
-
         % We get the final place field : mean of the 6 laps following the
         % 16th lap of RUN2
 
@@ -130,42 +103,13 @@ for fileID = 1:length(sessions)
             finalPlaceField(end + 1) = {mean(temp, 'omitnan')};
         end
 
-        % % IF USING DIRECTIONAL
-        % 
-        % % Check 1 - We check if the number of complete laps is correct --
-        % nbLapsRUN1 = numel(lap_directional_place_fields(trackOI).dir1.half_Lap) - ...
-        %              mod(numel(lap_directional_place_fields(trackOI).dir1.half_Lap), 2);
-        % nbLapsRUN1 = nbLapsRUN1/2;
-        % 
-        % pfDir1RUN1 = lap_directional_place_fields(trackOI).dir1.Complete_Lap{nbLapsRUN1};
-        % pfDir2RUN1 = lap_directional_place_fields(trackOI).dir2.Complete_Lap{nbLapsRUN1};
-        % 
-        % 
-        % pfDir1RUN2 = lap_directional_place_fields(trackOI + 2).dir1.Complete_Lap{1};
-        % pfDir2RUN2 = lap_directional_place_fields(trackOI + 2).dir2.Complete_Lap{1};
-        % 
-        % directionalityRUN1 = getPVCor(goodCells, pfDir1RUN1.smooth, pfDir2RUN1.smooth, "pvCorrelation");
-        % directionalityRUN2 = getPVCor(goodCells, pfDir1RUN2.smooth, pfDir2RUN2.smooth, "pvCorrelation");
-        % 
-        % current_refinement = median(directionalityRUN2, "omitnan") - ...
-        %                      median(directionalityRUN1, "omitnan");
-        % 
-        % % We can now find the PV correlation of the last lap RUN1 and first
-        % % lap RUN2 with the FPF
-        % 
-
         pvCorRUN1 = getPVCor(goodCells, RUN1LapPFData{end}.smooth, finalPlaceField, "pvCorrelation");
 
         pvCorRUN2 = getPVCor(goodCells, RUN2LapPFData{1}.smooth, finalPlaceField, "pvCorrelation");
 
         current_refinement = median(pvCorRUN2, 'omitnan') - median(pvCorRUN1, 'omitnan');
         
-        if trackOI == 1
-            heatmap_refinement_T1{end + 1} = pvCorRUN2 - pvCorRUN1;
-        else
-            heatmap_refinement_T2{end + 1} = pvCorRUN2 - pvCorRUN1;
-        end
-
+        
         % Get all the sleep replay Exposure vs. Re-exposure
 
         track_label = ['Replay_T', int2str(trackOI), '_vs_T', int2str(trackOI + 2)];
@@ -250,16 +194,6 @@ for fileID = 1:length(sessions)
         partP1Rep = [partP1Rep; nbReplayEvents];
         numberSWR = [numberSWR; current_nbSWR];
         expReexpBias = [expReexpBias; ratioReexp];
-        SWS_replay_prop = [SWS_replay_prop; current_RE_SWS];
-
-        amountSleep = [amountSleep; current_amount_sleep];
-        amountRem = [amountRem; current_amount_rem];
-        amountSWS = [amountSWS; current_amount_sws];
-        amountQuiet = [amountQuiet; current_amount_quiet];
-
-        nbSpikesBefREM = [nbSpikesBefREM; numel(current_before_rem)];
-        nbSpikesAfREM = [nbSpikesAfREM; numel(current_after_rem)];
-
 
     end
 end
@@ -274,35 +208,8 @@ condition(track ~= 1) = newConditions(:, 2);
 condition = str2double(condition);
 
 data = table(sessionID, animal, condition, refinCorr, corrEndRUN1, ...
-             partP1Rep, numberSWR, expReexpBias, SWS_replay_prop, ...
-             amountSleep, amountRem, amountSWS, amountQuiet, ...
-             nbSpikesBefREM, nbSpikesAfREM);
+             partP1Rep, numberSWR, expReexpBias, ...
+             amountSleep);
 
-save("dataRegressionPop.mat", "data")
-
-%%
-
-% allT1 = cat(1, heatmap_refinement_T1{:});
-% meanAllT1 = mean(allT1, 'omitnan');
-% 
-% allT2 = cat(1, heatmap_refinement_T2{:});
-% meanAllT2 = mean(allT2, 'omitnan');
-% 
-% plot(1:2:200, meanAllT1, 'b');
-% hold on;
-% plot(1:2:200, meanAllT2, 'r');
-
-%%
-
-load("dataRegressionPop.mat")
-
-data.logConditionC = log2(data.condition) - mean(log2(data.condition), 'omitnan');
-data.propBefore = data.nbSpikesBefREM ./ data.partP1Rep;
-data.propAfter = data.nbSpikesAfREM ./ data.partP1Rep;
-
-
-lme = fitlme(data(data.condition ~= 16, :), 'refinCorr ~ logConditionC + propBefore + propAfter + (1|animal) + (1|sessionID:animal)');
-disp(lme)
-
-scatter(data.condition, data.propAfter)
+save("interneuronsPV.mat", "data")
 
