@@ -73,7 +73,10 @@ for fileID = 1:length(sessions)
 
         % Control : Cells that where good place cells during RUN1 and RUN2
         % (no appearing / disappearing cells).
-        goodCells = intersect(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
+%         goodCells = intersect(place_fields.track(trackOI).good_cells, ...
+%                               place_fields.track(trackOI + 2).good_cells);
+                          
+        goodCells = place_fields.interneurons;                   
 
         % Control : Cells that were good place cells during RUN1 xor RUN2
         % (only appearing / disappearing cells).
@@ -312,20 +315,18 @@ data = table(sessionID, animal, condition, cell, label, ...
     firingRateRUN1, refinCM, refinFR, refinPeak, ...
     partP1Rep, propPartRep, partSWR, expReexpBias, propSpikesSWS, rateCloseToREM);
 
-save("dataRegression.mat", "data")
+save("cellDataInterneurons.mat", "data")
 % save("dataRegressionXor.mat", "data")
 % save("dataRegressionIntersection.mat", "data")
 
 %%
-load("dataRegression.mat");
+load("cellDataInterneurons.mat");
 
 datac = data;
-datac.absRefin = abs(datac.refinCM);
-
 datac.logCondC = log2(datac.condition) - mean(log2(datac.condition));
 datac.propPartRepC = datac.propPartRep - mean(datac.propPartRep);
 
-lme = fitlme(datac, 'absRefin ~ logCondC + propPartRepC + (1|animal) + (1|sessionID:animal)');
+lme = fitlme(datac, 'refinFR ~ logCondC + (1|animal) + (1|sessionID:animal)');
 disp(lme);
 
 scatter(datac.absRefin, datac.propPartRep)
@@ -337,14 +338,3 @@ subplot(2, 1, 2)
 histogram(log(datac.absRefin));
 
 scatter(log(datac.propPartRep(datac.absRefin > 0.5)), log(datac.absRefin(datac.absRefin > 0.5)))
-
-%%
-
-datac = data;
-[GC, GR] = groupcounts(datac.cell);
-datac(ismember(datac.cell, GR(GC == 1)), :) = [];
-
-stabT1 = datac.refinCM(datac.condition == 16);
-stabT2 = datac.refinCM(datac.condition ~= 16);
-
-scatter(stabT1, stabT2)

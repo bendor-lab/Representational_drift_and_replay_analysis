@@ -13,7 +13,7 @@ sessions = data_folders_excl;
 
 %% Loading relevant files
 
-for sID = 15:15%1:19
+for sID = 14:14%1:19
     
     disp(sID);
     file = sessions{sID};
@@ -113,11 +113,18 @@ for sID = 15:15%1:19
             speed_field = speed_field./sampling_rate; % convert to Hz
             % speed_field_smooth = smoothdata(speed_field,"gaussian", 2);
             
-            binned_time = floor(times_lap); % We bin every second
-            mean_values = accumarray(binned_time+1, isSpiking', [], @sum);
+            %
+            spikes_mat = histcounts2(all_pos_fire, all_speed_fire, ...
+                                     0:10:200, 0:30);
+                                 
+            occurency_mat = histcounts2(current_pos, current_speed, 0:10:200, 0:30);
+            
+            pfields = spikes_mat./occurency_mat;
+            pfields = pfields./sampling_rate;
+
             
             figure;
-            ax(1) = subplot(1, 2, 1);
+            ax(1) = subplot(2, 2, 1);
             bar(1:200, place_field_smooth);
             grid on;
             xlabel("Position (cm)");
@@ -125,7 +132,7 @@ for sID = 15:15%1:19
             title("Place field - c" + cellOI + " - sess. " + sID);
             %ylim([0 0.5])
             
-            ax(2) = subplot(1, 2, 2);
+            ax(2) = subplot(2, 2, 2);
             bar(1:30, speed_field);
             grid on;
             xlabel("Speed (cm/s)");
@@ -133,6 +140,8 @@ for sID = 15:15%1:19
             title("Speed field -" + cellOI + " - " + sID);
             %ylim([0, 0.25]);
             
+            ax(3) = subplot(2, 2, 3);
+            surf(1:30, 0:10:190, pfields);
             
 %             linkaxes(ax, "x");
             

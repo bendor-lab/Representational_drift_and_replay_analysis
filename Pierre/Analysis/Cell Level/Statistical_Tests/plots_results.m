@@ -184,14 +184,11 @@ timeSeriesOverLapPop(summaryLapDataCorr, "median_pvCorr", "se_pvCorr", "PV corre
 
 %% b. Cell change --------------------------------------------------------
 
-dataLap = load("timeSeries.mat");
+dataLap = load("timeSeriesInterneurons.mat");
 dataLap = dataLap.data;
 
 popDataLap = load("../../Population Level/Statistics/timeSeries.mat");
 popDataLap = popDataLap.data;
-
-% We keep only stable cells !
-dataLap(dataLap.label ~= "Stable", :) = [];
 
 summaryLapData = groupsummary(dataLap, ["condition", "exposure", "lap"], ["median", "std"], ...
     ["CMdiff", "FRdiff", "PeakDiff"]);

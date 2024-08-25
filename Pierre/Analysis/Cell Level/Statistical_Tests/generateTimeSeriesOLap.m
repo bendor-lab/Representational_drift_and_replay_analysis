@@ -70,12 +70,14 @@ parfor fileID = 1:length(sessions)
         % goodPCRUN2Other = place_fields.track(other_track + 2).good_cells;
         % 
         % Good cells : Cells that where good place cells during RUN1 or RUN2
-        goodCells = union(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
+        % goodCells = union(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
 
         % Control : Cells that where good place cells during RUN1 and RUN2
         % (no appearing / disappearing cells).
         % goodCells = intersect(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
-
+         
+          goodCells = place_fields.interneurons;
+          
         % Control : Cells that were good place cells during RUN1 xor RUN2
         % (only appearing / disappearing cells).
         % goodCells = setxor(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
@@ -194,4 +196,4 @@ condition = str2double(condition);
 
 data = table(sessionID, animal, condition, exposure, lap, cell, label, CMdiff, FRdiff, PeakDiff, meanFR);
 
-save("timeSeries.mat", "data")
+save("timeSeriesInterneurons.mat", "data")
