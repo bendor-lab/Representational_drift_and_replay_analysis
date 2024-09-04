@@ -141,6 +141,7 @@ parfor fileID = 1:length(sessions)
                 % current_pvCorr = getPVCor(goodCells, current_place_fields_DIR1, current_place_fields_DIR2, "pvCorrelation");
                 
                 current_pvCorr = median(current_pvCorr, 'omitnan');
+                                
 
                 % Save the data
                 
