@@ -187,7 +187,7 @@ timeSeriesOverLapPop(summaryLapDataCorr, "median_pvCorr", "se_pvCorr", "PV corre
 dataLap = load("timeSeriesInterneurons.mat");
 dataLap = dataLap.data;
 
-popDataLap = load("../../Population Level/Statistics/timeSeries.mat");
+popDataLap = load("../../Population Level/Statistics/timeSeries_new_data_1.mat");
 popDataLap = popDataLap.data;
 
 summaryLapData = groupsummary(dataLap, ["condition", "exposure", "lap"], ["median", "std"], ...

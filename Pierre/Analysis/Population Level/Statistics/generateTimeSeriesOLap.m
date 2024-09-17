@@ -4,7 +4,7 @@ clear
 PATH.SCRIPT = fileparts(mfilename('fullpath'));
 cd(PATH.SCRIPT)
 
-sessions = data_folders_excl; % We fetch all the sessions folders paths
+sessions = data_folders_deprivation; % We fetch all the sessions folders paths
 
 % We create identifiers for cells from each session.
 % Format is : IDENT-00-XXX
@@ -28,15 +28,18 @@ diffSum = @(x1, x2) abs(x1 - x2)/(x1 + x2);
 
 %% Extraction & computation
 
-parfor fileID = 1:length(sessions)
+for fileID = 1:length(sessions)
 
     disp(fileID);
     file = sessions{fileID}; % We get the current session
     [animalOI, conditionOI] = parseNameFile(file); % We get the informations about the current data
 
-    animalOI = string(animalOI);
-    conditionOI = string(conditionOI); % We convert everything to string
+%     animalOI = string(animalOI);
+%     conditionOI = string(conditionOI); % We convert everything to string
 
+    animalOI = "XX1";
+    conditionOI = "16x1";
+    
     % Load the variables
 
     temp = load(file + "\extracted_place_fields.mat");
@@ -45,8 +48,8 @@ parfor fileID = 1:length(sessions)
     temp = load(file + "\extracted_lap_place_fields.mat");
     lap_place_fields = temp.lap_place_fields;
     % 
-    temp = load(file + "\extracted_directional_lap_place_fields");
-    lap_directional_place_fields = temp.lap_directional_place_fields;
+%     temp = load(file + "\extracted_directional_lap_place_fields");
+%     lap_directional_place_fields = temp.lap_directional_place_fields;
     
     temp = load(file + "\extracted_position");
     position = temp.position;
@@ -65,23 +68,15 @@ parfor fileID = 1:length(sessions)
 
         % Control : Cells that where good place cells during RUN1 and RUN2
         % (no appearing / disappearing cells).
-        % goodCells = intersect(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
-          goodCells = place_fields.interneurons;
+        goodCells = intersect(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
+        % goodCells = place_fields.interneurons;
           
         % Control : Cells that were good place cells during RUN1 xor RUN2
         % (only appearing / disappearing cells).
         % goodCells = setxor(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
 
-        % goodCells = intersect(lap_place_fields(trackOI).Complete_Lap{end}.good_cells, ...
-        %                       lap_place_fields(trackOI+2).Complete_Lap{1}.good_cells);
-
         % goodCells = setdiff(place_fields.track(trackOI + 2).good_cells, ...
         %                     place_fields.track(trackOI).good_cells);
-
-        % goodCells = setdiff(lap_place_fields(trackOI+2).Complete_Lap{1}.good_cells, ...
-        %                       lap_place_fields(trackOI).Complete_Lap{end}.good_cells);
-        % 
-        % goodCells = intersect(goodCells, lap_place_fields(other_track).Complete_Lap{end}.good_cells);
 
         if numel(goodCells) == 1
             continue;
@@ -98,14 +93,27 @@ parfor fileID = 1:length(sessions)
         finalPlaceField = {};
 
         % For each cell, we create the final place field
+%         for cellID = 1:length(place_fields.track(trackOI + 2).smooth)
+%             temp = [];
+% 
+%             for clap = 1:6
+%                 temp = [temp; RUN2LapPFData{16 + clap}.smooth{cellID}];
+%             end
+% 
+%             finalPlaceField(end + 1) = {mean(temp, 'omitnan')};
+%         end
+        
+        % If working with less laps (new data), just take the last
+        % lap (leave 1 lap for T1)*
+        
         for cellID = 1:length(place_fields.track(trackOI + 2).smooth)
             temp = [];
 
-            for clap = 1:6
-                temp = [temp; RUN2LapPFData{16 + clap}.smooth{cellID}];
+            for clap = 1:1
+                temp = [temp; RUN2LapPFData{end - (clap-1)}.smooth{cellID}];
             end
 
-            finalPlaceField(end + 1) = {mean(temp, 'omitnan')};
+            finalPlaceField(end + 1) = {mean(temp, 1, 'omitnan')};
         end
 
         for exposureOI = 1:2
@@ -173,4 +181,4 @@ condition = str2double(condition);
 
 data = table(sessionID, animal, condition, exposure, lap, speed, pvCorr);
 
-save("timeSeries_interneurons.mat", "data")
+save("timeSeries_new_data_1.mat", "data")

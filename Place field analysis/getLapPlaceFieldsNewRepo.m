@@ -14,7 +14,7 @@ addpath("Extract place fields", "Place field comparison");
 
 % We get the list of session folder
 
-path2Data = PATH.SCRIPT + "\..\ExpData\";
+path2Data = PATH.SCRIPT + "\..\ExpData\EXP_2\";
 
 allFolders = string(ls(path2Data + "*_*")); % We look for all the directoris with right name
 

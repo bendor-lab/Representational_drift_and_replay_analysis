@@ -25,6 +25,8 @@ tetrodes = fieldnames(cluster_data.extracted_clusters);
 
 for thisTetrode = 1:length(tetrodes)
     
+    disp("Tetrode " + thisTetrode + "/" + length(tetrodes))
+    
     TT = cell2mat(tetrodes(thisTetrode));
     TT_num = strsplit(TT,'TT');
     TT_num = cell2mat(TT_num(2));
@@ -42,8 +44,11 @@ for thisTetrode = 1:length(tetrodes)
             keyboard;
     end
     
-    if exist('raw')==7 %find DAT file for this tetrode in 'raw' folder
-        OldFolder = cd('raw');
+    %if exist('raw')==7 %find DAT file for this tetrode in 'raw' folder
+    if exist('20-08-24_klusta data') == 7 % Find DAT files in new data - TEMPORARY
+        % OldFolder = cd('raw');
+        OldFolder = cd('20-08-24_klusta data'); % TEMPORARY
+        
         % check for their name - some directories will have 'tetrode_1.dat', others
         % will have 'TT1.dat'
         these_files= dir;
