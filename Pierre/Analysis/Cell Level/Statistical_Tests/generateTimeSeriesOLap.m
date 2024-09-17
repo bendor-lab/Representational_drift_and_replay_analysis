@@ -4,8 +4,8 @@ clear
 PATH.SCRIPT = fileparts(mfilename('fullpath'));
 cd(PATH.SCRIPT)
 
-% sessions = data_folders_excl; % We fetch all the sessions folders paths
-sessions = data_folders_deprivation;
+sessions = data_folders_excl; % We fetch all the sessions folders paths
+% sessions = data_folders_deprivation;
 
 % We create identifiers for cells from each session.
 % Format is : IDENT-00-XXX
@@ -33,7 +33,7 @@ diffSum = @(x1, x2) abs(x1 - x2)/(x1 + x2);
 
 %% Extraction & computation
 
-for fileID = 1:length(sessions)
+parfor fileID = 1:length(sessions)
 
     disp(fileID);
     file = sessions{fileID}; % We get the current session
@@ -42,7 +42,10 @@ for fileID = 1:length(sessions)
     animalOI = string(animalOI);
     conditionOI = string(conditionOI); % We convert everything to string
     ident = identifiers(fileID); % We get the identifier for the session
-
+    
+%     animalOI = "XX1";
+%     conditionOI = "16x1";
+    
     % Load the variables
 
     temp = load(file + "\extracted_place_fields.mat");
@@ -77,7 +80,7 @@ for fileID = 1:length(sessions)
         % (no appearing / disappearing cells).
         % goodCells = intersect(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
          
-          goodCells = place_fields.interneurons;
+        goodCells = place_fields.interneurons;
           
         % Control : Cells that were good place cells during RUN1 xor RUN2
         % (only appearing / disappearing cells).
@@ -112,7 +115,19 @@ for fileID = 1:length(sessions)
 
             finalPlaceField(end + 1) = {mean(temp, 'omitnan')};
         end
+        
+% FOR NEW DATA : TEMPORARY ----
 
+%         for cellID = 1:length(place_fields.track(trackOI + 2).smooth)
+%             temp = [];
+% 
+%             for lapOI = 1:1
+%                 temp = [temp; RUN2LapPFData{end - lapOI + 1}.smooth{cellID}];
+%             end
+% 
+%             finalPlaceField(end + 1) = {mean(temp, 1, 'omitnan')};
+%         end
+        
         cmFPF = cellfun(@(x) sum(x.*(1:2:200)/sum(x)), finalPlaceField);
         frFPF = cellfun(@max, finalPlaceField);
         peakFPF = cellfun(@(x) find(x == max(x), 1), finalPlaceField);
@@ -197,4 +212,4 @@ condition = str2double(condition);
 
 data = table(sessionID, animal, condition, exposure, lap, cell, label, CMdiff, FRdiff, PeakDiff, meanFR);
 
-save("timeSeriesInterneurons.mat", "data")
+save("timeSeries_Interneurons.mat", "data")
