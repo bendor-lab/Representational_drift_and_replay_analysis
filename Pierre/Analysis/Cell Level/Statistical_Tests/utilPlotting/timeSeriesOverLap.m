@@ -10,7 +10,9 @@ for i = 1:length(allConditions) % We iterate through conditions
     % We get the lap data of the exposure
     dataByLapExp1 = data(data.condition == condition & data.exposure == 1, :);
     % We crop the data depending on the condition number
-    dataByLapExp1 = dataByLapExp1(1:condition, :);
+    if (height(dataByLapExp1) > condition)
+        dataByLapExp1 = dataByLapExp1(1:condition, :);
+    end
 
     % We get the lap data of the reexposure
     dataByLapExp2 = data(data.condition == condition & data.exposure == 2, :);
@@ -35,12 +37,12 @@ for i = 1:length(allConditions) % We iterate through conditions
 
     % Shading the std
     f1 = fill([X1_shade, flip(X1_shade)], [Y1_shade + std1_data, flip(Y1_shade - std1_data)], color, ...
-         'FaceAlpha', 0.1);
+        'FaceAlpha', 0.1);
     f1.LineStyle = "none";
     hold on;
 
     f2 = fill([X2_shade, flip(X2_shade)], [Y2_shade + std2_data, flip(Y2_shade - std2_data)], color, ...
-         'FaceAlpha', 0.1);
+        'FaceAlpha', 0.1);
     f2.LineStyle = "none";
 
     plot(X, Y, 'Color', color, 'LineWidth', 2);
@@ -64,11 +66,11 @@ limitUp = max(data.(var)) + 0.125 * max(data.(var));
 % Set the legend
 ylim([0, limitUp])
 legend({'', '', ' 1 lap', '', ...
-        '', '', ' 2 laps', ...
-        '', '', ' 3 laps', ...
-        '', '', ' 4 laps', ...
-        '', '', ' 8 laps', ...
-        '', '', ' 16 laps'}, 'Location','southoutside','NumColumns', 6, 'FontSize', 12);
+    '', '', ' 2 laps', ...
+    '', '', ' 3 laps', ...
+    '', '', ' 4 laps', ...
+    '', '', ' 8 laps', ...
+    '', '', ' 16 laps'}, 'Location','southoutside','NumColumns', 6, 'FontSize', 12);
 
 legend('show');
 xlabel("Lap")

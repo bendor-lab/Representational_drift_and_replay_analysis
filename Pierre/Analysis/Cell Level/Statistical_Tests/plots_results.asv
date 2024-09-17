@@ -556,44 +556,4 @@ plot(data2.partP1Rep, polyval(p, data2.partP1Rep), 'r')
 
 %% Plot new data
 
-subplot(1, 2, 1)
-subset = summaryLapDataPop(summaryLapDataPop.exposure == 1, :);
-all_conditions = unique(subset.condition);
-for c = all_conditions'
-    subsub = subset(subset.condition == c, :);
-    if (height(subsub) == 1)
-        scatter(subsub.lap, subsub.median_pvCorr)
-    else
-        plot(subsub.lap, subsub.median_pvCorr, "LineWidth", 2)
-    end
-
-    hold on;
-end
-
-xlim([0 16])
-ylim([0 1])
-grid on;
-title("First exposure");
-xlabel("Lap number")
-ylabel("PV correlation with last lap")
-
-subplot(1, 2, 2)
-subset = summaryLapDataPop(summaryLapDataPop.exposure == 2, :);
-all_conditions = unique(subset.condition);
-for c = all_conditions'
-    subsub = subset(subset.condition == c, :);
-    if (height(subsub) == 1)
-        scatter(subsub.lap, subsub.median_pvCorr)
-    else
-        plot(subsub.lap, subsub.median_pvCorr, "LineWidth", 2)
-    end
-
-    hold on;
-end
-
-xlim([0 16])
-ylim([0 1])
-grid on;
-title("Re-exposure");
-
-legend({"1 lap", "16 laps"})
+subplot(1, 2, )
