@@ -62,12 +62,12 @@ for fileID = 2:length(sessions)
     
     temp = load(file + "\extracted_laps");
     lap_times = temp.lap_times;
-    
-    comparison = lap_place_fields(2).Complete_Lap{1}.smooth;
 
     % Track loop
 
     for trackOI = 1:2
+        
+        comparison = lap_place_fields(trackOI).Complete_Lap{1}.smooth;
 
         other_track = mod(trackOI + 1, 2) + 2*mod(trackOI, 2);
 
