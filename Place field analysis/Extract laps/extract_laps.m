@@ -1,6 +1,6 @@
 
 function lap_times = extract_laps(plot_option)
-% MH
+% MH - Modified by Pierre VARICHON 2024 (bug new experiment)
 % Plot option: 'Y'/'N'
 
 load extracted_position
@@ -35,8 +35,15 @@ for track_id = 1 : length(position.linear)
             lap_times(track_id).end_zone(j).x = [];
             lap_times(track_id).end_zone(j).t = [];
         end
+        
         lap_times(track_id).end_zone(j).x(end+1) = y(i); 
         lap_times(track_id).end_zone(j).t(end+1) = t(i);
+    end
+    
+    % If the first endzone is empty (rare case), will result in bug
+    % So we remove it
+    if isempty(lap_times(track_id).end_zone(1).x)
+        lap_times(track_id).end_zone(1) = [];
     end
   
     % Saves in which direction is the first lap (1 for facing PC or -1 for facing wall)
@@ -182,3 +189,4 @@ function y=rescale(x)
 y = (x-min(x))/(max(x)-min(x));
 
 end
+

@@ -1,11 +1,10 @@
 % Help function to get the lap / directional place fields, in Z:/ 
 clear
 sessions = data_folders_deprivation;
-% sessions = [{"C:\Users\pierre.varichon\Desktop\backup_data_200824"}];
 
 addpath("Extract place fields", "Place field comparison", "Extract laps");
 
-for fID = 1:numel(sessions)
+for fID = 2:numel(sessions)
     
     file = sessions{fID};
     cd(file)

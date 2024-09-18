@@ -209,7 +209,6 @@ condition(track ~= 1) = newConditions(:, 2);
 
 condition = str2double(condition);
 
-
 data = table(sessionID, animal, condition, exposure, lap, cell, label, CMdiff, FRdiff, PeakDiff, meanFR);
 
 save("timeSeries_Interneurons.mat", "data")
