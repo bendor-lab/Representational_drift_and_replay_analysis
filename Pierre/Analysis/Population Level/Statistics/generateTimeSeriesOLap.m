@@ -62,6 +62,8 @@ for fileID = 2:length(sessions)
     
     temp = load(file + "\extracted_laps");
     lap_times = temp.lap_times;
+    
+    comparison = lap_place_fields(1).Complete_Lap{end}.smooth;
 
     % Track loop
 
@@ -153,7 +155,8 @@ for fileID = 2:length(sessions)
                 % current_lap_data_DIR2 = lap_directional_place_fields(vTrack).dir2.Complete_Lap{lapOI};
                 % current_place_fields_DIR2 = current_lap_data_DIR2.smooth;
 
-                current_pvCorr = getPVCor(goodCells, current_place_fields, finalPlaceField, "pvCorrelation");
+                % current_pvCorr = getPVCor(goodCells, current_place_fields, finalPlaceField, "pvCorrelation");
+                current_pvCorr = getPVCor(goodCells, current_place_fields, comparison, "pvCorrelation");
                 % current_pvCorr = getPVCor(goodCells, current_place_fields_DIR1, current_place_fields_DIR2, "pvCorrelation");
                 
                 current_pvCorr = median(current_pvCorr, 'omitnan');
@@ -188,4 +191,4 @@ condition = str2double(condition);
 
 data = table(sessionID, animal, condition, exposure, lap, speed, pvCorr);
 
-save("timeSeries_new_data_2.mat", "data")
+save("new_data_2_last_lapT1R1.mat", "data")
