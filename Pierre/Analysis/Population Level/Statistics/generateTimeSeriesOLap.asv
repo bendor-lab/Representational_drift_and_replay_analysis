@@ -4,7 +4,8 @@ clear
 PATH.SCRIPT = fileparts(mfilename('fullpath'));
 cd(PATH.SCRIPT)
 
-sessions = data_folders_excl; % We fetch all the sessions folders paths
+% sessions = data_folders_excl; % We fetch all the sessions folders paths
+sessions = data_folders_deprivation;
 
 % We create identifiers for cells from each session.
 % Format is : IDENT-00-XXX
@@ -28,12 +29,11 @@ diffSum = @(x1, x2) abs(x1 - x2)/(x1 + x2);
 
 %% Extraction & computation
 
-for fileID = 1:length(sessions)
+for fileID = 2:length(sessions)
 
     disp(fileID);
     file = sessions{fileID}; % We get the current session
-    [animalOI, conditionOI] = parseNameFile(file); % We get the informations about the current data
-
+%     [animalOI, conditionOI] = parseNameFile(file); % We get the informations about the current data
 %     animalOI = string(animalOI);
 %     conditionOI = string(conditionOI); % We convert everything to string
 
@@ -69,6 +69,8 @@ for fileID = 1:length(sessions)
         % Control : Cells that where good place cells during RUN1 and RUN2
         % (no appearing / disappearing cells).
         goodCells = intersect(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
+        if trackOI == 1
+            goodCells = intersect(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
         % goodCells = place_fields.interneurons;
           
         % Control : Cells that were good place cells during RUN1 xor RUN2
@@ -84,9 +86,19 @@ for fileID = 1:length(sessions)
         
         % We get the final place field : mean of the 6 laps following the
         % 16th lap of RUN2
-
-        RUN1LapPFData = lap_place_fields(trackOI).Complete_Lap;
-        RUN2LapPFData = lap_place_fields(trackOI + 2).Complete_Lap;
+        
+        % If order T1 - T2 -> T1 - T2
+%         RUN1LapPFData = lap_place_fields(trackOI).Complete_Lap;
+%         RUN2LapPFData = lap_place_fields(trackOI + 2).Complete_Lap;
+        
+       % If order T1 - T2 -> T2 - T1
+       RUN1LapPFData = lap_place_fields(trackOI).Complete_Lap;
+       
+        if trackOI == 1
+            RUN2LapPFData = lap_place_fields(4).Complete_Lap;
+        else
+            RUN2LapPFData = lap_place_fields(3).Complete_Lap;
+        end
 
         numberLapsRUN2 = length(RUN2LapPFData);
 
@@ -104,7 +116,7 @@ for fileID = 1:length(sessions)
 %         end
         
         % If working with less laps (new data), just take the last
-        % lap (leave 1 lap for T1)*
+        % lap*
         
         for cellID = 1:length(place_fields.track(trackOI + 2).smooth)
             temp = [];
@@ -119,13 +131,15 @@ for fileID = 1:length(sessions)
         for exposureOI = 1:2
             
             % If the structure is T1 - T2 -> T1 - T2
-            vTrack = trackOI + mod(exposureOI + 1, 2)*2;
+%             vTrack = trackOI + mod(exposureOI + 1, 2)*2;
+            
             % If the structure is T1 - T2 -> T2 - T1 (day 1 of control 2024)
             if exposureOI == 2
                 if trackOI == 1
                     vTrack = 4;
                 else
                     vTrack = 3;
+                end
             else
                 vTrack = trackOI;
             end
@@ -161,7 +175,6 @@ for fileID = 1:length(sessions)
                 
                 current_pvCorr = median(current_pvCorr, 'omitnan');
                                 
-
                 % Save the data
                 
                 sessionID = [sessionID; fileID];
@@ -192,4 +205,4 @@ condition = str2double(condition);
 
 data = table(sessionID, animal, condition, exposure, lap, speed, pvCorr);
 
-save("timeSeries_new_data_1.mat", "data")
+save("timeSeries_new_data_2.mat", "data")

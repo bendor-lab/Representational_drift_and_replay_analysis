@@ -12,6 +12,12 @@ sessions = data_folders_deprivation;
 identifiers = 1:numel(sessions);
 identifiers = identifiers* 1000;
 
+% Order of the tracks : first line is exposure, second line is re-exposure
+% Note : EVEN IF order in control day 1 is T1 - T2 -> T2 - T1, the order 1
+% 2 3 4 is the same as for the experimental condition (1 - 3 / 2 - 4 for exposure / re-exposure)
+
+track_order = [1 2; 3 4];
+
 % Arrays to hold all the data
 
 sessionID = [];
@@ -47,8 +53,8 @@ for fileID = 2:length(sessions)
 
     temp = load(file + "\extracted_lap_place_fields.mat");
     lap_place_fields = temp.lap_place_fields;
-    % 
-%     temp = load(file + "\extracted_directional_lap_place_fields");
+
+    %     temp = load(file + "\extracted_directional_lap_place_fields");
 %     lap_directional_place_fields = temp.lap_directional_place_fields;
     
     temp = load(file + "\extracted_position");
@@ -68,7 +74,8 @@ for fileID = 2:length(sessions)
 
         % Control : Cells that where good place cells during RUN1 and RUN2
         % (no appearing / disappearing cells).
-        goodCells = intersect(place_fields.track(trackOI).good_cells, place_fields.track(trackOI + 2).good_cells);
+        goodCells = intersect(place_fields.track(track_order(1, trackOI)).good_cells, place_fields.track(track_order(2, trackOI)).good_cells);
+                
         % goodCells = place_fields.interneurons;
           
         % Control : Cells that were good place cells during RUN1 xor RUN2
@@ -86,17 +93,8 @@ for fileID = 2:length(sessions)
         % 16th lap of RUN2
         
         % If order T1 - T2 -> T1 - T2
-%         RUN1LapPFData = lap_place_fields(trackOI).Complete_Lap;
-%         RUN2LapPFData = lap_place_fields(trackOI + 2).Complete_Lap;
-        
-       % If order T1 - T2 -> T2 - T1
-       RUN1LapPFData = lap_place_fields(trackOI).Complete_Lap;
-       
-        if trackOI == 1
-            RUN2LapPFData = lap_place_fields(4).Complete_Lap;
-        else
-            RUN2LapPFData = lap_place_fields(3).Complete_Lap;
-        end
+        RUN1LapPFData = lap_place_fields(track_order(1, trackOI)).Complete_Lap;
+        RUN2LapPFData = lap_place_fields(track_order(2, trackOI)).Complete_Lap;
 
         numberLapsRUN2 = length(RUN2LapPFData);
 
@@ -128,21 +126,8 @@ for fileID = 2:length(sessions)
 
         for exposureOI = 1:2
             
-            % If the structure is T1 - T2 -> T1 - T2
-%             vTrack = trackOI + mod(exposureOI + 1, 2)*2;
-            
-            % If the structure is T1 - T2 -> T2 - T1 (day 1 of control 2024)
-            if exposureOI == 2
-                if trackOI == 1
-                    vTrack = 4;
-                else
-                    vTrack = 3;
-                end
-            else
-                vTrack = trackOI;
-            end
-                
-
+            vTrack = track_order(exposureOI, trackOI);
+        
             current_numberLaps = numel(lap_place_fields(vTrack).Complete_Lap);
             % current_numberLaps = numel(lap_directional_place_fields(vTrack).dir1.Complete_Lap);
 
