@@ -1,8 +1,8 @@
 % Testing drift monitoring during sleep using replay events
 clear
 
-sID = 15;
-trackOI = 2;
+sID = 2;
+trackOI = 1;
 
 sessions = data_folders_excl;
 sessions_legacy = data_folders_excl_legacy;
@@ -55,7 +55,7 @@ all_spikes = significant_replay_events.track(trackOI).spikes;
 
 %% For each cell ---
 
-cellID = 6; % Id of the cell in the good cells vector
+cellID = 14; % Id of the cell in the good cells vector
 cellOI = all_cells(cellID); % real ID of the cell
 
 % We can create a mutated version of the two files without the cell
@@ -131,4 +131,4 @@ end
 %% Plotting
 
 plotDriftReplay(fields_replay, place_fields_BAYESIAN, ...
-                trackOI, cellOI, 2);
+                trackOI, cellOI, 1);
