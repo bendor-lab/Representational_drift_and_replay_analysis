@@ -39,12 +39,12 @@ parfor fileID = 1:length(sessions)
 
     disp(fileID);
     file = sessions{fileID}; % We get the current session
-%     [animalOI, conditionOI] = parseNameFile(file); % We get the informations about the current data
-%     animalOI = string(animalOI);
-%     conditionOI = string(conditionOI); % We convert everything to string
+    [animalOI, conditionOI] = parseNameFile(file); % We get the informations about the current data
+    animalOI = string(animalOI);
+    conditionOI = string(conditionOI); % We convert everything to string
 
-    animalOI = "XX1";
-    conditionOI = "16x1";
+%     animalOI = "XX1";
+%     conditionOI = "16x1";
     
     % Load the variables
 
