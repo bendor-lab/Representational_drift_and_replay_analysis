@@ -4,8 +4,8 @@ clear
 PATH.SCRIPT = fileparts(mfilename('fullpath'));
 cd(PATH.SCRIPT)
 
-% sessions = data_folders_excl; % We fetch all the sessions folders paths
-sessions = data_folders_deprivation;
+sessions = data_folders_excl; % We fetch all the sessions folders paths
+% sessions = data_folders_deprivation;
 
 % We create identifiers for cells from each session.
 % Format is : IDENT-00-XXX
@@ -35,7 +35,7 @@ diffSum = @(x1, x2) abs(x1 - x2)/(x1 + x2);
 
 %% Extraction & computation
 
-for fileID = 2:length(sessions)
+parfor fileID = 1:length(sessions)
 
     disp(fileID);
     file = sessions{fileID}; % We get the current session
