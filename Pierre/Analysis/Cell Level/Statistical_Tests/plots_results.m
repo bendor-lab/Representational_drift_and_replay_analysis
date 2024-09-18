@@ -555,6 +555,10 @@ hold on;
 plot(data2.partP1Rep, polyval(p, data2.partP1Rep), 'r')
 
 %% Plot new data
+% Need to be in population folder
+load("timeSeries_new_data_1.mat");
+summaryLapDataPop = groupsummary(data, ["condition", "exposure", "lap"], ["median", "std"], ...
+    ["pvCorr", "speed"]);
 
 subplot(1, 2, 1)
 subset = summaryLapDataPop(summaryLapDataPop.exposure == 1, :);
@@ -597,3 +601,227 @@ grid on;
 title("Re-exposure");
 
 legend({"1 lap", "16 laps"})
+
+%%
+
+load("timeSeries_new_data_1.mat");
+summaryLapData = groupsummary(data, ["condition", "exposure", "lap"], ["median", "std"], ...
+    ["CMdiff", "FRdiff", "PeakDiff"]);
+
+summaryLapData.se_CMdiff = summaryLapData.std_CMdiff./sqrt(summaryLapData.GroupCount);
+summaryLapData.se_FRdiff = summaryLapData.std_FRdiff./sqrt(summaryLapData.GroupCount);
+summaryLapData.se_PeakDiff = summaryLapData.std_PeakDiff./sqrt(summaryLapData.GroupCount);
+
+subplot(3, 2, 1)
+subset = summaryLapData(summaryLapData.exposure == 1, :);
+all_conditions = unique(subset.condition);
+for c = all_conditions'
+    subsub = subset(subset.condition == c, :);
+    if (height(subsub) == 1)
+        scatter(subsub.lap, subsub.median_CMdiff)
+    else
+        errorbar(subsub.lap, subsub.median_CMdiff, subsub.se_CMdiff, "LineWidth", 2)
+    end
+
+    hold on;
+end
+
+xlim([0 16])
+ylim([0 20])
+grid on;
+title("First exposure");
+xlabel("Lap number")
+ylabel("CM difference with last lap")
+
+subplot(3, 2, 2)
+subset = summaryLapData(summaryLapData.exposure == 2, :);
+all_conditions = unique(subset.condition);
+for c = all_conditions'
+    subsub = subset(subset.condition == c, :);
+    if (height(subsub) == 1)
+        errorbar(subsub.lap, subsub.median_CMdiff, subsub.se_CMdiff)
+    else
+        errorbar(subsub.lap, subsub.median_CMdiff, subsub.se_CMdiff, "LineWidth", 2)
+    end
+
+    hold on;
+end
+
+xlim([0 16])
+ylim([0 20])
+grid on;
+title("Re-exposure");
+
+legend({"1 lap", "16 laps"})
+
+subplot(3, 2, 3)
+subset = summaryLapData(summaryLapData.exposure == 1, :);
+all_conditions = unique(subset.condition);
+for c = all_conditions'
+    subsub = subset(subset.condition == c, :);
+    if (height(subsub) == 1)
+        scatter(subsub.lap, subsub.median_FRdiff)
+    else
+        errorbar(subsub.lap, subsub.median_FRdiff, subsub.se_FRdiff, "LineWidth", 2)
+    end
+
+    hold on;
+end
+
+xlim([0 16])
+ylim([0 0.5])
+grid on;
+title("First exposure");
+xlabel("Lap number")
+ylabel("Firing Rate difference with last lap")
+
+subplot(3, 2, 4)
+subset = summaryLapData(summaryLapData.exposure == 2, :);
+all_conditions = unique(subset.condition);
+for c = all_conditions'
+    subsub = subset(subset.condition == c, :);
+    if (height(subsub) == 1)
+        errorbar(subsub.lap, subsub.median_FRdiff, subsub.se_FRdiff)
+    else
+        errorbar(subsub.lap, subsub.median_FRdiff, subsub.se_FRdiff, "LineWidth", 2)
+    end
+
+    hold on;
+end
+
+xlim([0 16])
+ylim([0 0.5])
+grid on;
+title("Re-exposure");
+
+legend({"1 lap", "16 laps"})
+
+subplot(3, 2, 5)
+subset = summaryLapData(summaryLapData.exposure == 1, :);
+all_conditions = unique(subset.condition);
+for c = all_conditions'
+    subsub = subset(subset.condition == c, :);
+    if (height(subsub) == 1)
+        scatter(subsub.lap, subsub.median_PeakDiff)
+    else
+        errorbar(subsub.lap, subsub.median_PeakDiff, subsub.se_PeakDiff, "LineWidth", 2)
+    end
+
+    hold on;
+end
+
+xlim([0 16])
+ylim([0 30])
+grid on;
+title("First exposure");
+xlabel("Lap number")
+ylabel("Peak difference with last lap")
+
+subplot(3, 2, 6)
+subset = summaryLapData(summaryLapData.exposure == 2, :);
+all_conditions = unique(subset.condition);
+for c = all_conditions'
+    subsub = subset(subset.condition == c, :);
+    if (height(subsub) == 1)
+        errorbar(subsub.lap, subsub.median_PeakDiff, subsub.se_PeakDiff)
+    else
+        errorbar(subsub.lap, subsub.median_PeakDiff, subsub.se_PeakDiff, "LineWidth", 2)
+    end
+
+    hold on;
+end
+
+xlim([0 16])
+ylim([0 30])
+grid on;
+title("Re-exposure");
+
+legend({"1 lap", "16 laps"})
+
+%%
+
+subset1 = data(data.condition == 16, :);
+subset2 = data(data.condition ~= 16, :);
+
+sub1_last = subset1(subset1.exposure == 1 & subset1.lap == 13, :);
+sub1_first = subset1(subset1.exposure == 2 & subset1.lap == 1, :);
+
+refinement_16_CM = sub1_last.CMdiff - sub1_first.CMdiff;
+refinement_16_FR = sub1_last.FRdiff - sub1_first.FRdiff;
+refinement_16_Peak = sub1_last.PeakDiff - sub1_first.PeakDiff;
+
+sub2_last = subset2(subset2.exposure == 1 & subset2.lap == 1, :);
+sub2_first = subset2(subset2.exposure == 2 & subset2.lap == 1, :);
+
+refinement_1_CM = sub2_last.CMdiff - sub2_first.CMdiff;
+refinement_1_FR = sub2_last.FRdiff - sub2_first.FRdiff;
+refinement_1_Peak = sub2_last.PeakDiff - sub2_first.PeakDiff;
+
+figure;
+
+subplot(3, 2, 1)
+histogram(refinement_16_CM, -50:10:50)
+hold on;
+xline(0, 'r--', "LineWidth", 2)
+grid on;
+
+[~, p, ~, ~] = ttest(refinement_16_CM);
+
+title("Refinement - 16 laps (p = " + p + ")")
+ylabel("Count")
+xlabel("CM distance reduction after REST (30 s)")
+
+subplot(3, 2, 2)
+histogram(refinement_1_CM, -50:10:50)
+hold on;
+xline(0, 'r--', "LineWidth", 2)
+grid on;
+
+[~, p, ~, ~] = ttest(refinement_1_CM);
+title("Refinement - 1 lap (p = " + p + ")")
+
+% ------------------------------------------
+
+subplot(3, 2, 3)
+histogram(refinement_16_FR, -1:0.1:1)
+hold on;
+xline(0, 'r--', "LineWidth", 2)
+grid on;
+
+[~, p, ~, ~] = ttest(refinement_16_FR);
+
+title("Refinement - 16 laps (p = " + p + ")")
+ylabel("Count")
+xlabel("FR distance reduction after REST (30 s)")
+
+subplot(3, 2, 4)
+histogram(refinement_1_FR, -1:0.1:1)
+hold on;
+xline(0, 'r--', "LineWidth", 2)
+grid on;
+
+[~, p, ~, ~] = ttest(refinement_1_FR);
+title("Refinement - 1 lap (p = " + p + ")")
+
+% ------------------------------------------
+
+subplot(3, 2, 5)
+histogram(refinement_16_Peak, -100:20:100)
+hold on;
+xline(0, 'r--', "LineWidth", 2)
+grid on;
+
+[~, p, ~, ~] = ttest(refinement_16_Peak);
+
+title("Refinement - 16 laps (p = " + p + ")")
+ylabel("Count")
+xlabel("Peak Loc. distance reduction after REST (30 s)")
+
+subplot(3, 2, 6)
+histogram(refinement_1_Peak, -100:20:100)
+hold on;
+xline(0, 'r--', "LineWidth", 2)
+grid on;
+
+[~, p, ~, ~] = ttest(refinement_1_Peak);
+title("Refinement - 1 lap (p = " + p + ")")
