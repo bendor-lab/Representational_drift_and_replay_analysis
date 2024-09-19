@@ -1,10 +1,19 @@
 
-function lap_times = extract_laps(plot_option)
+function lap_times = extract_laps(plot_option, exep)
 % MH - Modified by Pierre VARICHON 2024 (bug new experiment)
 % Plot option: 'Y'/'N'
+% exep is a bool regarding 2nd track - first exposure (1 lap).
+% For this track, all the time on the track is considered as one complete
+% lap (for new experiment)
 
 load extracted_position
 parameters=list_of_parameters;
+
+if (~exist('exep', 'var'))
+    exep = false;
+else
+    exep = true;
+end
 
 for track_id = 1 : length(position.linear)
     
@@ -36,7 +45,7 @@ for track_id = 1 : length(position.linear)
             lap_times(track_id).end_zone(j).t = [];
         end
         
-        lap_times(track_id).end_zone(j).x(end+1) = y(i); 
+        lap_times(track_id).end_zone(j).x(end+1) = y(i);
         lap_times(track_id).end_zone(j).t(end+1) = t(i);
     end
     
@@ -45,33 +54,33 @@ for track_id = 1 : length(position.linear)
     if isempty(lap_times(track_id).end_zone(1).x)
         lap_times(track_id).end_zone(1) = [];
     end
-  
+    
     % Saves in which direction is the first lap (1 for facing PC or -1 for facing wall)
     if lap_times(track_id).end_zone(1).x > 0
         lap_times(track_id).initial_dir =  1;
     else
         lap_times(track_id).initial_dir = -1;
     end
-       
+    
     % Find the start point of each lap (direction), by finding median of time
     for j=1:length(lap_times(track_id).end_zone)
         lap_times(track_id).halfLaps_start(j) = median(lap_times(track_id).end_zone(j).t);
     end
-       
+    
     % START AND END TIMEPOINTS PER LAP
     lap_times(track_id).halfLaps_stop = lap_times(track_id).halfLaps_start(2:end); % lap end time
     lap_times(track_id).halfLaps_start(end) = []; % lap start time
     lap_times(track_id).duration  = lap_times(track_id).halfLaps_stop-lap_times(track_id).halfLaps_start; % lap durations
     
     % Finds length of X points for each lap within the track (not including ends of tracks)
-    running_along_track = [];  
+    running_along_track = [];
     for i=1:length(lap_times(track_id).duration)
         timestamps_within_lap_indices = find(position.linear(track_id).timestamps >= lap_times(track_id).halfLaps_start(i) & position.linear(track_id).timestamps < lap_times(track_id).halfLaps_stop(i)); % find indices of time within a lap
         running_along_track(i) = length(find(x(timestamps_within_lap_indices)>0.2 & x(timestamps_within_lap_indices)<0.8)); %find x indices for these time points excluding ends of track (>0.2 & >0.8)
     end
     
     %combine noisy laps that are less than 2 second or spends less than 1 second running
-    noisy_laps_indices = find(lap_times(track_id).duration<1 | running_along_track<25);   
+    noisy_laps_indices = find(lap_times(track_id).duration<1 | running_along_track<25);
     lap_times(track_id).clip = [];
     
     for i = 1:length(noisy_laps_indices)
@@ -102,13 +111,13 @@ for track_id = 1 : length(position.linear)
         lap_time_indices = find(position.linear(track_id).timestamps >= lap_times(track_id).halfLaps_start(i) & position.linear(track_id).timestamps<lap_times(track_id).halfLaps_stop(i)); %finds time indices per lap
         not_nan = length(find(~isnan(x(lap_time_indices)))); %find if these indices are NOT NaNs in the x position
         is_nan  = length(find(isnan(x(lap_time_indices)))); %find if these indices ARE NaNs in the x position
-    
-    %if there's lots of NaNs between lap start and lap end time, it means there's a large jump (e.g. jump from 1st to 2nd exposure) - fill with NaNs
-    %if there's less than 25 points (not NaN) - short lap - fill with NaNs
-        if  is_nan>250 | not_nan<25 
+        
+        %if there's lots of NaNs between lap start and lap end time, it means there's a large jump (e.g. jump from 1st to 2nd exposure) - fill with NaNs
+        %if there's less than 25 points (not NaN) - short lap - fill with NaNs
+        if  is_nan>250 | not_nan<25
             lap_times(track_id).halfLaps_start(i) = NaN;
             lap_times(track_id).halfLaps_stop(i)  = NaN;
-        end       
+        end
     end
     
     %clean NaNs
@@ -117,67 +126,74 @@ for track_id = 1 : length(position.linear)
     
     lap_times(track_id).completeLaps_start =  lap_times(track_id).halfLaps_start(1:2:end);
     lap_times(track_id).completeLaps_stop = lap_times(track_id).halfLaps_stop(2:2:end);
-    if lap_times(track_id).completeLaps_stop(end) ==  lap_times(track_id).halfLaps_stop(end-1)
+    
+    if exep && track_id == 2 % If exception for 1 lap
+        lap_times(track_id).completeLaps_start = [position.linear(track_id).timestamps(1)];
+        lap_times(track_id).completeLaps_stop = [position.linear(track_id).timestamps(end)];
+        lap_times(track_id).halfLaps_start = [position.linear(track_id).timestamps(1)];
+        lap_times(track_id).halfLaps_stop = [position.linear(track_id).timestamps(end)];
+        
+    elseif lap_times(track_id).completeLaps_stop(end) ==  lap_times(track_id).halfLaps_stop(end-1)
         lap_times(track_id).completeLaps_stop = [lap_times(track_id).completeLaps_stop lap_times(track_id).halfLaps_stop(end)];
     end
     
     % Re-calculate number of laps
     lap_times(track_id).number_halfLaps = length(lap_times(track_id).halfLaps_start);
     lap_times(track_id).number_completeLaps = length(lap_times(track_id).completeLaps_start);
-
-    % Set lap IDs for both half and complete laps
-     lap_times(track_id).completeLap_id = 1:lap_times(track_id).number_completeLaps;
-     lap_times(track_id).halfLap_id = 1:lap_times(track_id).number_halfLaps;
-
     
- %%%%%%%%%%%% PLOTTING %%%%%%%%%%
-
- if plot_option
-     if length(position.linear) == 4
-         if rem(track_id,2) ~= 0 % Plot Track 1 and track 3 together (1st and 2nd exposure)
-             figure(1)
-             if track_id == 1
-                 subplot(1,2,1);
-                 title(strcat('Track ',num2str(track_id)))
-                 hold on;
-             else
-                 subplot(1,2,2);
-                 title(strcat('Track ',num2str(track_id)))
-                 hold on;
-             end
-         else
-             figure(2) % Plot Track 2 and track 4 together (1st and 2nd exposure)
-             if track_id == 2
-                 subplot(1,2,1);
-                 title(strcat('Track ',num2str(track_id)))
-                 hold on;
-             else
-                 subplot(1,2,2);
-                 title(strcat('Track ',num2str(track_id)))
-                 hold on;
-             end
-         end
-     else
-         figure(1) % if all are diferent tracks, plot them together
-         subplot(1,length(position.linear),track_id)
-         hold on;
-     end
-     
-     for i=1:lap_times(track_id).number_halfLaps
-         index=find(position.t>=lap_times(track_id).halfLaps_start(i) & position.t<lap_times(track_id).halfLaps_stop(i));
-         if ~isempty(index)
-                 time = position.t(index)-min(position.t(index));
-                 laps = i + 0.05 + 0.9 * x(index);
-                 plot(time,laps,'Color',parameters.plot_color_line{track_id}); 
-         end
-     end
-     
-     xlabel('linearized lap')
-     ylabel('lap number')
-     set(gca,'YTick',min(ylim):1:max(ylim))
-   
- end 
- 
+    % Set lap IDs for both half and complete laps
+    lap_times(track_id).completeLap_id = 1:lap_times(track_id).number_completeLaps;
+    lap_times(track_id).halfLap_id = 1:lap_times(track_id).number_halfLaps;
+    
+    
+    %%%%%%%%%%%% PLOTTING %%%%%%%%%%
+    
+    if plot_option
+        if length(position.linear) == 4
+            if rem(track_id,2) ~= 0 % Plot Track 1 and track 3 together (1st and 2nd exposure)
+                figure(1)
+                if track_id == 1
+                    subplot(1,2,1);
+                    title(strcat('Track ',num2str(track_id)))
+                    hold on;
+                else
+                    subplot(1,2,2);
+                    title(strcat('Track ',num2str(track_id)))
+                    hold on;
+                end
+            else
+                figure(2) % Plot Track 2 and track 4 together (1st and 2nd exposure)
+                if track_id == 2
+                    subplot(1,2,1);
+                    title(strcat('Track ',num2str(track_id)))
+                    hold on;
+                else
+                    subplot(1,2,2);
+                    title(strcat('Track ',num2str(track_id)))
+                    hold on;
+                end
+            end
+        else
+            figure(1) % if all are diferent tracks, plot them together
+            subplot(1,length(position.linear),track_id)
+            hold on;
+        end
+        
+        for i=1:lap_times(track_id).number_halfLaps
+            index=find(position.t>=lap_times(track_id).halfLaps_start(i) & position.t<lap_times(track_id).halfLaps_stop(i));
+            if ~isempty(index)
+                time = position.t(index)-min(position.t(index));
+                laps = i + 0.05 + 0.9 * x(index);
+                plot(time,laps,'Color',parameters.plot_color_line{track_id});
+            end
+        end
+        
+        xlabel('linearized lap')
+        ylabel('lap number')
+        set(gca,'YTick',min(ylim):1:max(ylim))
+        
+    end
+    
 end
 
 save extracted_laps lap_times
