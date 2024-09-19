@@ -4,8 +4,8 @@ clear
 PATH.SCRIPT = fileparts(mfilename('fullpath'));
 cd(PATH.SCRIPT)
 
-sessions = data_folders_excl; % We fetch all the sessions folders paths
-% sessions = data_folders_deprivation;
+% sessions = data_folders_excl; % We fetch all the sessions folders paths
+sessions = data_folders_deprivation;
 
 % We create identifiers for cells from each session.
 % Format is : IDENT-00-XXX
@@ -35,16 +35,16 @@ diffSum = @(x1, x2) abs(x1 - x2)/(x1 + x2);
 
 %% Extraction & computation
 
-parfor fileID = 1:length(sessions)
+for fileID = 3:length(sessions)
 
     disp(fileID);
     file = sessions{fileID}; % We get the current session
-    [animalOI, conditionOI] = parseNameFile(file); % We get the informations about the current data
-    animalOI = string(animalOI);
-    conditionOI = string(conditionOI); % We convert everything to string
+%     [animalOI, conditionOI] = parseNameFile(file); % We get the informations about the current data
+%     animalOI = string(animalOI);
+%     conditionOI = string(conditionOI); % We convert everything to string
 
-%     animalOI = "XX1";
-%     conditionOI = "16x1";
+    animalOI = "XX1";
+    conditionOI = "16x1";
     
     % Load the variables
 
@@ -67,7 +67,7 @@ parfor fileID = 1:length(sessions)
 
     for trackOI = 1:2
         
-        comparison = lap_place_fields(trackOI).Complete_Lap{1}.smooth;
+%         comparison = lap_place_fields(trackOI).Complete_Lap{1}.smooth;
 
         other_track = mod(trackOI + 1, 2) + 2*mod(trackOI, 2);
 
@@ -155,8 +155,8 @@ parfor fileID = 1:length(sessions)
                 % current_lap_data_DIR2 = lap_directional_place_fields(vTrack).dir2.Complete_Lap{lapOI};
                 % current_place_fields_DIR2 = current_lap_data_DIR2.smooth;
 
-                % current_pvCorr = getPVCor(goodCells, current_place_fields, finalPlaceField, "pvCorrelation");
-                current_pvCorr = getPVCor(goodCells, current_place_fields, comparison, "pvCorrelation");
+                current_pvCorr = getPVCor(goodCells, current_place_fields, finalPlaceField, "pvCorrelation");
+%                 current_pvCorr = getPVCor(goodCells, current_place_fields, comparison, "pvCorrelation");
                 % current_pvCorr = getPVCor(goodCells, current_place_fields_DIR1, current_place_fields_DIR2, "pvCorrelation");
                 
                 current_pvCorr = median(current_pvCorr, 'omitnan');
@@ -191,4 +191,4 @@ condition = str2double(condition);
 
 data = table(sessionID, animal, condition, exposure, lap, speed, pvCorr);
 
-save("new_data_2_last_lapT1R1.mat", "data")
+save("timeSeries_new_data_3.mat", "data")
