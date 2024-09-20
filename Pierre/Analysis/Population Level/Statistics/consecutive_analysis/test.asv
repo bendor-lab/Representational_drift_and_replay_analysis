@@ -60,27 +60,39 @@ for anim = all_animals
     all_sID = unique(sub.sessionID);
 
     for sID_n = 1:numel(all_sID)
-        
+
         sID = all_sID(sID_n);
         subplot(1, numel(all_sID), sID_n)
 
         subset = sub(sub.sessionID == sID, :);
         sub_t1 = subset(subset.condition == 16, :);
+        sub_t2 = subset(subset.condition ~= 16, :);
 
-        p = plot(subset.lap(subset.condition ~= 16), subset.pvCorr, "LineWidth", 2);
+        current_condition = sub_t2.condition(1);
+
+        p1 = plot(sub_t1.lap(1:end-1), diff(sub_t1.pvCorr), "LineWidth", 2);
         hold on;
+        p2 = plot(sub_t2.lap(1:end-1), diff(sub_t2.pvCorr), "LineWidth", 2);
+        
+        ddiff(sub_t1.pvCorr)
+        scatter(17, sub_t1.pvCorr(sub_t1.lap == 17), ...
+            "filled", MarkerEdgeColor = p1.Color, MarkerFaceColor = [1 1 1]);
 
-        h(end + 1) = p;
+        scatter(current_condition + 1, sub_t2.pvCorr(sub_t2.lap == current_condition+1), ...
+            "filled", MarkerEdgeColor = p2.Color, MarkerFaceColor = [1 1 1]);
 
-        scatter(c + 1, subset.pvCorr(subset.lap == c+1), "filled", ...
-            MarkerEdgeColor = p.Color, MarkerFaceColor = [1 1 1]);
+        title(current_condition + " laps");
 
-        hold on;
+        if sID_n == numel(all_sID)
+            legend([p1, p2], {"Track 1", "Track 2"});
+        end
+
         grid on;
     end
 
-    legend(h, {"1", "2", "3", "4", "8", "16"})
+    linkaxes();
 
+    sgtitle(anim);
 end
 
 % Stabilisation seems to be acquired way faster for few laps
