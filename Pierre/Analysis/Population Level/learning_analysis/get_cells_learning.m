@@ -33,7 +33,7 @@ diffSum = @(x1, x2) abs(x1 - x2)/(x1 + x2);
 
 %% Extraction & computation
 
-for fileID = 1:1 %length(sessions)
+parfor fileID = 1:length(sessions)
 
     disp(fileID);
     file = sessions{fileID}; % We get the current session
@@ -68,7 +68,15 @@ for fileID = 1:1 %length(sessions)
             vTrack = trackOI + mod(exposureOI + 1, 2)*2;
             current_numberLaps = numel(lap_place_fields(vTrack).Complete_Lap);
             
-            current_template = lap_place_fields(vTrack).Complete_Lap{16};
+            if current_numberLaps == 1
+                continue;
+            end
+            
+            if current_numberLaps > 16
+                current_numberLaps = 16;
+            end
+            
+            current_template = lap_place_fields(vTrack).Complete_Lap{end}.smooth;
 
             % Define the template (last lap)
             cmFPF = cellfun(@(x) sum(x.*(1:2:200)/sum(x)), current_template);
@@ -82,15 +90,7 @@ for fileID = 1:1 %length(sessions)
             frFPF(isnan(cmFPF)) = NaN;
             peakFPF(isnan(cmFPF)) = NaN;
 
-            if current_numberLaps > 15
-                current_numberLaps = 15;
-            end
-
-            if current_numberLaps == 1
-                continue;
-            end
-
-            for lapOI = 1:current_numberLaps
+            for lapOI = 1:(current_numberLaps-1)
 
                 current_lap_data = lap_place_fields(vTrack).Complete_Lap{lapOI};
                 current_place_fields = current_lap_data.smooth;
