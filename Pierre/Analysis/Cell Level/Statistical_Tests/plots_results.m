@@ -604,7 +604,7 @@ legend({"1 lap", "16 laps"})
 
 %%
 
-load("timeSeries_new_data_2.mat");
+load("timeSeries_new_data_1.mat");
 summaryLapData = groupsummary(data, ["condition", "exposure", "lap"], ["median", "std"], ...
     ["CMdiff", "FRdiff", "PeakDiff"]);
 

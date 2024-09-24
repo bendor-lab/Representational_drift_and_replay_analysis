@@ -75,7 +75,7 @@ xticklabels(["First 4 laps", "Last 4 laps", "Difference"])
 lap = [];
 slope_diff = [];
 
-for lapOI = 0:7
+for lapOI = 0:8
     
     for sID = 1:19
         subset = data(data.sessionID == sID & data.condition == 16 ...
@@ -98,8 +98,33 @@ end
 lap = lap';
 slope_diff = slope_diff';
 
+% We shuffle to get a distribution
+shuffled = [];
+
+for sID = 1:19
+    subset = data(data.sessionID == sID & data.condition == 16 ...
+        & data.exposure == 1, :);
+    
+    if height(subset) == 0
+        continue;
+    end
+    
+    for i = 1:100
+        
+        shuffled_subset = subset;
+        shuffled_subset.pvCorr = subset.pvCorr(randperm(height(subset)));
+        
+        [coef_start_shuff, coef_end_shuff] = getSlopes(shuffled_subset, lapOI, false);
+        
+        difference_shuff = coef_start_shuff(2) - coef_end_shuff(2);
+        
+        shuffled(end + 1) = difference_shuff;
+        
+    end
+end
+
 % get the mean and se for plotting
-mean_values_rolling_RUN1 = arrayfun(@(x) mean(slope_diff(lap == x)), 1:8);
+mean_values = arrayfun(@(x) mean(slope_diff(lap == x)), 1:11);
 
 f = figure;
 f.Position = [360.3333  198.3333  763.3333  420.0000];
@@ -109,7 +134,7 @@ grid on;
 ylabel("Slope difference with last 4 laps")
 xlabel("Lap x to x + 4")
 hold on;
-plot(1:8, mean_values_rolling_RUN1, 'b-o', ...
+plot(1:11, mean_values, 'b-o', ...
     'MarkerEdgeColor','b',...
     'MarkerFaceColor','b')
 
@@ -162,7 +187,7 @@ title("Re-exposure")
 lap = [];
 slope_diff = [];
 
-for lapOI = 0:7
+for lapOI = 0:8
     
     for sID = 1:19
         subset = data(data.sessionID == sID & data.condition == 16 ...
@@ -185,7 +210,7 @@ lap = lap';
 slope_diff = slope_diff';
 
 % get the mean and se for plotting
-mean_values = arrayfun(@(x) mean(slope_diff(lap == x)), 1:8);
+mean_values = arrayfun(@(x) mean(slope_diff(lap == x)), 1:11);
 
 f = figure;
 f.Position = [360.3333  198.3333  763.3333  420.0000];
@@ -195,7 +220,7 @@ grid on;
 ylabel("Slope difference with last 4 laps")
 xlabel("Lap x to x + 4")
 hold on;
-plot(1:8, mean_values, 'b-o', ...
+plot(1:11, mean_values, 'b-o', ...
     'MarkerEdgeColor','b',...
     'MarkerFaceColor','b')
 
@@ -310,7 +335,7 @@ all_cond_plot(all_cond_plot == 16) = 6;
 
 diff_plot = diff';
 
-mean_values = arrayfun(@(x) mean(diff(all_cond_plot == x)), 1:7);
+mean_values = arrayfun(@(x) mean(slope_diff(lap == x)), 1:11);
 
 all_cond = all_cond';
 diff = diff';
@@ -319,7 +344,7 @@ figure;
 % subplot(1, 2, 1);
 beeswarm(all_cond_plot, diff_plot);
 grid on;
-ylabel("Slope difference between first and last 4 laps")
+ylabel("Slope difference with last 4 laps")
 xlabel("Previous experience (nb of laps)")
 hold on;
 plot(1:7, mean_values, 'b-o', ...
@@ -328,16 +353,6 @@ plot(1:7, mean_values, 'b-o', ...
 
 xticks(1:6)
 xticklabels(["1 lap", "2 laps", "3 laps", "4 laps", "8 laps", "16 laps"])
-title("Re-exposure : variable previous experience");
-
-matching_values = mean_values_rolling_RUN1([2 3 4 5]);
-
-plot(1:4, matching_values, 'r-o', ...
-                          'MarkerEdgeColor','r',...
-                          'MarkerFaceColor','r');
-
-legend({"Mean per condition", "Expected from template"}, ...
-        'Location','southeast')
 
 % subplot(1, 2, 2);
 % beeswarm(all_cond_control', diff_control');
