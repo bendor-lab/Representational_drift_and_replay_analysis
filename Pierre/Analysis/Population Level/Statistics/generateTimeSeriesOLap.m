@@ -29,13 +29,9 @@ lap = [];
 pvCorr = [];
 speed = [];
 
-% We take the absolute value of the difference over sum to get the relative
-% distance with the FPF, independently of the direction
-diffSum = @(x1, x2) abs(x1 - x2)/(x1 + x2);
-
 %% Extraction & computation
 
-for fileID = 3:length(sessions)
+for fileID = 2:2 %length(sessions)
 
     disp(fileID);
     file = sessions{fileID}; % We get the current session
@@ -191,4 +187,4 @@ condition = str2double(condition);
 
 data = table(sessionID, animal, condition, exposure, lap, speed, pvCorr);
 
-save("timeSeries_new_data_3.mat", "data")
+save("timeSeries_new_data_2.mat", "data")
