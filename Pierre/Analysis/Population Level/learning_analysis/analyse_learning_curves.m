@@ -70,12 +70,12 @@ xticklabels(["First 4 laps", "Last 4 laps", "Difference"])
 
 %% Second plot - This difference reduces with experience
 
-% We want to go from 1 to 15 - 4 = 11
+% We want to go from 1 to 15 - 8 = 7
 
 lap = [];
 slope_diff = [];
 
-for lapOI = 0:10
+for lapOI = 0:8
     
     for sID = 1:19
         subset = data(data.sessionID == sID & data.condition == 16 ...
@@ -239,8 +239,6 @@ conditions = [1 2 3 4 8 16];
 
 all_cond = [];
 diff = [];
-cond_control = [];
-diff_control = [];
 
 for c = conditions
     subset = data(data.condition == c & data.exposure == 2, :);
@@ -251,7 +249,7 @@ for c = conditions
         
         subsub_control = data(data.sessionID == sID & ...
                               data.condition == 16 & ...
-                              data.exposure == 1);
+                              data.exposure == 1, :);
         
         if height(subsub) == 0
             continue;
@@ -259,14 +257,7 @@ for c = conditions
         
         [coef_start, coef_end] = getSlopes(subsub, 0, false);
         difference = coef_start(2) - coef_end(2);
-        
-        if c ~= 16
-            [coef_start_c, coef_end_c] = getSlopes(subsub_control, c, false);
-            difference_control = coef_start_c(2) - coef_end_c(2);
-            diff_control(end + 1) = difference_control;
-            cond_control(end + 1) = c;
-        end
-        
+               
         all_cond(end + 1) = c;
         diff(end + 1) = difference;
         
@@ -276,13 +267,8 @@ end
 all_cond_plot = all_cond';
 all_cond_plot(all_cond_plot == 8) = 5;
 all_cond_plot(all_cond_plot == 16) = 6;
-all_cond_plot = all_cond_plot + 1;
-all_cond_plot = [repelem(1, numel(difference_R1), 1); all_cond_plot];
 
 diff_plot = diff';
-diff_plot = [difference_R1'; diff_plot];
-
-mean_values = arrayfun(@(x) mean(diff_plot(all_cond_plot == x)), 1:7);
 
 all_cond = all_cond';
 diff = diff';
@@ -293,12 +279,12 @@ grid on;
 ylabel("Slope difference with last 4 laps")
 xlabel("Previous experience (nb of laps)")
 hold on;
-plot(1:7, mean_values, 'b-o', ...
-    'MarkerEdgeColor','b',...
-    'MarkerFaceColor','b')
-
-xticks([1 2 3 4 5 6 7])
-xticklabels(["RUN1", "1 lap", "2 laps", "3 laps", "4 laps", "8 laps", "16 laps"])
+% plot(1:7, mean_values, 'b-o', ...
+%     'MarkerEdgeColor','b',...
+%     'MarkerFaceColor','b')
+% 
+xticks(1:6)
+xticklabels(["1 lap", "2 laps", "3 laps", "4 laps", "8 laps", "16 laps"])
 
 % You don't have as much difference in the slopes
 
