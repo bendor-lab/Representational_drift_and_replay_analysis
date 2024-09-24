@@ -45,9 +45,9 @@ for thisTetrode = 1:length(tetrodes)
     end
     
     %if exist('raw')==7 %find DAT file for this tetrode in 'raw' folder
-    if exist('23-08-24_klusta data') == 7 % Find DAT files in new data - TEMPORARY
+    if exist('22-08-24_klusta data') == 7 % Find DAT files in new data - TEMPORARY
         % OldFolder = cd('raw');
-        OldFolder = cd('23-08-24_klusta data'); % TEMPORARY
+        OldFolder = cd('22-08-24_klusta data'); % TEMPORARY
         
         % check for their name - some directories will have 'tetrode_1.dat', others
         % will have 'TT1.dat'

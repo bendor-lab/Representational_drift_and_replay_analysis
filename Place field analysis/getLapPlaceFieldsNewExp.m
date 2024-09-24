@@ -4,12 +4,15 @@ sessions = data_folders_deprivation;
 
 addpath("Extract place fields", "Place field comparison", "Extract laps");
 
-for fID = 3:numel(sessions)
+for fID = 2:2 %numel(sessions)
     
     file = sessions{fID};
     cd(file)
     
     % If non existent, we get the mean waveforms
+    % For now, we need to change
+    % line 50 with the correct folder name
+    
     getWaveformsFromSamples();
     
     % We need to get the laps

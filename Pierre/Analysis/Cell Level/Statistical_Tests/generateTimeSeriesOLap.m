@@ -33,11 +33,11 @@ diffSum = @(x1, x2) abs(x1 - x2)/(x1 + x2);
 
 %% Extraction & computation
 
-for fileID = 1:1 %length(sessions)
+for fileID = 2:2 %length(sessions)
 
     disp(fileID);
     file = sessions{fileID}; % We get the current session
-    [animalOI, conditionOI] = parseNameFile(file); % We get the informations about the current data
+    %[animalOI, conditionOI] = parseNameFile(file); % We get the informations about the current data
 
 %     animalOI = string(animalOI);
 %     conditionOI = string(conditionOI); % We convert everything to string
@@ -211,4 +211,4 @@ condition = str2double(condition);
 
 data = table(sessionID, animal, condition, exposure, lap, cell, label, CMdiff, FRdiff, PeakDiff, meanFR);
 
-save("timeSeries_new_data_1.mat", "data")
+save("timeSeries_new_data_2.mat", "data")
