@@ -556,7 +556,7 @@ plot(data2.partP1Rep, polyval(p, data2.partP1Rep), 'r')
 
 %% Plot new data
 % Need to be in population folder
-load("timeSeries_new_data_3.mat");
+load("timeSeries_new_data_4.mat");
 summaryLapDataPop = groupsummary(data, ["condition", "exposure", "lap"], ["median", "std"], ...
     ["pvCorr", "speed"]);
 
@@ -604,7 +604,7 @@ legend({"1 lap", "16 laps"})
 
 %%
 
-load("timeSeries_new_data_3.mat");
+load("timeSeries_new_data_4.mat");
 summaryLapData = groupsummary(data, ["condition", "exposure", "lap"], ["median", "std"], ...
     ["CMdiff", "FRdiff", "PeakDiff"]);
 

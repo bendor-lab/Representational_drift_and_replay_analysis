@@ -5,12 +5,14 @@
 % 20-08-24 : Condition 16x1 - T1T2 No REST T1T2
 % 22-08-24 : Condition 16x1 - T1T2 No REST T2T1
 % 23-08-24 : Condition 16x1 - T1T2 15m no sleep T2T1
+% 24-08-24 : Condition 16x1 - T1T2 2H REST T1T2
 
 function sessions = data_folders_deprivation
 
 sessions = [{"X:\BendorLab\Drobo\Lab Members\Ben\Neural data\R908\Recording data\20-08-24"}, ...
             {"X:\BendorLab\Drobo\Lab Members\Ben\Neural data\R908\Recording data\22-08-24"}, ...
-            {"X:\BendorLab\Drobo\Lab Members\Ben\Neural data\R908\Recording data\23-08-24"}];
+            {"X:\BendorLab\Drobo\Lab Members\Ben\Neural data\R908\Recording data\23-08-24"}, ...
+            {"X:\BendorLab\Drobo\Lab Members\Ben\Neural data\R908\Recording data\24-08-24"}];
 
 end
 

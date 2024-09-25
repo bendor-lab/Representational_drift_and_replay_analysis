@@ -31,7 +31,7 @@ speed = [];
 
 %% Extraction & computation
 
-for fileID = 3:3 %length(sessions)
+for fileID = 4:4 %length(sessions)
 
     disp(fileID);
     file = sessions{fileID}; % We get the current session
@@ -187,4 +187,4 @@ condition = str2double(condition);
 
 data = table(sessionID, animal, condition, exposure, lap, speed, pvCorr);
 
-save("timeSeries_new_data_3.mat", "data")
+save("timeSeries_new_data_4.mat", "data")

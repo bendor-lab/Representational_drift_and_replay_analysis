@@ -150,20 +150,12 @@ save("control_split_TS.mat", "data")
 
 %%
 
-load("control_split_TS.mat")
+summ = groupsummary(data, ["condition", "lap"], ["mean"], ["pvCorr"]);
 
-for c = [1 2 3 4 8]
-    figure;
-    sub = data(data.condition == c, :);
-    all_sessions = unique(sub.sessionID);
-    matching_16_data = data(ismember(data.sessionID, all_sessions) & ...
-                       data.condition == 16, :);
-    summ_c = groupsummary(sub, "lap", "mean", "pvCorr");
-    summ_16 = groupsummary(matching_16_data, "lap", "mean", "pvCorr");
+for c = [1 2 3 4 8 16]
+    sub = summ(summ.condition == c, :);
+    plot(sub.lap, sub.mean_pvCorr, "LineWidth", 2);
     hold on;
-    
-    plot(summ_c.lap, summ_c.mean_pvCorr, "LineWidth", 2);
-    plot(summ_16.lap, summ_16.mean_pvCorr, "LineWidth", 2);
-
-    legend()
 end
+
+legend();

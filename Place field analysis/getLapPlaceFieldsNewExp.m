@@ -4,7 +4,7 @@ sessions = data_folders_deprivation;
 
 addpath("Extract place fields", "Place field comparison", "Extract laps");
 
-for fID = 3:3 %numel(sessions)
+for fID = 4:4 %numel(sessions)
     
     file = sessions{fID};
     cd(file)
