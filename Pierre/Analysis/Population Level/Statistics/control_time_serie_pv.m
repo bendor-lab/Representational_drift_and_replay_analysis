@@ -190,7 +190,7 @@ end
 
 %%
 
-all_index = unique(data.sessionID(data.condition == 1, :));
+all_index = unique(data.sessionID(data.condition == 2, :));
 
 sub = data(ismember(data.sessionID, all_index), :);
 
@@ -209,4 +209,26 @@ for id = all_index'
     x = x + 1;
 end
 
+title("Control : FPF after same nb. of laps")
+linkaxes()
+
+data2 = load("timeSeries.mat");
+data2 = data2.data;
+
+sub = data2(ismember(data2.sessionID, all_index), :);
+
+figure;
+x = 1;
+for id = all_index'
+    subplot(1, 4, x);
+    subsub = data2(data2.sessionID == id & data2.condition == 16 & data2.exposure == 1, :);
+    subsub2 = data2(data2.sessionID == id & data2.condition ~= 16 & data2.exposure == 1, :);
+    
+    plot(subsub.lap, subsub.pvCorr);
+    hold on;
+    plot(subsub2.lap, subsub2.pvCorr);
+    x = x + 1;
+end
+
+title("Original data")
 linkaxes()
