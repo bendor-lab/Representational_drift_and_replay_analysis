@@ -30,10 +30,6 @@ lap = [];
 pvCorr = [];
 speed = [];
 
-% We take the absolute value of the difference over sum to get the relative
-% distance with the FPF, independently of the direction
-diffSum = @(x1, x2) abs(x1 - x2)/(x1 + x2);
-
 %% Extraction & computation
 
 parfor fileID = 1:length(sessions)
@@ -51,10 +47,7 @@ parfor fileID = 1:length(sessions)
     
     temp = load(file + "\extracted_lap_place_fields.mat");
     lap_place_fields = temp.lap_place_fields;
-    
-    temp = load(file + "\extracted_position");
-    position = temp.position;
-    
+        
     temp = load(file + "\extracted_laps");
     lap_times = temp.lap_times;
     
@@ -113,12 +106,22 @@ parfor fileID = 1:length(sessions)
                 
         current_numberLaps = numel(all_place_fields);
         
+%         for good_c = goodCells
+%             figure;
+%             subplot(1, 2, 1);
+%             bar(all_place_fields{5}.smooth{good_c});
+%             subplot(1, 2, 2);
+%             bar(all_place_fields{end}.smooth{good_c});
+%         end
+%         
+%         linkaxes()
+        
         for lapOI = 1:current_numberLaps
                         
             current_lap_data = all_place_fields{lapOI};
             current_place_fields = current_lap_data.smooth;
                         
-            current_pvCorr = getPVCor(goodCells, current_place_fields, finalPlaceField, "pvCorrelation");
+            current_pvCorr = getPVCor(goodCells, current_place_fields, finalPlaceField, "cosine");
             
             current_pvCorr = median(current_pvCorr, 'omitnan');
             
@@ -146,7 +149,7 @@ condition = str2double(condition);
 
 data = table(sessionID, animal, condition, lap, pvCorr);
 
-save("control_split_TS.mat", "data")
+save("control_split_TS_cosine.mat", "data")
 
 %%
 
