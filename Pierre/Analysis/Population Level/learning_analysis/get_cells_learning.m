@@ -42,7 +42,6 @@ parfor fileID = 1:length(sessions)
     animalOI = string(animalOI);
     conditionOI = string(conditionOI); % We convert everything to string
     ident = identifiers(fileID); % We get the identifier for the session
-    ident = 1000;
         
     % Load the variables
 
