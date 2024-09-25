@@ -174,7 +174,7 @@ for c = [1 2 3 4 8]
     inBetween = [summ_16.mean_pvCorr', fliplr(summ_c.mean_pvCorr')];
     fill(x2, inBetween, 'g');
     grid on;
-    ylim([0 1]);
+    %ylim([0 1]);
     title("Condition : " + c + " laps")
 
     if c == 1
