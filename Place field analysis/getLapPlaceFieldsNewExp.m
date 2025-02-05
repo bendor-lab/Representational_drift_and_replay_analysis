@@ -1,10 +1,14 @@
 % Help function to get the lap / directional place fields, in Z:/ 
 clear
 sessions = data_folders_deprivation;
+has_data = [1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0];
+has_data = logical(has_data);
+sessions = sessions(has_data);
 
-addpath("Extract place fields", "Place field comparison", "Extract laps");
+addpath("Extract place fields", "Place field comparison", "Extract laps", ...
+        "../Extract spikes, waveforms and dropped samples", "../Added code");
 
-for fID = 4:4 %numel(sessions)
+for fID = 1:numel(sessions)
     
     file = sessions{fID};
     cd(file)

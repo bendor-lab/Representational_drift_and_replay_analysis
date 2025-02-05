@@ -44,10 +44,16 @@ for thisTetrode = 1:length(tetrodes)
             keyboard;
     end
     
+    % Find automatically the klusta folder
+    all_items = dir();
+    matching_fold = contains({all_items.name}, "klusta");
+    name_fold = all_items(matching_fold, :).name;
+    
+    
     %if exist('raw')==7 %find DAT file for this tetrode in 'raw' folder
-    if exist('24-08-24_klusta data') == 7 % Find DAT files in new data - TEMPORARY
+    if exist(name_fold) == 7 % Find DAT files in new data - TEMPORARY
         % OldFolder = cd('raw');
-        OldFolder = cd('24-08-24_klusta data'); % TEMPORARY
+        OldFolder = cd(name_fold); % TEMPORARY
         
         % check for their name - some directories will have 'tetrode_1.dat', others
         % will have 'TT1.dat'

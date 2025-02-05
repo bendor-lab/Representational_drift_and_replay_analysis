@@ -1,0 +1,25 @@
+%% This function plots lap-to-lap PV traces for individual sessions
+% Ben's data ! 
+
+clear
+load("../data/time_serie_control.mat");
+
+unique_sessions = unique(data.sessionID);
+
+for sID = unique_sessions'
+
+    cur_data = data(data.sessionID == sID, :);
+    
+    for trackOI = 1:2
+
+        subdata = cur_data(cur_data.track == trackOI, :);
+        sub_1 = subdata(subdata.exposure == 1, :);
+        sub_2 = subdata(subdata.exposure == 2, :);
+        sub_2(end, :) = []; % remove the last lap
+
+        X = [sub_1.lap NaN NaN sub_2.lap];
+        Y = [sub_1.]
+    end
+
+
+end
