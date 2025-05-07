@@ -112,15 +112,11 @@ for an = all_animals'
 
         cur_cond = all_conditions(cond_id);
 
-        cond_data_e1 = cur_subdata(cur_subdata.condition == cur_cond & cur_subdata.exposure == 1 & cur_subdata.track == 2, :);
-        cond_data_e2 = cur_subdata(cur_subdata.condition == cur_cond & cur_subdata.exposure == 2 & cur_subdata.track == 2, :);
+        cond_data_e1 = cur_subdata(cur_subdata.condition == cur_cond & cur_subdata.exposure == 1, :);
+        cond_data_e2 = cur_subdata(cur_subdata.condition == cur_cond & cur_subdata.exposure == 2, :);
 
-        plot(cond_data_e1.lap, cond_data_e1.pvCorr, 'Color', colors(cond_id, :), 'LineWidth', 2)
-        plot(cond_data_e2.lap + 16, cond_data_e2.pvCorr, 'Color', colors(cond_id, :), 'LineWidth', 2)
-
-        if cond_id == 1
-            scatter(cond_data_e1.lap, cond_data_e1.pvCorr, 20, 'filled', "MarkerFaceColor", colors(cond_id, :));
-        end
+        plot(cond_data_e1.lap, cond_data_e1.median_pvCorr, 'Color', colors(cond_uid, :), 'LineWidth', 2)
+        plot(cond_data_e2.lap + 16, cond_data_e2.median_pvCorr, 'Color', colors(end, :), 'LineWidth', 2)
 
     end
 

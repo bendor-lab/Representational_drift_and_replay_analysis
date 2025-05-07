@@ -6,8 +6,6 @@
 % PV 2025
 
 clear
-PATH.SCRIPT = fileparts(mfilename('fullpath'));
-cd(PATH.SCRIPT)
 
 sessions = data_folders_excl; % Martha's recordings
 
@@ -125,7 +123,7 @@ for fileID = 1:length(sessions)
 
             current_lap_data = concat_laps{lapOI};
             current_place_fields = current_lap_data.smooth;
-            current_pvCorr = getPVCor(goodCells, current_place_fields, finalPlaceField, "pvCorrelation");
+            current_pvCorr = getPVCor(goodCells, current_place_fields, finalPlaceField, "cosine");
             current_pvCorr = median(current_pvCorr, 'omitnan');
 
             % get the exposure of the current lap selected
@@ -153,3 +151,79 @@ end
 data = table(sessionID, animal, condition, track_order, track, exposure, lap, pvCorr);
 
 save("../data/distance_control_TS.mat", "data")
+
+%% Plot the analysis
+
+dataLapCorr = load("../data/distance_control_TS.mat"); % load the data
+dataLapCorr = dataLapCorr.data;
+
+dataLapCorr.condition_num = split(dataLapCorr.condition, 'x');
+dataLapCorr.condition_num(:, 1) = [];
+dataLapCorr.condition_num(dataLapCorr.track == 1) = "16";
+dataLapCorr.condition_num = str2double(dataLapCorr.condition_num);
+
+sum = groupsummary(dataLapCorr, ...
+                     ["condition_num", "lap"], ...
+                     ["median", "std"], ["pvCorr"]); % calculate the mean pv correlation across sessions
+sum.se_pvCorr = sum.std_pvCorr./sqrt(sum.GroupCount);
+
+all_conditions = unique(sum.condition_num);
+colors = lines(numel(all_conditions));
+
+f = figure;
+
+hold on;
+
+for c = 1:numel(all_conditions)
+
+    cur_pv = sum.median_pvCorr(sum.condition_num == all_conditions(c));
+    cur_pv = cur_pv(1:16);
+    plot(1:16, cur_pv, 'Color', colors(c, :));
+
+end
+
+grid on;
+legend({"1 lap", "2 laps", "3 laps", "4 laps", "8 laps", "16 laps"});
+
+xlabel("Cumulative laps");
+ylabel("Cosine similarity with FPF")
+
+%%
+
+
+all_points = [];
+
+f2 = figure;
+f2.Position = [387         463        1185         420];
+hold on;
+
+colors = lines(2);
+
+all_conditions = unique(dataLapCorr.condition);
+
+for c = 1:numel(all_conditions)
+    
+    lap_nb = unique(dataLapCorr.condition_num(dataLapCorr.condition == all_conditions(c) & dataLapCorr.track == 2));
+
+    gain_t1 = dataLapCorr.pvCorr(dataLapCorr.condition == all_conditions(c) & dataLapCorr.track == 1 & dataLapCorr.lap == lap_nb + 1) - ...
+              dataLapCorr.pvCorr(dataLapCorr.condition == all_conditions(c) & dataLapCorr.track == 1 & dataLapCorr.lap == lap_nb);
+
+    gain_t2 = dataLapCorr.pvCorr(dataLapCorr.condition == all_conditions(c) & dataLapCorr.track == 2 & dataLapCorr.lap == lap_nb + 1) - ...
+              dataLapCorr.pvCorr(dataLapCorr.condition == all_conditions(c) & dataLapCorr.track == 2 & dataLapCorr.lap == lap_nb);
+
+    
+    swarmchart(repelem(c*5, 1, numel(gain_t1)), gain_t1, 'filled', 'MarkerFaceColor', colors(1, :));
+    swarmchart(repelem((c*5) + 2, 1, numel(gain_t2)), gain_t2, 'filled', 'MarkerFaceColor', colors(2, :));
+
+end
+
+grid on;
+xticks((1:numel(all_conditions))*5 + 1);
+xticklabels(all_conditions);
+xlabel("Condition");
+ylabel("Drift towards FPF");
+
+legend({"Expected refinement without rest", "Refinement with rest"})
+
+% We see more refinement with rest, but it's pretty weak
+

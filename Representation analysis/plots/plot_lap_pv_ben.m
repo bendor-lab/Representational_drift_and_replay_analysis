@@ -1,17 +1,12 @@
 %% This code generate a plot of the mean pv-correlation evolution 
-% across laps
+% across laps - New data !
 % PV 2025
 
-dataLapCorr = load("../data/time_serie_cosine.mat"); % load the data
+dataLapCorr = load("../data/time_serie_control.mat"); % load the data
 dataLapCorr = dataLapCorr.data;
 
-dataLapCorr.condition_num = split(dataLapCorr.condition, 'x');
-dataLapCorr.condition_num(:, 1) = [];
-dataLapCorr.condition_num(dataLapCorr.track == 1) = "16";
-dataLapCorr.condition_num = str2double(dataLapCorr.condition_num);
-
 sum = groupsummary(dataLapCorr, ...
-                     ["condition_num", "exposure", "lap"], ...
+                     ["condition", "exposure", "lap", "track"], ...
                      ["median", "std"], ["pvCorr"]); % calculate the mean pv correlation across sessions
 sum.se_pvCorr = sum.std_pvCorr./sqrt(sum.GroupCount);
 
@@ -19,11 +14,18 @@ var = "median_pvCorr";
 varName = "PV correlation";
 std_var = "se_pvCorr";
 
-f1 = figure;
-f1.Position = [0,0,964,542];
-
-allConditions = unique(sum.condition_num);
+allConditions = unique(sum.condition);
 colors = lines(length(allConditions));
+
+for cond = allConditions'
+    
+    f1 = figure;
+    f1.Position = [0,0,964,542];
+    
+    cur_data = sum(sum.condition == cond, :);
+
+end
+
 
 for i = 1:length(allConditions) % We iterate through conditions
     condition = allConditions(i);
