@@ -132,15 +132,6 @@ for fileID = 1:length(sessions)
         %     finalPlaceField(end + 1) = {mean(temp, 'omitnan')};
         % end
         % firstLapFPF = 13;
-
-%         
-%         If working with less laps (new data), just take the last
-%         lap
-        
-        for cellID = 1:length(place_fields.track(trackOI + 2).smooth)
-            finalPlaceField(end + 1) = {RUN2LapPFData{end}.smooth{cellID}};
-        end
-        firstLapFPF = numel(RUN2LapPFData); % Define the first lap used for FPF calculation
         
         % Iterate over exposures (RUN1, RUN2)
         

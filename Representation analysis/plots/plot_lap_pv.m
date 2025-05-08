@@ -2,7 +2,7 @@
 % across laps
 % PV 2025
 
-dataLapCorr = load("../data/time_serie_cosine.mat"); % load the data
+dataLapCorr = load("../data/time_serie_main.mat"); % load the data
 dataLapCorr = dataLapCorr.data;
 
 dataLapCorr.condition_num = split(dataLapCorr.condition, 'x');

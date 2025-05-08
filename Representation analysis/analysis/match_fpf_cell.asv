@@ -20,8 +20,10 @@ track_order = {};
 track = [];
 exposure = [];
 lap = [];
-pvCorr = [];
-speed = [];
+cell = [];
+cmDist = [];
+frDist = [];
+firingCorr = [];
 
 %% First, we determine the minimum number of laps ran in TOTAL for each track
 % to know where the FPF is gonna be calculated
@@ -103,7 +105,6 @@ for fileID = 1:length(sessions)
         finalPlaceField = {};
 
         %         For each cell, we create the final place field
-
         for cellID = 1:length(place_fields.track(trackOI + 2).smooth)
 
             temp = [];
@@ -115,6 +116,9 @@ for fileID = 1:length(sessions)
             finalPlaceField(end + 1) = {mean(temp, 'omitnan')};
         end
 
+        fpfCM = cellfun(@(x) sum(x.*(1:2:200)/sum(x)), finalPlaceField(goodCells));
+        fpfFR = cellfun(@max, finalPlaceField(goodCells));
+
         % Iterate over laps (till the beggining of the FPF range)
         for lapOI = 1:(fpf_laps(1) - 1)
 
@@ -123,8 +127,14 @@ for fileID = 1:length(sessions)
 
             current_lap_data = concat_laps{lapOI};
             current_place_fields = current_lap_data.smooth;
-            current_pvCorr = getPVCor(goodCells, current_place_fields, finalPlaceField, "pvCorrelation");
-            current_pvCorr = median(current_pvCorr, 'omitnan');
+
+            currentCM = cellfun(@(x) sum(x.*(1:2:200)/sum(x)), current_place_fields(goodCells));
+            currentFR = cellfun(@max, current_place_fields(goodCells));
+
+            cm_diff = abs(currentCM - fpfCM);
+            fr_diff = abs(currentFR - fpfFR);
+            fpf_corr = cellfun(@(x, y) corrcoef(x, y), current_place_fields(goodCells), finalPlaceField(goodCells), 'UniformOutput', false);
+            fpf_corr = cellfun(@(x) x(1, 2), fpf_corr);
 
             % get the exposure of the current lap selected
             if lapOI > nbLapRun1
@@ -135,26 +145,34 @@ for fileID = 1:length(sessions)
 
             % Save the data
 
-            sessionID = [sessionID; fileID];
-            animal = [animal; animalOI];
-            condition = [condition; conditionOI];
-            track_order = [track_order; {cur_track_order}];
-            track = [track; trackOI];
-            exposure = [exposure; exposureOI];
-            lap = [lap; lapOI];
-            pvCorr = [pvCorr; current_pvCorr];
+            for c = 1:numel(cm_diff)
+
+                sessionID = [sessionID; fileID];
+                animal = [animal; animalOI];
+                condition = [condition; conditionOI];
+                track_order = [track_order; {cur_track_order}];
+                track = [track; trackOI];
+                exposure = [exposure; exposureOI];
+                lap = [lap; lapOI];
+                cell = [cell; goodCells(c)];
+                cmDist = [cmDist; cm_diff(c)];
+                frDist = [frDist; fr_diff(c)];
+                firingCorr = [firingCorr; fpf_corr(c)];
+
+            end
+
 
         end
     end
 end
 
-data = table(sessionID, animal, condition, track_order, track, exposure, lap, pvCorr);
+data = table(sessionID, animal, condition, track_order, track, exposure, lap, cell, cmDist, frDist, firingCorr);
 
-save("../data/distance_control_TS.mat", "data")
+save("../data/distance_control_TS_cell.mat", "data")
 
 %% Plot the analysis
 
-dataLapCorr = load("../data/distance_control_TS.mat"); % load the data
+dataLapCorr = load("../data/distance_control_TS_cell.mat"); % load the data
 dataLapCorr = dataLapCorr.data;
 
 dataLapCorr.condition_num = split(dataLapCorr.condition, 'x');
@@ -164,8 +182,11 @@ dataLapCorr.condition_num = str2double(dataLapCorr.condition_num);
 
 sum = groupsummary(dataLapCorr, ...
     ["condition_num", "lap"], ...
-    ["median", "std"], ["pvCorr"]); % calculate the mean pv correlation across sessions
-sum.se_pvCorr = sum.std_pvCorr./sqrt(sum.GroupCount);
+    ["median", "std"], ["cmDist", "frDist", "firingCorr"]); % calculate the mean pv correlation across sessions
+
+sum.se_cmDist = sum.std_cmDist ./ sqrt(sum.GroupCount);
+sum.se_frDist = sum.std_frDist ./ sqrt(sum.GroupCount);
+sum.se_firingCorr = sum.std_firingCorr ./ sqrt(sum.GroupCount);
 
 all_conditions = unique(sum.condition_num);
 colors = lines(numel(all_conditions));
@@ -176,8 +197,9 @@ hold on;
 
 for c = 1:numel(all_conditions)
 
-    cur_pv = sum.median_pvCorr(sum.condition_num == all_conditions(c));
+    cur_pv = sum.median_firingCorr(sum.condition_num == all_conditions(c));
     cur_pv = cur_pv(1:16);
+    
     plot(1:16, cur_pv, 'Color', colors(c, :));
 
 end
@@ -186,83 +208,62 @@ grid on;
 legend({"1 lap", "2 laps", "3 laps", "4 laps", "8 laps", "16 laps"});
 
 xlabel("Cumulative laps");
-ylabel("Cosine similarity with FPF")
+ylabel("Mean distance with FPF (pairwise PF correlation)")
 
 %%
+
+mean_cells = groupsummary(dataLapCorr, ...
+    ["sessionID", "condition", "track", "exposure", "lap"], ...
+    ["median", "std"], ["cmDist", "frDist", "firingCorr"]); % calculate the mean pv correlation across sessions
 
 
 all_points = [];
 
-f2 = figure;
-f2.Position = [387         463        1185         420];
-hold on;
+var_to_plot = ["cmDist", "frDist", "firingCorr"];
 
-colors = lines(3);
+f1 = figure;
+t2 = tiledlayout(3, 1);
 
-all_conditions = unique(dataLapCorr.condition);
+for v = var_to_plot
+    
+    nexttile;
+    hold on;
+    
+    var = "median_" + v;
+    colors = lines(2);
 
-for c = 1:numel(all_conditions)
+    all_conditions = unique(mean_cells.condition);
+    lap_nb_cond = [1, 2, 3, 4, 8];
 
-    lap_nb = unique(dataLapCorr.condition_num(dataLapCorr.condition == all_conditions(c) & dataLapCorr.track == 2));
+    for c = 1:numel(all_conditions)
 
-    gain_t1 = dataLapCorr.pvCorr(dataLapCorr.condition == all_conditions(c) & dataLapCorr.track == 1 & dataLapCorr.lap == lap_nb + 1) - ...
-        dataLapCorr.pvCorr(dataLapCorr.condition == all_conditions(c) & dataLapCorr.track == 1 & dataLapCorr.lap == lap_nb);
+        lap_nb = lap_nb_cond(c);
 
-    gain_t2 = dataLapCorr.pvCorr(dataLapCorr.condition == all_conditions(c) & dataLapCorr.track == 2 & dataLapCorr.lap == lap_nb + 1) - ...
-        dataLapCorr.pvCorr(dataLapCorr.condition == all_conditions(c) & dataLapCorr.track == 2 & dataLapCorr.lap == lap_nb);
+        gain_t1 = mean_cells.(var)(mean_cells.condition == all_conditions(c) & mean_cells.track == 1 & mean_cells.lap == lap_nb + 1) - ...
+            mean_cells.(var)(mean_cells.condition == all_conditions(c) & mean_cells.track == 1 & mean_cells.lap == lap_nb);
 
-    diff_gain = gain_t2 - gain_t1;
+        gain_t2 = mean_cells.(var)(mean_cells.condition == all_conditions(c) & mean_cells.track == 2 & mean_cells.lap == lap_nb + 1) - ...
+            mean_cells.(var)(mean_cells.condition == all_conditions(c) & mean_cells.track == 2 & mean_cells.lap == lap_nb);
 
 
-    swarmchart(repelem(c*7, 1, numel(gain_t1)), gain_t1, 'filled', 'MarkerFaceColor', colors(1, :));
-    swarmchart(repelem((c*7) + 2, 1, numel(gain_t2)), gain_t2, 'filled', 'MarkerFaceColor', colors(2, :));
-    swarmchart(repelem((c*7) + 4, 1, numel(gain_t2)), diff_gain, 'filled', 'MarkerFaceColor', colors(3, :));
+        swarmchart(repelem(c*5, 1, numel(gain_t1)), gain_t1, 'filled', 'MarkerFaceColor', colors(1, :));
+        swarmchart(repelem((c*5) + 2, 1, numel(gain_t2)), gain_t2, 'filled', 'MarkerFaceColor', colors(2, :));
+
+    end
+
+    grid on;
+    xticks((1:numel(all_conditions))*5 + 1);
+    xticklabels(all_conditions);
+    xlabel("Condition");
+    ylabel("Drift towards FPF");
+
+    
+    title("Cell place field refinement after rest (" + v + ")");
 
 end
 
-grid on;
-xticks((1:numel(all_conditions))*7 + 3);
-xticklabels(all_conditions);
-xlabel("Condition");
-ylabel("Drift towards FPF");
-
-legend({"Expected refinement without rest", "Refinement with rest", "Difference"})
-
-% We see more refinement with rest, but it's pretty weak
+legend({"Expected refinement without rest", "Refinement with rest"})
 
 %%
 
-f1 = figure;
-
-hold on;
-
-var = "pvCorr";
-
-all_conditions = unique(dataLapCorr.condition);
-lap_nb_cond = [1, 2, 3, 4, 8];
-
-cond_vec = [];
-gain_vec = [];
-
-for c = 1:numel(all_conditions)
-
-    lap_nb = lap_nb_cond(c);
-
-    gain_t1 = dataLapCorr.(var)(dataLapCorr.condition == all_conditions(c) & dataLapCorr.track == 1 & dataLapCorr.lap == lap_nb + 1) - ...
-        dataLapCorr.(var)(dataLapCorr.condition == all_conditions(c) & dataLapCorr.track == 1 & dataLapCorr.lap == lap_nb);
-
-    gain_t2 = dataLapCorr.(var)(dataLapCorr.condition == all_conditions(c) & dataLapCorr.track == 2 & dataLapCorr.lap == lap_nb + 1) - ...
-        dataLapCorr.(var)(dataLapCorr.condition == all_conditions(c) & dataLapCorr.track == 2 & dataLapCorr.lap == lap_nb);
-
-    gain_increase = gain_t2 - gain_t1;
-
-    cond_vec = [cond_vec; repelem(lap_nb_cond(c), numel(gain_increase), 1)];
-    gain_vec = [gain_vec; gain_increase];
-end
-
-f = fitlm(cond_vec, gain_vec);
-plot(f);
-
-
-
-
+for sID = 1:max()
